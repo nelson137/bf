@@ -22,7 +22,7 @@ struct Cli {
     #[structopt(short, long, default_value="", help=INPUT_HELP)]
     input: String,
 
-    #[structopt(long, help=DUMP_HELP)]
+    #[structopt(long, conflicts_with="show-tape", help=DUMP_HELP)]
     dump_tape: bool,
 
     #[structopt(long, help=SHOW_HELP)]

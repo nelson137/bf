@@ -1,3 +1,5 @@
+// use std::io::{self, Write};
+
 mod cell;
 use cell::Cell;
 
@@ -5,6 +7,7 @@ use cell::Cell;
 pub struct Tape {
     cells: Vec<Cell>,
     cursor: usize,
+    lines_printed: u32,
 }
 
 impl Tape {
@@ -12,6 +15,7 @@ impl Tape {
         Self {
             cells: vec![Cell::new(); 1],
             cursor: 0,
+            lines_printed: 0,
         }
     }
 
@@ -38,7 +42,7 @@ impl Tape {
         self.current();
     }
 
-    pub fn print(&self, ascii_only: bool) {
+    pub fn print(&mut self, ascii_only: bool) {
         let print_top_bot = |(left, sep, right, spacer)| {
             print!("{0}{1}{1}{1}", left, spacer);
             self.cells
@@ -55,6 +59,13 @@ impl Tape {
             (('┌', '┬', '┐', '─'), '│', ('└', '┴', '┘', '─'), '↑')
         };
 
+        // for each line that was printed:
+        //   move up 1 line, move to col 0, clear to EOL
+        (0..self.lines_printed).for_each(|_| {
+            print!("\x1b[1A\r\x1b[K");
+            // io::stdout().flush().unwrap();
+        });
+
         // Top of tape box
         print_top_bot(top_chars);
 
@@ -69,5 +80,7 @@ impl Tape {
 
         // Cursor
         println!("{:>1$}", cursor, 3 + self.cursor * 4);
+
+        self.lines_printed = 4;
     }
 }

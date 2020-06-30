@@ -1,4 +1,6 @@
 use std::path::PathBuf;
+use std::thread;
+use std::time::Duration;
 
 use structopt::StructOpt;
 
@@ -24,10 +26,23 @@ const WIDTH_HELP: &str = "The maximum width of the terminal for formatting \
 const INFILE_HELP: &str = "The path to the Brainfuck script to execute. Can \
                            be a hyphen (-) to read the script from stdin.";
 
+fn is_pos_int(value: String) -> Result<(), String> {
+    match value.parse::<i64>() {
+        Ok(i) => {
+            if i > 0 {
+                Ok(())
+            } else {
+                Err("value must be an integer > 0".to_string())
+            }
+        }
+        Err(err) => Err(err.to_string()),
+    }
+}
+
 #[derive(Debug, StructOpt)]
 struct Cli {
-    #[structopt(short, long, default_value="0", help=DELAY_HELP)]
-    delay: i32,
+    #[structopt(short, long, default_value="0", validator=is_pos_int, help=DELAY_HELP)]
+    delay: u64,
 
     #[structopt(short, long, default_value="", help=INPUT_HELP)]
     input: String,
@@ -55,6 +70,7 @@ fn main() {
 
     let mut interpreter = Interpreter::new(script, args.input).unwrap_or_else(|err| die(err));
     while interpreter.next().is_some() {
+        thread::sleep(Duration::from_millis(args.delay));
         interpreter.tape.print(args.ascii_only);
     }
 }

@@ -48,10 +48,10 @@ struct Cli {
     #[structopt(short, long, default_value="", hide_default_value=true, help=INPUT_HELP)]
     input: String,
 
-    #[structopt(long, conflicts_with="show-tape", help=DUMP_HELP)]
+    #[structopt(short="t", long, conflicts_with="show-tape", help=DUMP_HELP)]
     dump_tape: bool,
 
-    #[structopt(long, help=SHOW_HELP)]
+    #[structopt(short, long, help=SHOW_HELP)]
     show_tape: bool,
 
     #[structopt(short, long, help=ASCII_ONLY_HELP)]

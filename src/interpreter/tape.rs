@@ -37,4 +37,23 @@ impl Tape {
         // Force tape to be extended
         self.current();
     }
+
+    pub fn print(&self) {
+        let print_top_bot = || self.cells.iter().for_each(|_| print!("+---"));
+
+        // Top of tape box
+        print_top_bot();
+        println!("+");
+
+        // Tape contents and separators
+        self.cells.iter().for_each(|c| print!("|{}", c.display()));
+        println!("|");
+
+        // Bottom of tape box
+        print_top_bot();
+        println!("+");
+
+        // Cursor
+        println!("{:>1$}", "^", 3 + self.cursor * 4);
+    }
 }

@@ -27,4 +27,8 @@ impl Cell {
     pub fn set(&mut self, value: char) {
         self.0 = Wrapping(value as u8);
     }
+
+    pub fn display(&self) -> String {
+        format!("{:^3}", self.value())
+    }
 }

@@ -50,8 +50,7 @@ fn main() {
     let script = read_script(&args.infile).unwrap_or_else(|e| die(e));
 
     let mut interpreter = Interpreter::new(script, args.input).unwrap_or_else(|err| die(err));
-    while let Some(ins) = interpreter.next() {
-        print!("{}", ins);
+    while interpreter.next().is_some() {
+        interpreter.tape.print();
     }
-    println!();
 }

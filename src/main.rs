@@ -30,10 +30,10 @@ const INFILE_HELP: &str = "The path to the Brainfuck script to execute. Can \
 fn is_pos_int(value: String) -> Result<(), String> {
     match value.parse::<i64>() {
         Ok(i) => {
-            if i > 0 {
-                Ok(())
+            if i < 0 {
+                Err("value must be an integer >= 0".to_string())
             } else {
-                Err("value must be an integer > 0".to_string())
+                Ok(())
             }
         }
         Err(err) => Err(err.to_string()),

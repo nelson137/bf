@@ -69,6 +69,7 @@ fn main() {
     let script = read_script(&args.infile).unwrap_or_else(|e| die(e));
 
     let mut interpreter = Interpreter::new(script, args.input).unwrap_or_else(|err| die(err));
+    interpreter.tape.print(args.ascii_only);
     while interpreter.next().is_some() {
         thread::sleep(Duration::from_millis(args.delay));
         interpreter.tape.print(args.ascii_only);

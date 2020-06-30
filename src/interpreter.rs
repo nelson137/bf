@@ -53,6 +53,7 @@ impl Interpreter {
             } else if v == ']' {
                 if let Some(open_i) = stack.pop() {
                     map.insert(open_i, i);
+                    map.insert(i, open_i);
                 } else {
                     return Err(err);
                 }

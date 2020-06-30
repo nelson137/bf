@@ -41,10 +41,10 @@ fn is_pos_int(value: String) -> Result<(), String> {
 
 #[derive(Debug, StructOpt)]
 struct Cli {
-    #[structopt(short, long, default_value="0", validator=is_pos_int, help=DELAY_HELP)]
+    #[structopt(short, long, default_value="0", validator=is_pos_int, hide_default_value=true, help=DELAY_HELP)]
     delay: u64,
 
-    #[structopt(short, long, default_value="", help=INPUT_HELP)]
+    #[structopt(short, long, default_value="", hide_default_value=true, help=INPUT_HELP)]
     input: String,
 
     #[structopt(long, conflicts_with="show-tape", help=DUMP_HELP)]

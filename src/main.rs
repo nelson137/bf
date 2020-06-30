@@ -14,11 +14,12 @@ mod interpreter;
 use interpreter::Interpreter;
 
 const DELAY_HELP: &str = "The delay, in milliseconds, between the evaluation \
-                          of each Brainfuck instruction.";
+                          of each Brainfuck instruction. Does nothing if \
+                          --show-tape is not given.";
 const INPUT_HELP: &str = "The input to provide the Brainfuck program for the \
                           read (,) instruction.";
 const DUMP_HELP: &str = "Print the final state of the tape after execution.";
-const SHOW_HELP: &str = "Show the tape during execution. Use -d,--delay to \
+const SHOW_HELP: &str = "Show the tape during execution. Use -d/--delay to \
                          slow down execution.";
 const ASCII_ONLY_HELP: &str = "Only use ASCII characters for output.";
 const WIDTH_HELP: &str = "The maximum width of the terminal for formatting \

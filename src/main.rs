@@ -18,6 +18,7 @@ const INPUT_HELP: &str = "The input to provide the Brainfuck program for the \
 const DUMP_HELP: &str = "Print the final state of the tape after execution.";
 const SHOW_HELP: &str = "Show the tape during execution. Use -d,--delay to \
                          slow down execution.";
+const ASCII_ONLY_HELP: &str = "Only use ASCII characters for output.";
 const WIDTH_HELP: &str = "The maximum width of the terminal for formatting \
                           the tape output.";
 const INFILE_HELP: &str = "The path to the Brainfuck script to execute. Can \
@@ -37,6 +38,9 @@ struct Cli {
     #[structopt(long, help=SHOW_HELP)]
     show_tape: bool,
 
+    #[structopt(short, long, help=ASCII_ONLY_HELP)]
+    ascii_only: bool,
+
     #[structopt(short, long, help=WIDTH_HELP)]
     width: Option<i32>,
 
@@ -51,6 +55,6 @@ fn main() {
 
     let mut interpreter = Interpreter::new(script, args.input).unwrap_or_else(|err| die(err));
     while interpreter.next().is_some() {
-        interpreter.tape.print();
+        interpreter.tape.print(args.ascii_only);
     }
 }

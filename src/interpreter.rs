@@ -92,6 +92,7 @@ impl Iterator for Interpreter {
         }
 
         let ins = self.instructions[self.ip] as char;
+        let mut next_ip = self.ip + 1;
 
         match ins {
             '+' => self.tape.current().inc(),
@@ -100,12 +101,12 @@ impl Iterator for Interpreter {
             '<' => self.tape.left(),
             '[' => {
                 if self.tape.current().value() == 0 {
-                    self.ip = self.bracemap[&self.ip] + 1;
+                    next_ip = self.bracemap[&self.ip] + 1;
                 }
             }
             ']' => {
                 if self.tape.current().value() != 0 {
-                    self.ip = self.bracemap[&self.ip] + 1;
+                    next_ip = self.bracemap[&self.ip] + 1;
                 }
             }
             '.' => self.output.push(self.tape.current().ascii()),
@@ -116,7 +117,7 @@ impl Iterator for Interpreter {
             _ => return None,
         }
 
-        self.ip += 1;
+        self.ip = next_ip;
         Some(ins)
     }
 }

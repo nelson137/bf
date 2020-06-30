@@ -8,6 +8,9 @@ use util::die;
 mod read;
 use read::read_script;
 
+mod interpreter;
+use interpreter::Interpreter;
+
 const DELAY_HELP: &str = "The delay, in milliseconds, between the evaluation\
                           of each Brainfuck instruction.";
 const INPUT_HELP: &str = "The input to provide the Brainfuck program for the\
@@ -45,5 +48,10 @@ fn main() {
     let args = Cli::from_args();
 
     let script = read_script(&args.infile).unwrap_or_else(|e| die(e));
-    println!("script: {}", String::from_utf8_lossy(&script))
+
+    let mut interpreter = Interpreter::new(script, args.input).unwrap_or_else(|err| die(err));
+    while let Some(ins) = interpreter.next() {
+        print!("{}", ins);
+    }
+    println!();
 }

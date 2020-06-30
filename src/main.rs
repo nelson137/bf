@@ -11,17 +11,17 @@ use read::read_script;
 mod interpreter;
 use interpreter::Interpreter;
 
-const DELAY_HELP: &str = "The delay, in milliseconds, between the evaluation\
+const DELAY_HELP: &str = "The delay, in milliseconds, between the evaluation \
                           of each Brainfuck instruction.";
-const INPUT_HELP: &str = "The input to provide the Brainfuck program for the\
+const INPUT_HELP: &str = "The input to provide the Brainfuck program for the \
                           read (,) instruction.";
 const DUMP_HELP: &str = "Print the final state of the tape after execution.";
-const SHOW_HELP: &str = "Show the tape during execution. Use -d,--delay to\
+const SHOW_HELP: &str = "Show the tape during execution. Use -d,--delay to \
                          slow down execution.";
-const WIDTH_HELP: &str = "The maximum width of the terminal for formatting the\
-                          tape output.";
-const INFILE_HELP: &str = "The path to the Brainfuck script to execute. Can be\
-                           a hyphen (-) to read the script from stdin.";
+const WIDTH_HELP: &str = "The maximum width of the terminal for formatting \
+                          the tape output.";
+const INFILE_HELP: &str = "The path to the Brainfuck script to execute. Can \
+                           be a hyphen (-) to read the script from stdin.";
 
 #[derive(Debug, StructOpt)]
 struct Cli {

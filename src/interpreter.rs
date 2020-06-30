@@ -20,13 +20,12 @@ impl Interpreter {
     pub fn new(code: Vec<u8>, input: String) -> Result<Self, String> {
         let instructions = Self::sanitize(code);
         let bracemap = Self::build_bracemap(&instructions)?;
-        let input = input.chars().collect();
         Ok(Self {
             instructions,
             bracemap,
             ip: 0,
             tape: Tape::new(),
-            input,
+            input: input.chars().collect(),
             output: String::new(),
         })
     }
@@ -43,27 +42,27 @@ impl Interpreter {
     }
 
     fn build_bracemap(instructions: &Vec<u8>) -> Result<HashMap<usize, usize>, String> {
-        let mut stack = Vec::new();
-        let mut map = HashMap::new();
+        let mut open_brackets = Vec::new();
+        let mut bracemap = HashMap::new();
         let err = "Mismatched brackets".to_string();
 
         for (i, v) in instructions.iter().map(|i| *i as char).enumerate() {
             if v == '[' {
-                stack.push(i);
+                open_brackets.push(i);
             } else if v == ']' {
-                if let Some(open_i) = stack.pop() {
-                    map.insert(open_i, i);
-                    map.insert(i, open_i);
+                if let Some(open_i) = open_brackets.pop() {
+                    bracemap.insert(open_i, i);
+                    bracemap.insert(i, open_i);
                 } else {
                     return Err(err);
                 }
             }
         }
 
-        if stack.len() > 0 {
+        if open_brackets.len() > 0 {
             Err(err)
         } else {
-            Ok(map)
+            Ok(bracemap)
         }
     }
 
@@ -86,8 +85,8 @@ impl Iterator for Interpreter {
     type Item = char;
 
     fn next(&mut self) -> Option<Self::Item> {
-        // No more instructions in program
         if self.ip > self.instructions.len() - 1 {
+            // No more instructions in program
             return None;
         }
 

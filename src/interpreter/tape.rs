@@ -63,7 +63,6 @@ impl Tape {
         //   move up 1 line, move to col 0, clear to EOL
         (0..self.lines_printed).for_each(|_| {
             print!("\x1b[1A\r\x1b[K");
-            // io::stdout().flush().unwrap();
         });
 
         // Top of tape box

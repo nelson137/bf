@@ -1,6 +1,8 @@
 use itertools::Itertools;
 use num_integer::div_rem;
 
+use crate::util::{BOX_CHARS_ASCII, BOX_CHARS_UNICODE};
+
 mod cell;
 use cell::Cell;
 
@@ -43,20 +45,11 @@ impl Tape {
         self.current();
     }
 
-    pub fn print(&mut self, width: u32, ascii_only: bool) {
-        let print_top_bot = |n_cells, (left, sep, right, spacer)| {
-            print!("{0}{1}{1}{1}", left, spacer);
-            for _ in 1..n_cells {
-                print!("{0}{1}{1}{1}", sep, spacer);
-            }
-            println!("{}", right);
-        };
-
-        let (top_chars, vert_sep, bot_chars, cursor) = if ascii_only {
-            let t_b_chars = ('+', '+', '+', '-');
-            (t_b_chars, '|', t_b_chars, '^')
+    pub fn draw(&mut self, width: u32, ascii_only: bool) {
+        let (box_chars, cursor) = if ascii_only {
+            (BOX_CHARS_ASCII, '^')
         } else {
-            (('┌', '┬', '┐', '─'), '│', ('└', '┴', '┘', '─'), '↑')
+            (BOX_CHARS_UNICODE, '↑')
         };
 
         // for each line that was printed:
@@ -70,21 +63,11 @@ impl Tape {
         let (cursor_chunk, cursor_chunk_i) = div_rem(self.cursor, chunk_size);
 
         for chunk in &self.cells.iter().chunks(chunk_size) {
-            let chunk: Vec<_> = chunk.collect();
+            // Print tape
+            let chunk: Vec<_> = chunk.map(|c| c.display()).collect();
+            box_chars.draw(&chunk);
 
-            // Top of tape box
-            print_top_bot(chunk.len(), top_chars);
-
-            // Tape contents and separators
-            for c in &chunk {
-                print!("{}{}", vert_sep, c.display());
-            }
-            println!("{}", vert_sep);
-
-            // Bottom of tape box
-            print_top_bot(chunk.len(), bot_chars);
-
-            // Cursor
+            // Print cursor
             if chunk_i == cursor_chunk {
                 print!("{:>1$}", cursor, 3 + cursor_chunk_i * 4);
             }

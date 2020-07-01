@@ -1,5 +1,5 @@
 use std::path::PathBuf;
-use std::thread;
+use std::thread::sleep;
 use std::time::Duration;
 
 use structopt::StructOpt;
@@ -106,17 +106,17 @@ fn main() {
     let mut interpreter = Interpreter::new(script, args.input).unwrap_or_else(|err| die(err));
 
     if args.show_tape {
-        interpreter.tape.print(width, args.ascii_only);
+        interpreter.tape.draw(width, args.ascii_only);
     }
 
     while interpreter.next().is_some() {
         if args.show_tape {
-            thread::sleep(Duration::from_millis(args.delay));
-            interpreter.tape.print(width, args.ascii_only);
+            sleep(Duration::from_millis(args.delay));
+            interpreter.tape.draw(width, args.ascii_only);
         }
     }
 
     if args.dump_tape {
-        interpreter.tape.print(width, args.ascii_only);
+        interpreter.tape.draw(width, args.ascii_only);
     }
 }

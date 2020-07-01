@@ -41,7 +41,7 @@ impl Interpreter {
         code.into_iter().filter(Self::is_instruction).collect()
     }
 
-    fn build_bracemap(instructions: &Vec<u8>) -> Result<HashMap<usize, usize>, String> {
+    fn build_bracemap(instructions: &[u8]) -> Result<HashMap<usize, usize>, String> {
         let mut open_brackets = Vec::new();
         let mut bracemap = HashMap::new();
         let err = "Mismatched brackets".to_string();
@@ -59,10 +59,10 @@ impl Interpreter {
             }
         }
 
-        if open_brackets.len() > 0 {
-            Err(err)
-        } else {
+        if open_brackets.is_empty() {
             Ok(bracemap)
+        } else {
+            Err(err)
         }
     }
 

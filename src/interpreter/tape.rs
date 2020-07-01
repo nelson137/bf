@@ -61,24 +61,24 @@ impl Tape {
 
         // for each line that was printed:
         //   move up 1 line, move to col 0, clear to EOL
-        (0..self.lines_printed).for_each(|_| {
+        for _ in 0..self.lines_printed {
             print!("\x1b[1A\r\x1b[K");
-        });
+        }
 
         let chunk_size = ((width - 1) / 4) as usize;
         let mut chunk_i = 0;
         let (cursor_chunk, cursor_chunk_i) = div_rem(self.cursor, chunk_size);
 
         for chunk in &self.cells.iter().chunks(chunk_size) {
-            let chunk: Vec<&Cell> = chunk.into_iter().collect();
+            let chunk: Vec<_> = chunk.collect();
 
             // Top of tape box
             print_top_bot(chunk.len(), top_chars);
 
             // Tape contents and separators
-            chunk
-                .iter()
-                .for_each(|c| print!("{}{}", vert_sep, c.display()));
+            for c in &chunk {
+                print!("{}{}", vert_sep, c.display());
+            }
             println!("{}", vert_sep);
 
             // Bottom of tape box
@@ -86,10 +86,9 @@ impl Tape {
 
             // Cursor
             if chunk_i == cursor_chunk {
-                println!("{:>1$}", cursor, 3 + cursor_chunk_i * 4);
-            } else {
-                println!();
+                print!("{:>1$}", cursor, 3 + cursor_chunk_i * 4);
             }
+            println!();
 
             chunk_i += 1;
         }

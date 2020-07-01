@@ -27,10 +27,10 @@ const WIDTH_HELP: &str = "The maximum width of the terminal for formatting \
 const INFILE_HELP: &str = "The path to the Brainfuck script to execute. Can \
                            be a hyphen (-) to read the script from stdin.";
 
-fn is_pos_int(value: String) -> Result<(), String> {
+fn is_valid_delay(value: String) -> Result<(), String> {
     match value.parse::<i64>() {
-        Ok(i) => {
-            if i < 0 {
+        Ok(n) => {
+            if n < 0 {
                 Err("value must be an integer >= 0".to_string())
             } else {
                 Ok(())
@@ -59,7 +59,7 @@ struct Cli {
         short,
         long,
         default_value="0",
-        validator=is_pos_int,
+        validator=is_valid_delay,
         hide_default_value=true,
         help=DELAY_HELP
     )]

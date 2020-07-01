@@ -10,7 +10,6 @@ use cell::Cell;
 pub struct Tape {
     cells: Vec<Cell>,
     cursor: usize,
-    lines_printed: usize,
 }
 
 impl Tape {
@@ -18,7 +17,6 @@ impl Tape {
         Self {
             cells: vec![Cell::new(); 1],
             cursor: 0,
-            lines_printed: 0,
         }
     }
 
@@ -45,18 +43,14 @@ impl Tape {
         self.current();
     }
 
-    pub fn draw(&mut self, width: u32, ascii_only: bool) {
+    pub fn draw(&mut self, width: u32, ascii_only: bool) -> String {
         let (box_chars, cursor) = if ascii_only {
             (BOX_CHARS_ASCII, '^')
         } else {
             (BOX_CHARS_UNICODE, '↑')
         };
 
-        // for each line that was printed:
-        //   move up 1 line, move to col 0, clear to EOL
-        for _ in 0..self.lines_printed {
-            print!("\x1b[1A\r\x1b[K");
-        }
+        let mut output = String::new();
 
         let chunk_size = ((width - 1) / 4) as usize;
         let mut chunk_i = 0;
@@ -69,13 +63,13 @@ impl Tape {
 
             // Print cursor
             if chunk_i == cursor_chunk {
-                print!("{:>1$}", cursor, 3 + cursor_chunk_i * 4);
+                output.push_str(&format!("{:>1$}", cursor, 3 + cursor_chunk_i * 4));
             }
-            println!();
+            output.push('\n');
 
             chunk_i += 1;
         }
 
-        self.lines_printed = chunk_i * 4;
+        output
     }
 }

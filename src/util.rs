@@ -5,6 +5,10 @@ pub fn die(msg: String) -> ! {
     exit(1);
 }
 
+pub fn ends_with_eol(s: &str) -> bool {
+    s.ends_with('\n') || s.ends_with("\r\n")
+}
+
 struct BoxCap {
     right: char,
     left: char,

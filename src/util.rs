@@ -17,12 +17,21 @@ struct BoxCap {
 }
 
 impl BoxCap {
-    fn draw(&self, n_cells: usize) {
-        print!("{0}{1}{1}{1}", self.left, self.spacer);
+    fn draw(&self, n_cells: usize) -> String {
+        let mut buf = String::new();
+        buf.push(self.left);
+        buf.push(self.spacer);
+        buf.push(self.spacer);
+        buf.push(self.spacer);
         for _ in 1..n_cells {
-            print!("{0}{1}{1}{1}", self.sep, self.spacer);
+            buf.push(self.sep);
+            buf.push(self.spacer);
+            buf.push(self.spacer);
+            buf.push(self.spacer);
         }
-        println!("{}", self.right);
+        buf.push(self.right);
+        buf.push('\n');
+        buf
     }
 }
 
@@ -33,15 +42,21 @@ pub struct BoxChars {
 }
 
 impl BoxChars {
-    pub fn draw(&self, contents: &[String]) {
-        self.top.draw(contents.len());
+    pub fn draw(&self, contents: &[String]) -> String {
+        let mut buf = String::new();
+
+        buf.push_str(&self.top.draw(contents.len()));
 
         for c in contents {
-            print!("{}{}", self.vert_sep, c);
+            buf.push(self.vert_sep);
+            buf.push_str(c);
         }
-        println!("{}", self.vert_sep);
+        buf.push(self.vert_sep);
+        buf.push('\n');
 
-        self.bot.draw(contents.len());
+        buf.push_str(&self.bot.draw(contents.len()));
+
+        buf
     }
 }
 

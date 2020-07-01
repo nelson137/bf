@@ -50,7 +50,7 @@ impl Tape {
             (BOX_CHARS_UNICODE, '↑')
         };
 
-        let mut output = String::new();
+        let mut buf = String::new();
 
         let chunk_size = ((width - 1) / 4) as usize;
         let mut chunk_i = 0;
@@ -59,17 +59,17 @@ impl Tape {
         for chunk in &self.cells.iter().chunks(chunk_size) {
             // Print tape
             let chunk: Vec<_> = chunk.map(|c| c.display()).collect();
-            box_chars.draw(&chunk);
+            buf.push_str(&box_chars.draw(&chunk));
 
             // Print cursor
             if chunk_i == cursor_chunk {
-                output.push_str(&format!("{:>1$}", cursor, 3 + cursor_chunk_i * 4));
+                buf.push_str(&format!("{:>1$}", cursor, 3 + cursor_chunk_i * 4));
             }
-            output.push('\n');
+            buf.push('\n');
 
             chunk_i += 1;
         }
 
-        output
+        buf
     }
 }

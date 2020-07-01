@@ -35,16 +35,21 @@ impl Printer {
 
     pub fn print(&mut self, data: String) {
         // Detect if last line has EOL
-        self.has_final_eol = ends_with_eol(&data);
+        let has_final_eol = ends_with_eol(&data);
 
         // Print data
         let lines: Vec<_> = data.lines().collect();
         for (i, line) in lines.iter().enumerate() {
             print!("{}", line);
-            if i < lines.len() - 1 || self.has_final_eol {
+            if i < lines.len() - 1 || has_final_eol {
                 println!();
             }
             self.lines_printed += 1;
+        }
+
+        // Only update variable if some data was printed (data != "")
+        if lines.len() > 0 {
+            self.has_final_eol = has_final_eol;
         }
 
         io::stdout().flush().unwrap();

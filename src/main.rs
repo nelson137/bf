@@ -94,6 +94,12 @@ struct Cli {
 }
 
 fn main() {
+    #[cfg(windows)]
+    match ansi_term::enable_ansi_support() {
+        Ok(_) => (),
+        Err(_code) => eprintln!("Warning: ANSI support not enabled"),
+    }
+
     let args = Cli::from_args();
 
     let script = read_script(&args.infile).unwrap_or_else(|e| die(e));

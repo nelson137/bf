@@ -18,7 +18,7 @@ use util::die;
 
 const DELAY_HELP: &str = "The delay, in milliseconds, between the evaluation \
                           of each Brainfuck instruction. Does nothing if \
-                          --show-tape is not given.";
+                          -s/--show-tape is not given.";
 const INPUT_HELP: &str = "The input to provide the Brainfuck program for the \
                           read (,) instruction.";
 const DUMP_HELP: &str = "Print the final state of the tape after execution.";

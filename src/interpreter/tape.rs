@@ -1,4 +1,5 @@
-// use std::io::{self, Write};
+use itertools::Itertools;
+use num_integer::div_rem;
 
 mod cell;
 use cell::Cell;
@@ -7,7 +8,7 @@ use cell::Cell;
 pub struct Tape {
     cells: Vec<Cell>,
     cursor: usize,
-    lines_printed: u32,
+    lines_printed: usize,
 }
 
 impl Tape {
@@ -42,13 +43,12 @@ impl Tape {
         self.current();
     }
 
-    pub fn print(&mut self, ascii_only: bool) {
-        let print_top_bot = |(left, sep, right, spacer)| {
+    pub fn print(&mut self, width: u32, ascii_only: bool) {
+        let print_top_bot = |n_cells, (left, sep, right, spacer)| {
             print!("{0}{1}{1}{1}", left, spacer);
-            self.cells
-                .iter()
-                .skip(1)
-                .for_each(|_| print!("{0}{1}{1}{1}", sep, spacer));
+            for _ in 1..n_cells {
+                print!("{0}{1}{1}{1}", sep, spacer);
+            }
             println!("{}", right);
         };
 
@@ -65,21 +65,35 @@ impl Tape {
             print!("\x1b[1A\r\x1b[K");
         });
 
-        // Top of tape box
-        print_top_bot(top_chars);
+        let chunk_size = ((width - 1) / 4) as usize;
+        let mut chunk_i = 0;
+        let (cursor_chunk, cursor_chunk_i) = div_rem(self.cursor, chunk_size);
 
-        // Tape contents and separators
-        self.cells
-            .iter()
-            .for_each(|c| print!("{}{}", vert_sep, c.display()));
-        println!("{}", vert_sep);
+        for chunk in &self.cells.iter().chunks(chunk_size) {
+            let chunk: Vec<&Cell> = chunk.into_iter().collect();
 
-        // Bottom of tape box
-        print_top_bot(bot_chars);
+            // Top of tape box
+            print_top_bot(chunk.len(), top_chars);
 
-        // Cursor
-        println!("{:>1$}", cursor, 3 + self.cursor * 4);
+            // Tape contents and separators
+            chunk
+                .iter()
+                .for_each(|c| print!("{}{}", vert_sep, c.display()));
+            println!("{}", vert_sep);
 
-        self.lines_printed = 4;
+            // Bottom of tape box
+            print_top_bot(chunk.len(), bot_chars);
+
+            // Cursor
+            if chunk_i == cursor_chunk {
+                println!("{:>1$}", cursor, 3 + cursor_chunk_i * 4);
+            } else {
+                println!();
+            }
+
+            chunk_i += 1;
+        }
+
+        self.lines_printed = chunk_i * 4;
     }
 }

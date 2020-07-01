@@ -40,6 +40,19 @@ fn is_pos_int(value: String) -> Result<(), String> {
     }
 }
 
+fn is_valid_width(value: String) -> Result<(), String> {
+    match value.parse::<i64>() {
+        Ok(n) => {
+            if n < 5 {
+                Err("value must be an integer > 5".to_string())
+            } else {
+                Ok(())
+            }
+        }
+        Err(err) => Err(err.to_string()),
+    }
+}
+
 #[derive(Debug, StructOpt)]
 struct Cli {
     #[structopt(
@@ -70,8 +83,8 @@ struct Cli {
     #[structopt(short, long, help=ASCII_ONLY_HELP)]
     ascii_only: bool,
 
-    #[structopt(short, long, help=WIDTH_HELP)]
-    width: Option<i32>,
+    #[structopt(short, long, validator=is_valid_width, help=WIDTH_HELP)]
+    width: Option<u32>,
 
     #[structopt(parse(from_os_str), help=INFILE_HELP)]
     infile: PathBuf,
@@ -82,20 +95,28 @@ fn main() {
 
     let script = read_script(&args.infile).unwrap_or_else(|e| die(e));
 
+    let width: u32 = match args.width {
+        Some(w) => w,
+        None => match term_size::dimensions() {
+            Some((w, _h)) if w > 5 => w as u32,
+            _ => 65, // Wide enough for 16 cells
+        },
+    };
+
     let mut interpreter = Interpreter::new(script, args.input).unwrap_or_else(|err| die(err));
 
     if args.show_tape {
-        interpreter.tape.print(args.ascii_only);
+        interpreter.tape.print(width, args.ascii_only);
     }
 
     while interpreter.next().is_some() {
         if args.show_tape {
             thread::sleep(Duration::from_millis(args.delay));
-            interpreter.tape.print(args.ascii_only);
+            interpreter.tape.print(width, args.ascii_only);
         }
     }
 
     if args.dump_tape {
-        interpreter.tape.print(args.ascii_only);
+        interpreter.tape.print(width, args.ascii_only);
     }
 }

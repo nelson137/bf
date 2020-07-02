@@ -14,7 +14,7 @@ mod read;
 use read::read_script;
 
 mod util;
-use util::{die, DRAW_STYLE_ASCII, DRAW_STYLE_UNICODE};
+use util::die;
 
 const DELAY_HELP: &str = "The delay, in milliseconds, between the evaluation \
                           of each Brainfuck instruction. Does nothing if \
@@ -24,7 +24,6 @@ const INPUT_HELP: &str = "The input to provide the Brainfuck program for the \
 const DUMP_HELP: &str = "Print the final state of the tape after execution.";
 const SHOW_HELP: &str = "Show the tape during execution. Use -d/--delay to \
                          slow down execution.";
-const ASCII_ONLY_HELP: &str = "Only use ASCII characters for output.";
 const WIDTH_HELP: &str = "The maximum width of the terminal for formatting \
                           the tape output.";
 const INFILE_HELP: &str = "The path to the Brainfuck script to execute. Can \
@@ -83,9 +82,6 @@ struct Cli {
     #[structopt(short, long, help=SHOW_HELP)]
     show_tape: bool,
 
-    #[structopt(short, long, help=ASCII_ONLY_HELP)]
-    ascii_only: bool,
-
     #[structopt(short, long, validator=is_valid_width, help=WIDTH_HELP)]
     width: Option<u32>,
 
@@ -112,32 +108,26 @@ fn main() {
         },
     };
 
-    let draw_style = if args.ascii_only {
-        DRAW_STYLE_ASCII
-    } else {
-        DRAW_STYLE_UNICODE
-    };
-
     let mut interpreter =
         Interpreter::new(script, args.input).unwrap_or_else(|err| die(err));
     let mut printer = Printer::new();
 
     if args.show_tape {
-        printer.print(interpreter.tape.draw(width, &draw_style));
+        printer.print(interpreter.tape.draw(width));
     }
 
     while interpreter.next().is_some() {
         printer.reset();
         if args.show_tape {
             sleep(Duration::from_millis(args.delay));
-            printer.print(interpreter.tape.draw(width, &draw_style));
+            printer.print(interpreter.tape.draw(width));
         }
         printer.print(interpreter.output.clone());
     }
 
     if args.dump_tape {
         printer.reset();
-        printer.print(interpreter.tape.draw(width, &draw_style));
+        printer.print(interpreter.tape.draw(width));
         printer.print(interpreter.output.clone());
     }
 }

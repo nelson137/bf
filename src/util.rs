@@ -43,13 +43,13 @@ impl BoxCap {
     }
 }
 
-pub struct DrawStyle {
+pub struct BoxStyle {
     top: BoxCap,
     bot: BoxCap,
     vert_sep: char,
 }
 
-impl DrawStyle {
+impl BoxStyle {
     pub fn draw_box(
         &self,
         contents: &[String],
@@ -73,23 +73,7 @@ impl DrawStyle {
     }
 }
 
-pub const DRAW_STYLE_ASCII: DrawStyle = DrawStyle {
-    top: BoxCap {
-        left: '+',
-        right: '+',
-        sep: '+',
-        spacer: '-',
-    },
-    bot: BoxCap {
-        left: '+',
-        right: '+',
-        sep: '+',
-        spacer: '-',
-    },
-    vert_sep: '|',
-};
-
-pub const DRAW_STYLE_UNICODE: DrawStyle = DrawStyle {
+pub const BOX_UNICODE: BoxStyle = BoxStyle {
     top: BoxCap {
         left: '┌',
         right: '┐',

@@ -1,6 +1,6 @@
 use itertools::Itertools;
 
-use crate::util::DrawStyle;
+use crate::util::BOX_UNICODE;
 
 mod cell;
 use cell::Cell;
@@ -42,7 +42,7 @@ impl Tape {
         self.current();
     }
 
-    pub fn draw(&mut self, width: u32, style: &DrawStyle) -> String {
+    pub fn draw(&mut self, width: u32) -> String {
         // Each cell is 4 wide + the extra vertical separator
         let cells_per_chunk = ((width - 1) / 4) as usize;
 
@@ -57,7 +57,7 @@ impl Tape {
             .into_iter()
             .enumerate()
             .map(|(i, chunk)| {
-                style.draw_box(
+                BOX_UNICODE.draw_box(
                     &chunk.collect::<Vec<_>>(),
                     i == 0,
                     i == n_chunks - 1,

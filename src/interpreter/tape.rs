@@ -1,6 +1,6 @@
 use itertools::Itertools;
 
-use crate::util::{BOX_CHARS_ASCII, BOX_CHARS_UNICODE};
+use crate::util::DrawStyle;
 
 mod cell;
 use cell::Cell;
@@ -42,13 +42,7 @@ impl Tape {
         self.current();
     }
 
-    pub fn draw(&mut self, width: u32, ascii_only: bool) -> String {
-        let box_chars = if ascii_only {
-            BOX_CHARS_ASCII
-        } else {
-            BOX_CHARS_UNICODE
-        };
-
+    pub fn draw(&mut self, width: u32, style: &DrawStyle) -> String {
         // Each cell is 4 wide + the extra vertical separator
         let cells_per_chunk = ((width - 1) / 4) as usize;
 
@@ -58,7 +52,7 @@ impl Tape {
             .map(|(i, c)| c.display(i == self.cursor))
             .chunks(cells_per_chunk)
             .into_iter()
-            .map(|chunk| box_chars.draw(&chunk.collect::<Vec<_>>()))
+            .map(|chunk| style.draw_box(&chunk.collect::<Vec<_>>()))
             .collect::<String>()
     }
 }

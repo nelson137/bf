@@ -14,7 +14,7 @@ mod read;
 use read::read_script;
 
 mod util;
-use util::die;
+use util::{die, DRAW_STYLE_ASCII, DRAW_STYLE_UNICODE};
 
 const DELAY_HELP: &str = "The delay, in milliseconds, between the evaluation \
                           of each Brainfuck instruction. Does nothing if \
@@ -112,25 +112,31 @@ fn main() {
         },
     };
 
+    let draw_style = if args.ascii_only {
+        DRAW_STYLE_ASCII
+    } else {
+        DRAW_STYLE_UNICODE
+    };
+
     let mut interpreter = Interpreter::new(script, args.input).unwrap_or_else(|err| die(err));
     let mut printer = Printer::new();
 
     if args.show_tape {
-        printer.print(interpreter.tape.draw(width, args.ascii_only));
+        printer.print(interpreter.tape.draw(width, &draw_style));
     }
 
     while interpreter.next().is_some() {
         printer.reset();
         if args.show_tape {
             sleep(Duration::from_millis(args.delay));
-            printer.print(interpreter.tape.draw(width, args.ascii_only));
+            printer.print(interpreter.tape.draw(width, &draw_style));
         }
         printer.print(interpreter.output.clone());
     }
 
     if args.dump_tape {
         printer.reset();
-        printer.print(interpreter.tape.draw(width, args.ascii_only));
+        printer.print(interpreter.tape.draw(width, &draw_style));
         printer.print(interpreter.output.clone());
     }
 }

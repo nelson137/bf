@@ -35,14 +35,14 @@ impl BoxCap {
     }
 }
 
-pub struct BoxChars {
+pub struct DrawStyle {
     top: BoxCap,
     bot: BoxCap,
     vert_sep: char,
 }
 
-impl BoxChars {
-    pub fn draw(&self, contents: &[String]) -> String {
+impl DrawStyle {
+    pub fn draw_box(&self, contents: &[String]) -> String {
         let mut buf = String::new();
 
         buf.push_str(&self.top.draw(contents.len()));
@@ -60,7 +60,7 @@ impl BoxChars {
     }
 }
 
-pub const BOX_CHARS_ASCII: BoxChars = BoxChars {
+pub const DRAW_STYLE_ASCII: DrawStyle = DrawStyle {
     top: BoxCap {
         left: '+',
         right: '+',
@@ -76,7 +76,7 @@ pub const BOX_CHARS_ASCII: BoxChars = BoxChars {
     vert_sep: '|',
 };
 
-pub const BOX_CHARS_UNICODE: BoxChars = BoxChars {
+pub const DRAW_STYLE_UNICODE: DrawStyle = DrawStyle {
     top: BoxCap {
         left: '┌',
         right: '┐',

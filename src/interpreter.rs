@@ -41,7 +41,9 @@ impl Interpreter {
         code.into_iter().filter(Self::is_instruction).collect()
     }
 
-    fn build_bracemap(instructions: &[u8]) -> Result<HashMap<usize, usize>, String> {
+    fn build_bracemap(
+        instructions: &[u8],
+    ) -> Result<HashMap<usize, usize>, String> {
         let mut open_brackets = Vec::new();
         let mut bracemap = HashMap::new();
         let err = "Mismatched brackets".to_string();
@@ -73,7 +75,10 @@ impl Interpreter {
                 // Read one character from stdin
                 let mut buf = [0u8; 1];
                 if let Err(err) = io::stdin().read_exact(&mut buf) {
-                    die(format!("Failed to read character from stdin: {}", err));
+                    die(format!(
+                        "Failed to read character from stdin: {}",
+                        err
+                    ));
                 }
                 buf[0] as char
             }

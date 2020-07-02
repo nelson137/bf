@@ -118,7 +118,8 @@ fn main() {
         DRAW_STYLE_UNICODE
     };
 
-    let mut interpreter = Interpreter::new(script, args.input).unwrap_or_else(|err| die(err));
+    let mut interpreter =
+        Interpreter::new(script, args.input).unwrap_or_else(|err| die(err));
     let mut printer = Printer::new();
 
     if args.show_tape {

@@ -46,13 +46,23 @@ impl Tape {
         // Each cell is 4 wide + the extra vertical separator
         let cells_per_chunk = ((width - 1) / 4) as usize;
 
+        let n_chunks =
+            (self.cells.len() as f64 / cells_per_chunk as f64).ceil() as usize;
+
         self.cells
             .iter()
             .enumerate()
             .map(|(i, c)| c.display(i == self.cursor))
             .chunks(cells_per_chunk)
             .into_iter()
-            .map(|chunk| style.draw_box(&chunk.collect::<Vec<_>>()))
+            .enumerate()
+            .map(|(i, chunk)| {
+                style.draw_box(
+                    &chunk.collect::<Vec<_>>(),
+                    i == 0,
+                    i == n_chunks - 1,
+                )
+            })
             .collect::<String>()
     }
 }

@@ -9,6 +9,14 @@ pub fn ends_with_eol(s: &str) -> bool {
     s.ends_with('\n') || s.ends_with("\r\n")
 }
 
+macro_rules! repeat_action {
+    ($n:literal, $action:stmt) => {
+        for __ in 0..$n {
+            $action
+        }
+    };
+}
+
 struct BoxCap {
     right: char,
     left: char,
@@ -17,20 +25,20 @@ struct BoxCap {
 }
 
 impl BoxCap {
-    fn draw(&self, n_cells: usize) -> String {
+    fn draw(&self, n_cells: usize, left_cap: bool, right_cap: bool) -> String {
         let mut buf = String::new();
-        buf.push(self.left);
-        buf.push(self.spacer);
-        buf.push(self.spacer);
-        buf.push(self.spacer);
+
+        buf.push(if left_cap { self.left } else { self.sep });
+        repeat_action!(3, buf.push(self.spacer));
+
         for _ in 1..n_cells {
             buf.push(self.sep);
-            buf.push(self.spacer);
-            buf.push(self.spacer);
-            buf.push(self.spacer);
+            repeat_action!(3, buf.push(self.spacer));
         }
-        buf.push(self.right);
+
+        buf.push(if right_cap { self.right } else { self.sep });
         buf.push('\n');
+
         buf
     }
 }
@@ -42,10 +50,15 @@ pub struct DrawStyle {
 }
 
 impl DrawStyle {
-    pub fn draw_box(&self, contents: &[String]) -> String {
+    pub fn draw_box(
+        &self,
+        contents: &[String],
+        left_cap: bool,
+        right_cap: bool,
+    ) -> String {
         let mut buf = String::new();
 
-        buf.push_str(&self.top.draw(contents.len()));
+        buf.push_str(&self.top.draw(contents.len(), left_cap, right_cap));
 
         for c in contents {
             buf.push(self.vert_sep);
@@ -54,7 +67,7 @@ impl DrawStyle {
         buf.push(self.vert_sep);
         buf.push('\n');
 
-        buf.push_str(&self.bot.draw(contents.len()));
+        buf.push_str(&self.bot.draw(contents.len(), left_cap, right_cap));
 
         buf
     }

@@ -1,5 +1,4 @@
 use itertools::Itertools;
-use num_integer::div_rem;
 
 use crate::util::{BOX_CHARS_ASCII, BOX_CHARS_UNICODE};
 
@@ -44,32 +43,22 @@ impl Tape {
     }
 
     pub fn draw(&mut self, width: u32, ascii_only: bool) -> String {
-        let (box_chars, cursor) = if ascii_only {
-            (BOX_CHARS_ASCII, '^')
+        let box_chars = if ascii_only {
+            BOX_CHARS_ASCII
         } else {
-            (BOX_CHARS_UNICODE, '↑')
+            BOX_CHARS_UNICODE
         };
 
-        let mut buf = String::new();
+        // Each cell is 4 wide + the extra vertical separator
+        let cells_per_chunk = ((width - 1) / 4) as usize;
 
-        let chunk_size = ((width - 1) / 4) as usize;
-        let mut chunk_i = 0;
-        let (cursor_chunk, cursor_chunk_i) = div_rem(self.cursor, chunk_size);
-
-        for chunk in &self.cells.iter().chunks(chunk_size) {
-            // Print tape
-            let chunk: Vec<_> = chunk.map(|c| c.display()).collect();
-            buf.push_str(&box_chars.draw(&chunk));
-
-            // Print cursor
-            if chunk_i == cursor_chunk {
-                buf.push_str(&format!("{:>1$}", cursor, 3 + cursor_chunk_i * 4));
-            }
-            buf.push('\n');
-
-            chunk_i += 1;
-        }
-
-        buf
+        self.cells
+            .iter()
+            .enumerate()
+            .map(|(i, c)| c.display(i == self.cursor))
+            .chunks(cells_per_chunk)
+            .into_iter()
+            .map(|chunk| box_chars.draw(&chunk.collect::<Vec<_>>()))
+            .collect::<String>()
     }
 }

@@ -28,7 +28,12 @@ impl Cell {
         self.0 = Wrapping(value as u8);
     }
 
-    pub fn display(&self) -> String {
-        format!("{:^3}", self.value())
+    pub fn display(&self, highlight: bool) -> String {
+        if highlight {
+            // bg=Cyan fg=Black
+            format!("\x1b[46m\x1b[30m{:^3}\x1b[0m", self.value())
+        } else {
+            format!("{:^3}", self.value())
+        }
     }
 }

@@ -9,6 +9,5 @@ edition = "2018"
 [dependencies]
 ansi_term = "0.12"
 itertools = "0.9"
-num-integer = "0.1"
 structopt = "0.3"
 term_size = "0.3"

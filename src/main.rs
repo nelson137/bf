@@ -21,7 +21,6 @@ const DELAY_HELP: &str = "The delay, in milliseconds, between the evaluation \
                           -s/--show-tape is not given.";
 const INPUT_HELP: &str = "The input to provide the Brainfuck program for the \
                           read (,) instruction.";
-const DUMP_HELP: &str = "Print the final state of the tape after execution.";
 const SHOW_HELP: &str = "Show the tape during execution. Use -d/--delay to \
                          slow down execution.";
 const WIDTH_HELP: &str = "The maximum width of the terminal for formatting \
@@ -76,9 +75,6 @@ struct Cli {
     )]
     input: String,
 
-    #[structopt(short="t", long, conflicts_with="show-tape", help=DUMP_HELP)]
-    dump_tape: bool,
-
     #[structopt(short, long, help=SHOW_HELP)]
     show_tape: bool,
 
@@ -122,12 +118,6 @@ fn main() {
             sleep(Duration::from_millis(args.delay));
             printer.print(interpreter.tape.draw(width));
         }
-        printer.print(interpreter.output.clone());
-    }
-
-    if args.dump_tape {
-        printer.reset();
-        printer.print(interpreter.tape.draw(width));
         printer.print(interpreter.output.clone());
     }
 }

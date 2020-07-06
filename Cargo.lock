@@ -34,6 +34,7 @@ name = "bf"
 version = "0.1.0"
 dependencies = [
  "ansi_term 0.12.1",
+ "atty",
  "itertools",
  "structopt",
  "term_size",

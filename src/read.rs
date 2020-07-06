@@ -3,7 +3,7 @@ use std::io::{self, Read};
 use std::path::PathBuf;
 
 pub fn read_script(infile: &PathBuf) -> Result<Vec<u8>, String> {
-    if infile.to_str().unwrap_or("") == "-" {
+    if *infile == PathBuf::from("-") {
         read_script_stdin()
     } else {
         read_script_file(infile)

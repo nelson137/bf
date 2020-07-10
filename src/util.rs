@@ -9,78 +9,27 @@ pub fn ends_with_eol(s: &str) -> bool {
     s.ends_with('\n') || s.ends_with("\r\n")
 }
 
-macro_rules! repeat_action {
-    ($n:literal, $action:stmt) => {
-        for __ in 0..$n {
-            $action
-        }
-    };
+pub struct BoxLid {
+    pub right: char,
+    pub left: char,
+    pub sep: char,
+    pub spacer: char,
 }
 
-struct BoxCap {
-    right: char,
-    left: char,
-    sep: char,
-    spacer: char,
+pub struct BoxChars {
+    pub top: BoxLid,
+    pub bot: BoxLid,
+    pub vert_sep: char,
 }
 
-impl BoxCap {
-    fn draw(&self, n_cells: usize, left_cap: bool, right_cap: bool) -> String {
-        let mut buf = String::new();
-
-        buf.push(if left_cap { self.left } else { self.sep });
-        repeat_action!(3, buf.push(self.spacer));
-
-        for _ in 1..n_cells {
-            buf.push(self.sep);
-            repeat_action!(3, buf.push(self.spacer));
-        }
-
-        buf.push(if right_cap { self.right } else { self.sep });
-        buf.push('\n');
-
-        buf
-    }
-}
-
-pub struct BoxStyle {
-    top: BoxCap,
-    bot: BoxCap,
-    vert_sep: char,
-}
-
-impl BoxStyle {
-    pub fn draw_box(
-        &self,
-        contents: &[String],
-        left_cap: bool,
-        right_cap: bool,
-    ) -> String {
-        let mut buf = String::new();
-
-        buf.push_str(&self.top.draw(contents.len(), left_cap, right_cap));
-
-        for c in contents {
-            buf.push(self.vert_sep);
-            buf.push_str(c);
-        }
-        buf.push(self.vert_sep);
-        buf.push('\n');
-
-        buf.push_str(&self.bot.draw(contents.len(), left_cap, right_cap));
-
-        buf
-    }
-}
-
-pub const BOX_UNICODE: BoxStyle = BoxStyle {
-    top: BoxCap {
+pub const BOX_UNICODE: BoxChars = BoxChars {
+    top: BoxLid {
         left: '┌',
         right: '┐',
         sep: '┬',
         spacer: '─',
     },
-    bot: BoxCap {
+    bot: BoxLid {
         left: '└',
         right: '┘',
         sep: '┴',

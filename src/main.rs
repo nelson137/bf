@@ -134,14 +134,14 @@ fn main() {
     let mut printer = Printer::new();
 
     if args.show_tape {
-        printer.print(interpreter.tape.draw(width, args.ascii_values));
+        printer.print(interpreter.tape.display(width, args.ascii_values));
     }
 
     while interpreter.next().is_some() {
         printer.reset();
         if args.show_tape {
             sleep(Duration::from_millis(args.delay));
-            printer.print(interpreter.tape.draw(width, args.ascii_values));
+            printer.print(interpreter.tape.display(width, args.ascii_values));
         }
         if !final_output_only {
             printer.print(interpreter.output.clone());

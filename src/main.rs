@@ -28,6 +28,8 @@ const SHOW_HELP: &str = "Show the tape during execution. Use -d/--delay to \
                          slow down execution.";
 const WIDTH_HELP: &str = "The maximum width of the terminal for formatting \
                           the tape output.";
+const ASCII_HELP: &str = "Show the ASCII characters in the tape output \
+                          instead of the decimal values.";
 const INFILE_HELP: &str = "The path to the Brainfuck script to execute. Can \
                            be a hyphen (-) to read the script from stdin.";
 const OUTFILE_HELP: &str = "Print the final output of the program to outfile \
@@ -88,6 +90,9 @@ struct Cli {
     #[structopt(short, long, validator=is_valid_width, help=WIDTH_HELP)]
     width: Option<u32>,
 
+    #[structopt(short, long, help=ASCII_HELP)]
+    ascii_values: bool,
+
     #[structopt(short, long, help=OUTFILE_HELP)]
     outfile: Option<Option<PathBuf>>,
 
@@ -129,14 +134,14 @@ fn main() {
     let mut printer = Printer::new();
 
     if args.show_tape {
-        printer.print(interpreter.tape.draw(width));
+        printer.print(interpreter.tape.draw(width, args.ascii_values));
     }
 
     while interpreter.next().is_some() {
         printer.reset();
         if args.show_tape {
             sleep(Duration::from_millis(args.delay));
-            printer.print(interpreter.tape.draw(width));
+            printer.print(interpreter.tape.draw(width, args.ascii_values));
         }
         if !final_output_only {
             printer.print(interpreter.output.clone());

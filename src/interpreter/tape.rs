@@ -42,7 +42,7 @@ impl Tape {
         self.current();
     }
 
-    pub fn draw(&mut self, width: u32) -> String {
+    pub fn draw(&mut self, width: u32, ascii_values: bool) -> String {
         // Each cell is 4 wide + the extra vertical separator
         let cells_per_chunk = ((width - 1) / 4) as usize;
 
@@ -52,7 +52,7 @@ impl Tape {
         self.cells
             .iter()
             .enumerate()
-            .map(|(i, c)| c.display(i == self.cursor))
+            .map(|(i, c)| c.display(i == self.cursor, ascii_values))
             .chunks(cells_per_chunk)
             .into_iter()
             .enumerate()

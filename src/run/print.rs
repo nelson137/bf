@@ -1,6 +1,10 @@
 use std::io::{self, Write};
 
-use crate::util::{die, ends_with_eol};
+use crate::util::die;
+
+fn ends_with_eol(s: &str) -> bool {
+    s.ends_with('\n') || s.ends_with("\r\n")
+}
 
 pub struct Printer {
     writer: Box<dyn Write>,

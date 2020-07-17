@@ -3,6 +3,8 @@ use std::io::{self, Read};
 
 use crate::util::die;
 
+mod cell;
+
 mod tape;
 use tape::Tape;
 

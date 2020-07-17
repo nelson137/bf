@@ -3,10 +3,36 @@ use std::iter::FromIterator;
 use itertools::Itertools;
 use num_integer::div_rem;
 
-use crate::util::{BoxLid, BOX_UNICODE};
+use super::cell::Cell;
 
-mod cell;
-use cell::Cell;
+struct BoxLid {
+    pub right: char,
+    pub left: char,
+    pub sep: char,
+    pub spacer: char,
+}
+
+struct BoxChars {
+    pub top: BoxLid,
+    pub bot: BoxLid,
+    pub vert_sep: char,
+}
+
+const TAPE_UNICODE: BoxChars = BoxChars {
+    top: BoxLid {
+        left: '┌',
+        right: '┐',
+        sep: '┬',
+        spacer: '─',
+    },
+    bot: BoxLid {
+        left: '└',
+        right: '┘',
+        sep: '┴',
+        spacer: '─',
+    },
+    vert_sep: '│',
+};
 
 #[derive(Debug)]
 pub struct Tape {
@@ -104,11 +130,11 @@ impl TapeChunk<'_> {
         };
 
         // Top lid
-        display_lid(&mut buf, &BOX_UNICODE.top);
+        display_lid(&mut buf, &TAPE_UNICODE.top);
 
         // Cell values and separators
         for (i, cell) in self.chunk.iter().enumerate() {
-            buf.push(BOX_UNICODE.vert_sep);
+            buf.push(TAPE_UNICODE.vert_sep);
             buf.push_str(
                 &cell.display(
                     cursor.filter(|c| i == *c).is_some(),
@@ -116,11 +142,11 @@ impl TapeChunk<'_> {
                 ),
             );
         }
-        buf.push(BOX_UNICODE.vert_sep);
+        buf.push(TAPE_UNICODE.vert_sep);
         buf.push('\n');
 
         // Bottom lid
-        display_lid(&mut buf, &BOX_UNICODE.bot);
+        display_lid(&mut buf, &TAPE_UNICODE.bot);
 
         buf
     }

@@ -1,5 +1,8 @@
 use structopt::StructOpt;
 
+mod generate;
+use generate::GenerateCli;
+
 mod run;
 use run::RunCli;
 
@@ -11,6 +14,8 @@ mod util;
 #[derive(Debug, StructOpt)]
 enum Cli {
     Run(RunCli),
+    #[structopt(alias = "gen")]
+    Generate(GenerateCli),
 }
 
 fn main() {
@@ -21,5 +26,6 @@ fn main() {
 
     match Cli::from_args() {
         Cli::Run(cli) => cli.run(),
+        Cli::Generate(cli) => cli.run(),
     }
 }

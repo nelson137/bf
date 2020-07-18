@@ -1,10 +1,9 @@
 use std::fs::File;
-use std::io::{self, Write};
+use std::io::Write;
 use std::path::PathBuf;
 use std::thread::sleep;
 use std::time::Duration;
 
-use atty::{self, Stream};
 use structopt::StructOpt;
 
 use crate::subcmd::SubCmd;
@@ -33,10 +32,8 @@ const ASCII_HELP: &str = "Show the ASCII characters in the tape output \
                           instead of the decimal values.";
 const INFILE_HELP: &str = "The path to the Brainfuck script to execute. Can \
                            be a hyphen (-) to read the script from stdin.";
-const OUTFILE_HELP: &str = "Print the final output of the program to outfile \
-                            rather than dynamically showing it as it is \
-                            printed. If outfile is a hyphen (-) or is omitted \
-                            print to stdout.";
+const OUTFILE_HELP: &str = "The name of the file to which the final output \
+                            of the Brainfuck script will be printed.";
 
 fn is_valid_delay(value: String) -> Result<(), String> {
     match value.parse::<i64>() {
@@ -96,7 +93,7 @@ pub struct RunCli {
     ascii_values: bool,
 
     #[structopt(short, long, help=OUTFILE_HELP)]
-    outfile: Option<Option<PathBuf>>,
+    outfile: Option<PathBuf>,
 
     #[structopt(parse(from_os_str), help=INFILE_HELP)]
     infile: PathBuf,
@@ -117,15 +114,6 @@ impl SubCmd for RunCli {
         let mut interpreter = Interpreter::new(script, self.input)
             .unwrap_or_else(|err| die(err));
 
-        let mut final_output_only = !atty::is(Stream::Stdout);
-
-        let outfile = if let Some(o_value) = self.outfile {
-            final_output_only = true;
-            o_value.filter(|p| *p != PathBuf::from("-"))
-        } else {
-            None
-        };
-
         let mut printer = Printer::new();
 
         if self.show_tape {
@@ -139,20 +127,12 @@ impl SubCmd for RunCli {
                 printer
                     .print(interpreter.tape.display(width, self.ascii_values));
             }
-            if !final_output_only {
-                printer.print(interpreter.output.clone());
-            }
+            printer.print(interpreter.output.clone());
         }
 
-        if final_output_only {
-            let mut output_writer: Box<dyn Write> = match outfile {
-                Some(path) => Box::new(
-                    File::create(path)
-                        .unwrap_or_else(|err| die(err.to_string())),
-                ),
-                None => Box::new(io::stdout()),
-            };
-            output_writer
+        if let Some(path) = self.outfile {
+            File::create(path)
+                .unwrap_or_else(|err| die(err.to_string()))
                 .write_all(interpreter.output.as_bytes())
                 .unwrap_or_else(|err| die(err.to_string()));
         }

@@ -19,17 +19,17 @@ pub struct Interpreter {
 }
 
 impl Interpreter {
-    pub fn new(code: Vec<u8>, input: String) -> Result<Self, String> {
+    pub fn new(code: Vec<u8>, input: String) -> Self {
         let instructions = Self::sanitize(code);
-        let bracemap = Self::build_bracemap(&instructions)?;
-        Ok(Self {
+        let bracemap = Self::build_bracemap(&instructions);
+        Self {
             instructions,
             bracemap,
             ip: 0,
             tape: Tape::new(),
             input: input.chars().collect(),
             output: String::new(),
-        })
+        }
     }
 
     fn is_instruction(c: &u8) -> bool {
@@ -43,12 +43,9 @@ impl Interpreter {
         code.into_iter().filter(Self::is_instruction).collect()
     }
 
-    fn build_bracemap(
-        instructions: &[u8],
-    ) -> Result<HashMap<usize, usize>, String> {
+    fn build_bracemap(instructions: &[u8]) -> HashMap<usize, usize> {
         let mut open_brackets = Vec::new();
         let mut bracemap = HashMap::new();
-        let err = "Mismatched brackets".to_string();
 
         for (i, v) in instructions.iter().map(|i| *i as char).enumerate() {
             if v == '[' {
@@ -57,16 +54,17 @@ impl Interpreter {
                 if let Some(open_i) = open_brackets.pop() {
                     bracemap.insert(open_i, i);
                     bracemap.insert(i, open_i);
-                } else {
-                    return Err(err);
                 }
             }
         }
 
-        if open_brackets.is_empty() {
-            Ok(bracemap)
-        } else {
-            Err(err)
+        bracemap
+    }
+
+    fn jump_bracket(&self) -> usize {
+        match self.bracemap.get(&self.ip) {
+            Some(next) => next + 1,
+            None => die("mismatched brackets".to_string()),
         }
     }
 
@@ -107,12 +105,12 @@ impl Iterator for Interpreter {
             '<' => self.tape.left(),
             '[' => {
                 if self.tape.current().value() == 0 {
-                    next_ip = self.bracemap[&self.ip] + 1;
+                    next_ip = self.jump_bracket();
                 }
             }
             ']' => {
                 if self.tape.current().value() != 0 {
-                    next_ip = self.bracemap[&self.ip] + 1;
+                    next_ip = self.jump_bracket();
                 }
             }
             '.' => self.output.push(self.tape.current().ascii()),

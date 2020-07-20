@@ -111,8 +111,7 @@ impl SubCmd for RunCli {
             },
         };
 
-        let mut interpreter = Interpreter::new(script, self.input)
-            .unwrap_or_else(|err| die(err));
+        let mut interpreter = Interpreter::new(script, self.input);
 
         let mut printer = Printer::new();
 

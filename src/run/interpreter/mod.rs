@@ -90,8 +90,10 @@ impl Iterator for Interpreter {
     type Item = char;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.ip > self.instructions.len() - 1 {
-            // No more instructions in program
+        if self.instructions.is_empty()
+            || self.ip > self.instructions.len() - 1
+        {
+            // No instructions or end of program
             return None;
         }
 

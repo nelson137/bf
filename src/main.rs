@@ -3,6 +3,8 @@ use structopt::StructOpt;
 mod generate;
 use generate::GenerateCli;
 
+mod print;
+
 mod run;
 use run::RunCli;
 

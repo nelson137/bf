@@ -6,12 +6,10 @@ use std::time::Duration;
 
 use structopt::StructOpt;
 
+use crate::interpreter::Interpreter;
 use crate::print::Printer;
 use crate::subcmd::SubCmd;
 use crate::util::die;
-
-mod interpreter;
-use interpreter::Interpreter;
 
 mod read;
 use read::read_script;

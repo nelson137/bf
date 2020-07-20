@@ -1,0 +1,1 @@
+use conditional compilation on EOL const for printing '\n'

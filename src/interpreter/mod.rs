@@ -5,7 +5,7 @@ use crate::util::die;
 
 mod cell;
 
-mod tape;
+pub mod tape;
 use tape::Tape;
 
 #[derive(Debug)]

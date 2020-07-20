@@ -9,7 +9,7 @@ use structopt::StructOpt;
 use crate::interpreter::Interpreter;
 use crate::print::Printer;
 use crate::subcmd::SubCmd;
-use crate::util::die;
+use crate::util::{die, get_width, is_valid_width};
 
 mod read;
 use read::read_script;
@@ -36,19 +36,6 @@ fn is_valid_delay(value: String) -> Result<(), String> {
         Ok(n) => {
             if n < 0 {
                 Err("value must be an integer >= 0".to_string())
-            } else {
-                Ok(())
-            }
-        }
-        Err(err) => Err(err.to_string()),
-    }
-}
-
-fn is_valid_width(value: String) -> Result<(), String> {
-    match value.parse::<i64>() {
-        Ok(n) => {
-            if n < 5 {
-                Err("value must be an integer > 5".to_string())
             } else {
                 Ok(())
             }
@@ -99,13 +86,7 @@ impl SubCmd for RunCli {
     fn run(self) {
         let script = read_script(&self.infile).unwrap_or_else(|e| die(e));
 
-        let width: u32 = match self.width {
-            Some(w) => w,
-            None => match term_size::dimensions() {
-                Some((w, _h)) if w > 5 => w as u32,
-                _ => 65, // Wide enough for 16 cells
-            },
-        };
+        let width = get_width(self.width);
 
         let mut interpreter = Interpreter::new(script, self.input);
 

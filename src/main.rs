@@ -5,6 +5,9 @@ use generate::GenerateCli;
 
 mod interpreter;
 
+mod live;
+use live::LiveCli;
+
 mod print;
 
 mod run;
@@ -18,8 +21,11 @@ mod util;
 #[derive(Debug, StructOpt)]
 enum Cli {
     Run(RunCli),
+
     #[structopt(alias = "gen")]
     Generate(GenerateCli),
+
+    Live(LiveCli),
 }
 
 fn main() {
@@ -31,5 +37,6 @@ fn main() {
     match Cli::from_args() {
         Cli::Run(cli) => cli.run(),
         Cli::Generate(cli) => cli.run(),
+        Cli::Live(cli) => cli.run(),
     }
 }

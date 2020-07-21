@@ -4,7 +4,7 @@ use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
 use structopt::StructOpt;
 
 use crate::interpreter::{tape::Tape, Interpreter};
-use crate::print::Printer;
+use crate::printer::Printer;
 use crate::subcmd::SubCmd;
 use crate::util::{die, get_width, is_valid_width};
 

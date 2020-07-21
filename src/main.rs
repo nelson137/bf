@@ -8,7 +8,7 @@ mod interpreter;
 mod live;
 use live::LiveCli;
 
-mod print;
+mod printer;
 
 mod run;
 use run::RunCli;

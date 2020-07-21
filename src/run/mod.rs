@@ -7,7 +7,7 @@ use std::time::Duration;
 use structopt::StructOpt;
 
 use crate::interpreter::Interpreter;
-use crate::print::Printer;
+use crate::printer::Printer;
 use crate::subcmd::SubCmd;
 use crate::util::{die, get_width, is_valid_width};
 

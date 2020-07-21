@@ -137,12 +137,13 @@ impl TapeChunk<'_> {
         // Cell values and separators
         for (i, cell) in self.chunk.iter().enumerate() {
             buf.push(TAPE_UNICODE.vert_sep);
-            buf.push_str(
-                &cell.display(
-                    cursor.filter(|c| i == *c).is_some(),
-                    ascii_values,
-                ),
-            );
+            let value = cell.display(ascii_values);
+            buf.push_str(if cursor.filter(|c| i == *c).is_some() {
+                // bg=Cyan fg=Black
+                format!("\x1b[46m\x1b[30m{:^3}\x1b[0m", value)
+            } else {
+                &value
+            });
         }
         buf.push(TAPE_UNICODE.vert_sep);
         buf.push_str(EOL);

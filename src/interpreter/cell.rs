@@ -28,25 +28,16 @@ impl Cell {
         self.0 = Wrapping(value as u8);
     }
 
-    pub fn display(&self, highlight: bool, ascii_value: bool) -> String {
+    pub fn display(&self, ascii_value: bool) -> String {
         let escaped = self.ascii().escape_default().to_string();
         let num = self.value().to_string();
-        let value = if ascii_value {
-            match self.ascii() {
-                '\0' => r"\0",
-                ' ' => "' '",
-                '\t' | '\n' | '\r' | '!'..='~' => &escaped,
-                _ => &num,
-            }
-        } else {
-            &num
+        let value = match self.ascii() {
+            _ if ascii_value => &num,
+            '\0' => r"\0",
+            ' ' => "' '",
+            '\t' | '\n' | '\r' | '!'..='~' => &escaped,
+            _ => &num,
         };
-
-        if highlight {
-            // bg=Cyan fg=Black
-            format!("\x1b[46m\x1b[30m{:^3}\x1b[0m", value)
-        } else {
-            format!("{:^3}", value)
-        }
+        format!("{:^3}", value)
     }
 }

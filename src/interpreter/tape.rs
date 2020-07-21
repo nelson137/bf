@@ -3,6 +3,8 @@ use std::iter::FromIterator;
 use itertools::Itertools;
 use num_integer::div_rem;
 
+use crate::util::EOL;
+
 use super::cell::Cell;
 
 struct BoxLid {
@@ -126,7 +128,7 @@ impl TapeChunk<'_> {
 
             // Final separator and newline
             buf.push(if right_cap { lid.right } else { lid.sep });
-            buf.push('\n');
+            buf.push_str(EOL);
         };
 
         // Top lid
@@ -143,7 +145,7 @@ impl TapeChunk<'_> {
             );
         }
         buf.push(TAPE_UNICODE.vert_sep);
-        buf.push('\n');
+        buf.push_str(EOL);
 
         // Bottom lid
         display_lid(&mut buf, &TAPE_UNICODE.bot);

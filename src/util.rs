@@ -1,5 +1,10 @@
 use std::process::exit;
 
+#[cfg(windows)]
+pub const EOL: &str = "\r\n";
+#[cfg(not(windows))]
+pub const EOL: &str = "\n";
+
 pub fn die(msg: String) -> ! {
     eprintln!("bf: {}", msg);
     exit(1);

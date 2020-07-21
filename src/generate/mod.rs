@@ -7,7 +7,7 @@ use std::path::PathBuf;
 use structopt::StructOpt;
 
 use crate::subcmd::SubCmd;
-use crate::util::die;
+use crate::util::{die, EOL};
 
 mod read;
 use read::read_data;
@@ -59,8 +59,8 @@ impl SubCmd for GenerateCli {
     fn run(self) {
         let mut data = read_data(self.infile);
 
-        if self.newline && !data.ends_with('\n') {
-            data.push('\n');
+        if self.newline && !data.ends_with(EOL) {
+            data.push_str(EOL);
         }
 
         let mut out_writer: Box<dyn Write> = match self.outfile {
@@ -94,16 +94,16 @@ impl SubCmd for GenerateCli {
 fn generator_charwise(data: String) -> String {
     let mut script = String::new();
     gen_loop(&mut script, data.bytes(), true);
-    script.push('\n');
+    script.push_str(EOL);
     script
 }
 
 fn generator_linewise(data: String) -> String {
-    let has_final_eol = data.ends_with('\n');
+    let has_final_eol = data.ends_with(EOL);
     let bf_eol = if data.contains("\r\n") {
-        "+++++++++++++.---.>" // \r\n
+        "+++++++++++++.---.>" // print "\r\n"
     } else {
-        "++++++++++.>" // \n
+        "++++++++++.>" // print "\n"
     };
 
     let mut script = String::new();
@@ -116,7 +116,7 @@ fn generator_linewise(data: String) -> String {
         }
     }
 
-    script.push('\n');
+    script.push_str(EOL);
     script
 }
 
@@ -152,7 +152,7 @@ fn generator_unique_chars(data: String) -> String {
         cursor = cell_index;
     }
 
-    script.push('\n');
+    script.push_str(EOL);
     script
 }
 

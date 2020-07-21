@@ -1,10 +1,6 @@
 use std::io::{self, Write};
 
-use crate::util::die;
-
-fn ends_with_eol(s: &str) -> bool {
-    s.ends_with('\n') || s.ends_with("\r\n")
-}
+use crate::util::{die, EOL};
 
 pub struct Printer {
     writer: Box<dyn Write>,
@@ -45,7 +41,7 @@ impl Printer {
 
     pub fn print(&mut self, data: String) {
         // Detect if last line has EOL
-        let has_final_eol = ends_with_eol(&data);
+        let has_final_eol = data.ends_with(EOL);
 
         // Print data
         let lines: Vec<_> = data.lines().collect();
@@ -55,7 +51,7 @@ impl Printer {
                 .unwrap_or_else(|err| die(err.to_string()));
             if i < lines.len() - 1 || has_final_eol {
                 self.writer
-                    .write_all(b"\n")
+                    .write_all(EOL.as_bytes())
                     .unwrap_or_else(|err| die(err.to_string()));
             }
             self.lines_printed += 1;

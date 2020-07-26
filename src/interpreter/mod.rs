@@ -61,10 +61,10 @@ impl Interpreter {
         bracemap
     }
 
-    fn jump_bracket(&self) -> usize {
+    fn jump_bracket(&self) -> Result<usize, String> {
         match self.bracemap.get(&self.ip) {
-            Some(next) => next + 1,
-            None => die("mismatched brackets".to_string()),
+            Some(next) => Ok(next + 1),
+            None => Err("mismatched brackets".to_string()),
         }
     }
 
@@ -87,7 +87,7 @@ impl Interpreter {
 }
 
 impl Iterator for Interpreter {
-    type Item = char;
+    type Item = Result<char, String>;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.instructions.is_empty()
@@ -98,7 +98,7 @@ impl Iterator for Interpreter {
         }
 
         let ins = self.instructions[self.ip] as char;
-        let mut next_ip = self.ip + 1;
+        let mut next_ip = Ok(self.ip + 1);
 
         match ins {
             '+' => self.tape.current().inc(),
@@ -106,13 +106,21 @@ impl Iterator for Interpreter {
             '>' => self.tape.right(),
             '<' => self.tape.left(),
             '[' => {
-                if self.tape.current().value() == 0 {
-                    next_ip = self.jump_bracket();
+                // Always check for mismatched bracket error
+                let ni = self.jump_bracket();
+                if let Err(err) = ni {
+                    return Some(Err(err));
+                } else if self.tape.current().value() == 0 {
+                    next_ip = ni;
                 }
             }
             ']' => {
-                if self.tape.current().value() != 0 {
-                    next_ip = self.jump_bracket();
+                // Always check for mismatched bracket error
+                let ni = self.jump_bracket();
+                if let Err(err) = ni {
+                    return Some(Err(err));
+                } else if self.tape.current().value() != 0 {
+                    next_ip = ni;
                 }
             }
             '.' => self.output.push(self.tape.current().ascii()),
@@ -123,7 +131,9 @@ impl Iterator for Interpreter {
             _ => return None,
         }
 
-        self.ip = next_ip;
-        Some(ins)
+        if let Ok(ip) = next_ip {
+            self.ip = ip;
+        }
+        Some(next_ip.map(|_| ins))
     }
 }

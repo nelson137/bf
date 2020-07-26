@@ -101,7 +101,14 @@ impl SubCmd for RunCli {
             );
         }
 
-        while interpreter.next().is_some() {
+        while let Some(frame) = interpreter.next() {
+            if let Err(err) = frame {
+                printer.print("Error: ");
+                printer.print(&err);
+                printer.print("\n");
+                return;
+            }
+
             printer.reset();
             if self.show_tape {
                 sleep(Duration::from_millis(self.delay));

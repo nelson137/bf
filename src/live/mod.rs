@@ -33,20 +33,30 @@ impl SubCmd for LiveCli {
         window.keypad(true);
         raw();
         noecho();
+
         start_color();
         Style::Cursor.init(COLOR_BLACK, COLOR_CYAN);
         Style::ControlHint.init(COLOR_BLACK, COLOR_CYAN);
+        Style::StatusOk.init(COLOR_GREEN, COLOR_BLACK);
+        Style::StatusErr.init(COLOR_RED, COLOR_BLACK);
 
         let width = window.get_max_x();
 
+        const STATUS_OK: &str = "ok";
+        let mut status = Ok(STATUS_OK.to_string());
+
+        // Print the initial status
+        window.mv(1, 1);
+        draw_status(&window, &status);
+
         // Print the initial tape state
-        window.mv(1, 0);
+        window.mv(2, 0);
         Tape::new()
             .chunks(width)
             .nc_display(&window, " ", self.ascii_values);
         draw_ui(&window, 1, 0);
         window.refresh();
-        window.mv(5, 1);
+        window.mv(6, 1);
 
         loop {
             let c = window.getch().unwrap_or_else(|| {
@@ -71,16 +81,27 @@ impl SubCmd for LiveCli {
                 _ => (),
             }
 
+            // Run the script
             let mut interpreter = Interpreter::new(code.as_bytes(), "");
-            while interpreter.next().is_some() {}
+            status = Ok(STATUS_OK.to_string());
+            while let Some(frame) = interpreter.next() {
+                if let Err(err) = frame {
+                    status = Err(err);
+                    break;
+                }
+            }
 
             let mut chunks = interpreter.tape.chunks(width);
             let n_chunks = chunks.len();
-            let cursor_y = (2 + n_chunks * 3) as i32;
+            let cursor_y = (3 + n_chunks * 3) as i32;
             let cursor_x = (1 + code.cursor()) as i32;
 
+            // Print status
+            window.mv(1, 1);
+            draw_status(&window, &status);
+
             // Print tape
-            window.mv(1, 0);
+            window.mv(2, 0);
             chunks.nc_display(&window, " ", self.ascii_values);
 
             // Print code
@@ -95,6 +116,20 @@ impl SubCmd for LiveCli {
 
         endwin();
     }
+}
+
+fn draw_status(window: &Window, status: &Result<String, String>) {
+    let (color, msg) = match status {
+        Ok(msg) => (Style::StatusOk.get(), msg),
+        Err(msg) => (Style::StatusErr.get(), msg),
+    };
+    window.attron(color);
+    window.attron(A_BOLD);
+    window.printw("Status: ");
+    window.printw(msg);
+    window.attroff(A_BOLD);
+    window.attroff(color);
+    window.clrtoeol();
 }
 
 fn draw_ui(window: &Window, n_chunks: usize, output_lines: usize) {
@@ -136,7 +171,7 @@ fn draw_ui(window: &Window, n_chunks: usize, output_lines: usize) {
     window.clrtoeol();
 
     // Divider 1
-    let divider_y = (1 + n_chunks * 3) as i32;
+    let divider_y = (2 + n_chunks * 3) as i32;
     window.mvprintw(divider_y, 0, "├");
     print_horizontal();
     window.printw("┤");

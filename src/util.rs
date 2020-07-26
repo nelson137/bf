@@ -38,7 +38,9 @@ pub fn is_valid_width(value: String) -> Result<(), String> {
 #[derive(Clone, Copy)]
 pub enum Style {
     Cursor = 1,
-    ControlHint = 2,
+    ControlHint,
+    StatusOk,
+    StatusErr,
 }
 
 impl Style {

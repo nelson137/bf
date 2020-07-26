@@ -21,6 +21,10 @@ impl Field {
         &self.data
     }
 
+    pub fn as_bytes(&self) -> &[u8] {
+        self.data.as_bytes()
+    }
+
     pub fn insert(&mut self, ch: char) {
         self.data.insert(self.cursor, ch);
         self.cursor += 1;

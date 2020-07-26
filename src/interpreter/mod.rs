@@ -19,7 +19,7 @@ pub struct Interpreter {
 }
 
 impl Interpreter {
-    pub fn new(code: Vec<u8>, input: String) -> Self {
+    pub fn new(code: &[u8], input: &str) -> Self {
         let instructions = Self::sanitize(code);
         let bracemap = Self::build_bracemap(&instructions);
         Self {
@@ -33,14 +33,14 @@ impl Interpreter {
     }
 
     fn is_instruction(c: &u8) -> bool {
-        ['+', '-', '>', '<', '[', ']', '.', ',']
-            .iter()
-            .map(|i| *i as u8)
-            .any(|i| i == *c)
+        match *c as char {
+            '+' | '-' | '>' | '<' | '[' | ']' | '.' | ',' => true,
+            _ => false,
+        }
     }
 
-    fn sanitize(code: Vec<u8>) -> Vec<u8> {
-        code.into_iter().filter(Self::is_instruction).collect()
+    fn sanitize(code: &[u8]) -> Vec<u8> {
+        code.iter().cloned().filter(Self::is_instruction).collect()
     }
 
     fn build_bracemap(instructions: &[u8]) -> HashMap<usize, usize> {

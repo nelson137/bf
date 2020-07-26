@@ -71,8 +71,7 @@ impl SubCmd for LiveCli {
                 _ => (),
             }
 
-            let mut interpreter =
-                Interpreter::new(code.data().bytes().collect(), String::new());
+            let mut interpreter = Interpreter::new(code.as_bytes(), "");
             while interpreter.next().is_some() {}
 
             let mut chunks = interpreter.tape.chunks(width);

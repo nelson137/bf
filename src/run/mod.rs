@@ -88,13 +88,13 @@ impl SubCmd for RunCli {
 
         let width = get_width(self.width);
 
-        let mut interpreter = Interpreter::new(script, self.input);
+        let mut interpreter = Interpreter::new(&script, &self.input);
 
         let mut printer = Printer::new();
 
         if self.show_tape {
             printer.print(
-                interpreter
+                &interpreter
                     .tape
                     .chunks(width)
                     .display("", self.ascii_values),
@@ -106,13 +106,13 @@ impl SubCmd for RunCli {
             if self.show_tape {
                 sleep(Duration::from_millis(self.delay));
                 printer.print(
-                    interpreter
+                    &interpreter
                         .tape
                         .chunks(width)
                         .display("", self.ascii_values),
                 );
             }
-            printer.print(interpreter.output.clone());
+            printer.print(&interpreter.output);
         }
 
         if let Some(path) = self.outfile {

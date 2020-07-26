@@ -39,7 +39,7 @@ impl Printer {
         }
     }
 
-    pub fn print(&mut self, data: String) {
+    pub fn print(&mut self, data: &str) {
         // Detect if last line has EOL
         let has_final_eol = data.ends_with(EOL);
 

@@ -63,7 +63,20 @@ impl Interpreter {
 
     fn jump_bracket(&self) -> Result<usize, String> {
         match self.bracemap.get(&self.ip) {
-            Some(next) => Ok(next + 1),
+            Some(next) => {
+                let (begin, end) = if self.ip < *next {
+                    (self.ip + 1, *next)
+                } else {
+                    (*next + 1, self.ip)
+                };
+                let loop_body = self.instructions.get(begin..end).unwrap();
+                // If loop body contains '+' or '-'
+                if loop_body.iter().any(|c| *c == 43 || *c == 45) {
+                    Ok(next + 1)
+                } else {
+                    Err("infinite loop".to_string())
+                }
+            }
             None => Err("mismatched brackets".to_string()),
         }
     }

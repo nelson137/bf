@@ -1,40 +1,11 @@
-use std::iter::FromIterator;
+use std::vec::Vec;
 
 use itertools::Itertools;
-use num_integer::div_rem;
+use pancurses::Window;
 
-use crate::util::EOL;
+use crate::util::{BoxLid, Style, EOL, TAPE_UNICODE};
 
-use super::cell::Cell;
-
-struct BoxLid {
-    pub right: char,
-    pub left: char,
-    pub sep: char,
-    pub spacer: char,
-}
-
-struct BoxChars {
-    pub top: BoxLid,
-    pub bot: BoxLid,
-    pub vert_sep: char,
-}
-
-const TAPE_UNICODE: BoxChars = BoxChars {
-    top: BoxLid {
-        left: '┌',
-        right: '┐',
-        sep: '┬',
-        spacer: '─',
-    },
-    bot: BoxLid {
-        left: '└',
-        right: '┘',
-        sep: '┴',
-        spacer: '─',
-    },
-    vert_sep: '│',
-};
+use super::cell::{Cell, CellDisplay};
 
 #[derive(Debug)]
 pub struct Tape {
@@ -73,92 +44,168 @@ impl Tape {
         self.current();
     }
 
-    pub fn display(&mut self, width: u32, ascii_values: bool) -> String {
+    pub fn chunks(&self, width: i32) -> ChunkedTape {
         // Each cell is 4 wide + the extra vertical separator
         let cells_per_chunk = ((width - 1) / 4) as usize;
-        let n_chunks =
-            (self.cells.len() as f64 / cells_per_chunk as f64).ceil() as usize;
-        let (cursor_chunk, cursor_chunk_i) =
-            div_rem(self.cursor, cells_per_chunk);
-        let cursor_i = Some(cursor_chunk_i);
-
-        self.cells
-            .iter()
-            .chunks(cells_per_chunk)
-            .into_iter()
-            .enumerate()
-            .map(|(i, chunk)| {
-                chunk.collect::<TapeChunk>().display(
-                    cursor_i.filter(|_| i == cursor_chunk),
-                    i == 0,
-                    i == n_chunks - 1,
-                    ascii_values,
-                )
-            })
-            .collect::<String>()
+        ChunkedTape::new(&self.cells, cells_per_chunk, self.cursor)
     }
 }
 
-struct TapeChunk<'a> {
-    chunk: Vec<&'a Cell>,
+pub struct ChunkedTape<'a> {
+    chunks: Vec<TapeChunkDisplay<'a>>,
+    cursor: (usize, usize),
 }
 
-impl TapeChunk<'_> {
-    pub fn display(
-        &self,
-        cursor: Option<usize>,
+impl<'a> ChunkedTape<'a> {
+    pub fn new(cells: &'a [Cell], size: usize, cursor: usize) -> Self {
+        let n_chunks = (cells.len() as f64 / size as f64).ceil() as usize;
+        let mut chunks = Vec::with_capacity(n_chunks);
+        for (i, c) in cells.iter().chunks(size).into_iter().enumerate() {
+            chunks.push(TapeChunkDisplay::new(c, i == 0, i == n_chunks - 1));
+        }
+        Self {
+            chunks,
+            cursor: (cursor / size, cursor % size),
+        }
+    }
+
+    pub fn len(&self) -> usize {
+        self.chunks.len()
+    }
+
+    pub fn display(&mut self, prefix: &str, ascii_values: bool) -> String {
+        let (cursor_y, cursor_x) = self.cursor;
+        self.chunks
+            .iter_mut()
+            .enumerate()
+            .map(|(chunk_i, chunk)| {
+                for (i, cell_disp) in chunk.iter_mut().enumerate() {
+                    if chunk_i == cursor_y && i == cursor_x {
+                        cell_disp.highlight();
+                    }
+                }
+                chunk.display(prefix, ascii_values)
+            })
+            .collect::<String>()
+    }
+
+    pub fn nc_display(
+        &mut self,
+        window: &Window,
+        prefix: &str,
+        ascii_values: bool,
+    ) {
+        let (cursor_y, cursor_x) = self.cursor;
+        for (chunk_i, chunk) in self.chunks.iter_mut().enumerate() {
+            for (i, cell_disp) in chunk.iter_mut().enumerate() {
+                if chunk_i == cursor_y && i == cursor_x {
+                    cell_disp.highlight();
+                }
+            }
+            chunk.nc_display(window, prefix, ascii_values);
+        }
+    }
+}
+
+pub struct TapeChunkDisplay<'a> {
+    pub chunk: Vec<CellDisplay<'a>>,
+    left_cap: bool,
+    right_cap: bool,
+}
+
+impl<'a> TapeChunkDisplay<'a> {
+    pub fn new<II: IntoIterator<Item = &'a Cell>>(
+        iter: II,
         left_cap: bool,
         right_cap: bool,
-        ascii_values: bool,
-    ) -> String {
+    ) -> Self {
+        let mut chunk = Vec::new();
+        for c in iter {
+            chunk.push(CellDisplay::new(&c));
+        }
+        Self {
+            chunk,
+            left_cap,
+            right_cap,
+        }
+    }
+
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut CellDisplay<'a>> {
+        self.chunk.iter_mut()
+    }
+
+    pub fn display_lid(&self, lid: &BoxLid) -> String {
+        self.chunk
+            .iter()
+            .enumerate()
+            .map(|(i, cell)| {
+                let right =
+                    Some(self.right_cap).filter(|_| i == self.chunk.len() - 1);
+                cell.display_lid(lid, i == 0 && self.left_cap, right)
+            })
+            .collect::<String>()
+    }
+
+    pub fn display(&self, prefix: &str, ascii_values: bool) -> String {
         let mut buf = String::new();
 
-        let display_lid = |buf: &mut String, lid: &BoxLid| {
-            let spacer = lid.spacer.to_string().repeat(3);
-
-            // First cell lid
-            buf.push(if left_cap { lid.left } else { lid.sep });
-            buf.push_str(&spacer);
-
-            // Remaining cell lids
-            for _ in 1..self.chunk.len() {
-                buf.push(lid.sep);
-                buf.push_str(&spacer);
-            }
-
-            // Final separator and newline
-            buf.push(if right_cap { lid.right } else { lid.sep });
-            buf.push_str(EOL);
-        };
-
         // Top lid
-        display_lid(&mut buf, &TAPE_UNICODE.top);
+        buf.push_str(prefix);
+        buf.push_str(&self.display_lid(&TAPE_UNICODE.top));
+        buf.push_str(EOL);
 
-        // Cell values and separators
-        for (i, cell) in self.chunk.iter().enumerate() {
+        // Values and separators
+        buf.push_str(prefix);
+        for cell in self.chunk.iter() {
             buf.push(TAPE_UNICODE.vert_sep);
-            let value = cell.display(ascii_values);
-            buf.push_str(if cursor.filter(|c| i == *c).is_some() {
-                // bg=Cyan fg=Black
-                format!("\x1b[46m\x1b[30m{:^3}\x1b[0m", value)
-            } else {
-                &value
-            });
+            if cell.is_highlighted() {
+                buf.push_str("\x1b[30m\x1b[46m");
+            }
+            buf.push_str(&cell.display(ascii_values));
+            if cell.is_highlighted() {
+                buf.push_str("\x1b[0m");
+            }
         }
         buf.push(TAPE_UNICODE.vert_sep);
         buf.push_str(EOL);
 
         // Bottom lid
-        display_lid(&mut buf, &TAPE_UNICODE.bot);
+        buf.push_str(prefix);
+        buf.push_str(&self.display_lid(&TAPE_UNICODE.bot));
+        buf.push_str(EOL);
 
         buf
     }
-}
 
-impl<'a> FromIterator<&'a Cell> for TapeChunk<'a> {
-    fn from_iter<T: IntoIterator<Item = &'a Cell>>(iter: T) -> Self {
-        Self {
-            chunk: iter.into_iter().collect::<Vec<&'a Cell>>(),
+    pub fn nc_display(
+        &self,
+        window: &Window,
+        prefix: &str,
+        ascii_values: bool,
+    ) {
+        // Top lid
+        window.printw(prefix);
+        window.printw(self.display_lid(&TAPE_UNICODE.top));
+        window.printw(EOL.to_string());
+
+        // Values and separators
+        window.printw(prefix);
+        for cell in self.chunk.iter() {
+            window.printw(TAPE_UNICODE.vert_sep.to_string());
+            if cell.is_highlighted() {
+                window.attron(Style::Cursor.get());
+            }
+            window.printw(cell.display(ascii_values));
+            if cell.is_highlighted() {
+                window.attroff(Style::Cursor.get());
+            }
         }
+        window.printw(TAPE_UNICODE.vert_sep.to_string());
+        window.printw(EOL.to_string());
+
+        // Bottom lid
+        window.printw(prefix);
+        window.printw(self.display_lid(&TAPE_UNICODE.bot));
+        window.printw(EOL.to_string());
     }
 }

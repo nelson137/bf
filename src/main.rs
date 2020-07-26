@@ -1,5 +1,7 @@
 use structopt::StructOpt;
 
+mod field;
+
 mod generate;
 use generate::GenerateCli;
 

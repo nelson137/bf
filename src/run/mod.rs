@@ -70,7 +70,7 @@ pub struct RunCli {
     show_tape: bool,
 
     #[structopt(short, long, validator=is_valid_width, help=WIDTH_HELP)]
-    width: Option<u32>,
+    width: Option<usize>,
 
     #[structopt(short, long, help=ASCII_HELP)]
     ascii_values: bool,
@@ -93,15 +93,24 @@ impl SubCmd for RunCli {
         let mut printer = Printer::new();
 
         if self.show_tape {
-            printer.print(interpreter.tape.display(width, self.ascii_values));
+            printer.print(
+                interpreter
+                    .tape
+                    .chunks(width)
+                    .display("", self.ascii_values),
+            );
         }
 
         while interpreter.next().is_some() {
             printer.reset();
             if self.show_tape {
                 sleep(Duration::from_millis(self.delay));
-                printer
-                    .print(interpreter.tape.display(width, self.ascii_values));
+                printer.print(
+                    interpreter
+                        .tape
+                        .chunks(width)
+                        .display("", self.ascii_values),
+                );
             }
             printer.print(interpreter.output.clone());
         }

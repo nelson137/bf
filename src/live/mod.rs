@@ -1,13 +1,13 @@
 use pancurses::{
-    endwin, initscr, noecho, raw, start_color, Input::*, Window, COLOR_BLACK,
-    COLOR_CYAN,
+    endwin, initscr, noecho, raw, start_color, Input::*, Window, A_BOLD,
+    COLOR_BLACK, COLOR_CYAN, COLOR_GREEN, COLOR_RED,
 };
 use structopt::StructOpt;
 
 use crate::field::Field;
 use crate::interpreter::{tape::Tape, Interpreter};
 use crate::subcmd::SubCmd;
-use crate::util::{die, is_valid_width, Style};
+use crate::util::{die, is_valid_width, Style, EOL};
 
 const ABOUT: &str = "Live scripting playground";
 const WIDTH_HELP: &str = "The maximum width of the terminal for formatting \
@@ -40,7 +40,7 @@ impl SubCmd for LiveCli {
         Style::StatusOk.init(COLOR_GREEN, COLOR_BLACK);
         Style::StatusErr.init(COLOR_RED, COLOR_BLACK);
 
-        let width = window.get_max_x();
+        let (height, width) = window.get_max_yx();
 
         const STATUS_OK: &str = "ok";
         let mut status = Ok(STATUS_OK.to_string());
@@ -93,8 +93,12 @@ impl SubCmd for LiveCli {
 
             let mut chunks = interpreter.tape.chunks(width);
             let n_chunks = chunks.len();
+
             let cursor_y = (3 + n_chunks * 3) as i32;
             let cursor_x = (1 + code.cursor()) as i32;
+
+            let output = sanitize_output(&interpreter.output);
+            let output_lines = output.lines().count();
 
             // Print status
             window.mv(1, 1);
@@ -108,7 +112,15 @@ impl SubCmd for LiveCli {
             window.mvprintw(cursor_y, 1, code.data());
             window.clrtoeol();
 
-            draw_ui(&window, n_chunks, 5);
+            // Print output
+            window.mv(height - output_lines as i32 - 2, 0);
+            for line in output.lines() {
+                window.printw(" ");
+                window.printw(line);
+                window.printw(EOL.to_string());
+            }
+
+            draw_ui(&window, n_chunks, output_lines);
 
             window.refresh();
             window.mv(cursor_y, cursor_x);
@@ -116,6 +128,12 @@ impl SubCmd for LiveCli {
 
         endwin();
     }
+}
+
+fn sanitize_output(data: &str) -> String {
+    data.chars()
+        .filter(|c| c.is_ascii_whitespace() || c.is_ascii_graphic())
+        .collect()
 }
 
 fn draw_status(window: &Window, status: &Result<String, String>) {

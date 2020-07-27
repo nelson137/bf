@@ -53,9 +53,11 @@ impl SubCmd for LiveCli {
 
         // Print the initial tape state
         window.mv(2, 0);
-        Tape::new()
-            .chunks(width)
-            .nc_display(&window, " ", self.ascii_values);
+        Tape::new().chunks(width - 2).nc_display(
+            &window,
+            " ",
+            self.ascii_values,
+        );
         draw_ui(&window, 1, 0);
         window.refresh();
         window.mv(6, 1);
@@ -95,7 +97,8 @@ impl SubCmd for LiveCli {
                 }
             }
 
-            let mut chunks = interpreter.tape.chunks(width);
+            // One character is lost on either side from the border
+            let mut chunks = interpreter.tape.chunks(width - 2);
             let n_chunks = chunks.len();
 
             let cursor_y = (3 + n_chunks * 3) as i32;

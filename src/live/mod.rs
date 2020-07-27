@@ -1,6 +1,6 @@
 use pancurses::{
-    endwin, initscr, noecho, raw, start_color, Input::*, Window, A_BOLD,
-    COLOR_BLACK, COLOR_CYAN, COLOR_GREEN, COLOR_RED,
+    endwin, has_colors, initscr, noecho, raw, start_color, Input::*, Window,
+    A_BOLD, COLOR_BLACK, COLOR_CYAN, COLOR_GREEN, COLOR_RED,
 };
 use structopt::StructOpt;
 
@@ -34,11 +34,13 @@ impl SubCmd for LiveCli {
         raw();
         noecho();
 
-        start_color();
-        Style::Cursor.init(COLOR_BLACK, COLOR_CYAN);
-        Style::ControlHint.init(COLOR_BLACK, COLOR_CYAN);
-        Style::StatusOk.init(COLOR_GREEN, COLOR_BLACK);
-        Style::StatusErr.init(COLOR_RED, COLOR_BLACK);
+        if has_colors() {
+            start_color();
+            Style::Cursor.init(COLOR_BLACK, COLOR_CYAN);
+            Style::ControlHint.init(COLOR_BLACK, COLOR_CYAN);
+            Style::StatusOk.init(COLOR_GREEN, COLOR_BLACK);
+            Style::StatusErr.init(COLOR_RED, COLOR_BLACK);
+        }
 
         let (height, width) = window.get_max_yx();
 

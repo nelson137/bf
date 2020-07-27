@@ -1,7 +1,7 @@
 use std::vec::Vec;
 
 use itertools::Itertools;
-use pancurses::Window;
+use pancurses::{has_colors, Window, A_UNDERLINE};
 
 use crate::util::{BoxLid, Style, EOL, TAPE_UNICODE};
 
@@ -183,6 +183,14 @@ impl<'a> TapeChunkDisplay<'a> {
         prefix: &str,
         ascii_values: bool,
     ) {
+        let cursor_style = || {
+            if has_colors() {
+                Style::Cursor.get()
+            } else {
+                A_UNDERLINE
+            }
+        };
+
         // Top lid
         window.printw(prefix);
         window.printw(self.display_lid(&TAPE_UNICODE.top));
@@ -193,11 +201,11 @@ impl<'a> TapeChunkDisplay<'a> {
         for cell in self.chunk.iter() {
             window.printw(TAPE_UNICODE.vert_sep.to_string());
             if cell.is_highlighted() {
-                window.attron(Style::Cursor.get());
+                window.attron(cursor_style());
             }
             window.printw(cell.display(ascii_values));
             if cell.is_highlighted() {
-                window.attroff(Style::Cursor.get());
+                window.attroff(cursor_style());
             }
         }
         window.printw(TAPE_UNICODE.vert_sep.to_string());

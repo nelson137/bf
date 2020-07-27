@@ -1,0 +1,9 @@
+interpreter
+    prevent complex logical infinite loops
+        execute code in another thread
+        support execution timeout
+live
+    fix residual lines left when divider moves
+    allow non-bf chars
+    implement infile script
+    implement controls

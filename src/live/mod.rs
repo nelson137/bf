@@ -76,6 +76,8 @@ impl SubCmd for LiveCli {
                 },
                 KeyLeft => code.cursor_left(),
                 KeyRight => code.cursor_right(),
+                KeyHome => code.cursor_home(),
+                KeyEnd => code.cursor_end(),
                 KeyBackspace => code.backspace(),
                 KeyDC => code.delete(),
                 _ => (),

@@ -203,7 +203,7 @@ impl<'a> TapeChunkDisplay<'a> {
             if cell.is_highlighted() {
                 window.attron(cursor_style());
             }
-            window.printw(cell.display(ascii_values));
+            cell.nc_display(window, ascii_values);
             if cell.is_highlighted() {
                 window.attroff(cursor_style());
             }

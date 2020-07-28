@@ -7,10 +7,11 @@ use pancurses::{
 };
 use structopt::StructOpt;
 
-use crate::field::Field;
 use crate::interpreter::{Interpreter, Tape};
 use crate::subcmd::SubCmd;
 use crate::util::{is_valid_width, Style, EOL};
+
+use super::field::Field;
 
 const ABOUT: &str = "Live scripting playground";
 const WIDTH_HELP: &str = "The maximum width of the terminal for formatting \

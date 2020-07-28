@@ -1,13 +1,16 @@
+use std::thread::sleep;
+use std::time::Duration;
+
 use pancurses::{
-    endwin, has_colors, initscr, noecho, raw, start_color, Input::*, Window,
-    A_BOLD, COLOR_BLACK, COLOR_CYAN, COLOR_GREEN, COLOR_RED,
+    endwin, has_colors, initscr, noecho, raw, resize_term, start_color,
+    Input::*, Window, A_BOLD, COLOR_BLACK, COLOR_CYAN, COLOR_GREEN, COLOR_RED,
 };
 use structopt::StructOpt;
 
 use crate::field::Field;
 use crate::interpreter::{tape::Tape, Interpreter};
 use crate::subcmd::SubCmd;
-use crate::util::{die, is_valid_width, Style, EOL};
+use crate::util::{is_valid_width, Style, EOL};
 
 const ABOUT: &str = "Live scripting playground";
 const WIDTH_HELP: &str = "The maximum width of the terminal for formatting \
@@ -29,8 +32,10 @@ impl SubCmd for LiveCli {
     fn run(mut self) {
         let mut code = Field::new();
         let window = initscr();
+        let frame_delay = Duration::from_millis(10);
 
         window.keypad(true);
+        window.nodelay(true);
         raw();
         noecho();
 
@@ -51,7 +56,7 @@ impl SubCmd for LiveCli {
         window.mv(1, 1);
         draw_status(&window, &status);
 
-        // Print the initial tape state
+        // Print the initial ui
         window.mv(2, 0);
         Tape::new().chunks(width - 2).nc_display(
             &window,
@@ -63,11 +68,14 @@ impl SubCmd for LiveCli {
         window.mv(6, 1);
 
         loop {
-            let c = window.getch().unwrap_or_else(|| {
-                die("failed to read from stdin".to_string())
-            });
+            sleep(frame_delay);
 
-            match c {
+            let input = match window.getch() {
+                Some(i) => i,
+                None => continue,
+            };
+
+            match input {
                 Character(c) => match c {
                     'q' | '\u{3}' => break,
                     '\u{1}' => self.ascii_values = !self.ascii_values,
@@ -84,6 +92,10 @@ impl SubCmd for LiveCli {
                 KeyEnd => code.cursor_end(),
                 KeyBackspace => code.backspace(),
                 KeyDC => code.delete(),
+                KeyResize => {
+                    resize_term(0, 0);
+                    window.clear();
+                }
                 _ => (),
             }
 

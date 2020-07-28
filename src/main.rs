@@ -10,8 +10,6 @@ mod interpreter;
 mod live;
 use live::LiveCli;
 
-mod printer;
-
 mod run;
 use run::RunCli;
 

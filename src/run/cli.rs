@@ -7,10 +7,10 @@ use std::time::Duration;
 use structopt::StructOpt;
 
 use crate::interpreter::Interpreter;
-use crate::printer::Printer;
 use crate::subcmd::SubCmd;
 use crate::util::{die, get_width, is_valid_width};
 
+use super::print::Printer;
 use super::read::read_script;
 
 const ABOUT: &str = "Execute a Brainfuck script";

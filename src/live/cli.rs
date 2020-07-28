@@ -9,7 +9,8 @@ use structopt::StructOpt;
 
 use crate::interpreter::{Interpreter, Tape};
 use crate::subcmd::SubCmd;
-use crate::util::{is_valid_width, Style, EOL};
+use crate::ui::Style;
+use crate::util::{is_valid_width, EOL};
 
 use super::field::Field;
 

@@ -14,6 +14,8 @@ use run::RunCli;
 mod subcmd;
 use subcmd::SubCmd;
 
+mod ui;
+
 mod util;
 
 #[derive(Debug, StructOpt)]

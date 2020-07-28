@@ -3,7 +3,8 @@ use std::vec::Vec;
 use itertools::Itertools;
 use pancurses::{has_colors, Window, A_UNDERLINE};
 
-use crate::util::{BoxLid, Style, EOL, TAPE_UNICODE};
+use crate::ui::{BoxLid, Style, TAPE_UNICODE};
+use crate::util::EOL;
 
 use super::cell::{Cell, CellDisplay};
 

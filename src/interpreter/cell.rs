@@ -2,7 +2,7 @@ use std::num::Wrapping;
 
 use pancurses::Window;
 
-use crate::util::BoxLid;
+use crate::ui::BoxLid;
 
 #[derive(Debug, Clone)]
 pub struct Cell(Wrapping<u8>);

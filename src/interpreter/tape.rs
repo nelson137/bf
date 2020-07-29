@@ -195,7 +195,7 @@ impl<'a> TapeChunkDisplay<'a> {
         // Top lid
         window.printw(prefix);
         window.printw(self.display_lid(&TAPE_UNICODE.top));
-        window.printw(EOL.to_string());
+        window.printw("\n");
 
         // Values and separators
         window.printw(prefix);
@@ -210,11 +210,11 @@ impl<'a> TapeChunkDisplay<'a> {
             }
         }
         window.printw(TAPE_UNICODE.vert_sep.to_string());
-        window.printw(EOL.to_string());
+        window.printw("\n");
 
         // Bottom lid
         window.printw(prefix);
         window.printw(self.display_lid(&TAPE_UNICODE.bot));
-        window.printw(EOL.to_string());
+        window.printw("\n");
     }
 }

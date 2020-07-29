@@ -8,6 +8,8 @@ mod interpreter;
 mod live;
 use live::LiveCli;
 
+mod read;
+
 mod run;
 use run::RunCli;
 

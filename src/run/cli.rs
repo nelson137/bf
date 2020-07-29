@@ -7,11 +7,11 @@ use std::time::Duration;
 use structopt::StructOpt;
 
 use crate::interpreter::Interpreter;
+use crate::read::read_script;
 use crate::subcmd::SubCmd;
 use crate::util::{die, get_width, is_valid_width};
 
 use super::print::Printer;
-use super::read::read_script;
 
 const ABOUT: &str = "Execute a Brainfuck script";
 const DELAY_HELP: &str = "The delay, in milliseconds, between the evaluation \

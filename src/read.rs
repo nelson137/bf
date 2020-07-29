@@ -20,12 +20,8 @@ fn read_script_stdin() -> Result<Vec<u8>, String> {
 }
 
 fn read_script_file(path: &PathBuf) -> Result<Vec<u8>, String> {
-    let mut file = File::open(path).or_else(|err| {
-        Err(format!(
-            "Failed to open infile: {}: {}",
-            path.display(),
-            err
-        ))
+    let mut file = File::open(path).map_err(|err| {
+        format!("Failed to open infile: {}: {}", path.display(), err)
     })?;
     let mut buf = Vec::new();
     match file.read_to_end(&mut buf) {

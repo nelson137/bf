@@ -15,13 +15,11 @@ use crate::interpreter::Interpreter;
 use crate::read::read_script;
 use crate::subcmd::SubCmd;
 use crate::ui::Style;
-use crate::util::{die, is_valid_width, EOL};
+use crate::util::{die, EOL};
 
 use super::editable::{Field, TextArea};
 
 const ABOUT: &str = "Live scripting playground";
-const WIDTH_HELP: &str = "The maximum width of the terminal for formatting \
-                          the tape output";
 const ASCII_HELP: &str = "Show the ASCII characters in the tape output \
                           instead of the decimal values";
 const INFILE_HELP: &str = "The script to edit in live mode";
@@ -29,9 +27,6 @@ const INFILE_HELP: &str = "The script to edit in live mode";
 #[derive(Debug, StructOpt)]
 #[structopt(about=ABOUT)]
 pub struct LiveCli {
-    #[structopt(short, long, validator=is_valid_width, help=WIDTH_HELP)]
-    width: Option<u32>,
-
     #[structopt(short, long, help=ASCII_HELP)]
     ascii_values: bool,
 
@@ -41,13 +36,12 @@ pub struct LiveCli {
 
 impl SubCmd for LiveCli {
     fn run(self) {
-        Live::new(self.width, self.ascii_values, self.infile).run();
+        Live::new(self.ascii_values, self.infile).run();
     }
 }
 
 struct Live {
     window: Window,
-    width: Option<u32>,
     ascii_values: bool,
     infile: Option<PathBuf>,
     original_script: String,
@@ -61,11 +55,7 @@ const WARN_UNSAVED_CHANGES: &str =
 const ERROR_EMPTY_FILENAME: &str = "Error: filename cannot be empty";
 
 impl Live {
-    fn new(
-        width: Option<u32>,
-        ascii_values: bool,
-        infile: Option<PathBuf>,
-    ) -> Self {
+    fn new(ascii_values: bool, infile: Option<PathBuf>) -> Self {
         let window = initscr();
         window.keypad(true);
         window.nodelay(true);
@@ -91,7 +81,6 @@ impl Live {
 
         Self {
             window,
-            width,
             ascii_values,
             infile,
             original_script,

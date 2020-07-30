@@ -1,5 +1,6 @@
 mod cell;
 
+#[allow(clippy::module_inception)]
 mod interpreter;
 pub use interpreter::Interpreter;
 

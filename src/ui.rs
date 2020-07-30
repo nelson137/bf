@@ -6,6 +6,7 @@ pub enum Style {
     ControlHint,
     StatusOk,
     StatusErr,
+    Info,
 }
 
 impl Style {

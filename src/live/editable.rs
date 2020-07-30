@@ -3,9 +3,8 @@ use std::cmp::min;
 use crate::util::EOL;
 
 pub struct Field {
-    lines: Vec<String>,
-    cursor: (usize, usize),
-    // selection: Option<(usize, usize)>,
+    data: String,
+    cursor: usize,
 }
 
 impl Field {
@@ -15,9 +14,79 @@ impl Field {
 
     pub fn from(data: &str) -> Self {
         Self {
-            lines: data.lines().map(|s| s.to_string()).collect(),
+            data: data.to_string(),
+            cursor: data.len(),
+        }
+    }
+
+    pub fn cursor(&self) -> usize {
+        self.cursor
+    }
+
+    pub fn text(&self) -> &str {
+        &self.data
+    }
+
+    pub fn insert(&mut self, ch: char) {
+        if ch.is_ascii_graphic() || ch.is_ascii_whitespace() {
+            self.data.insert(self.cursor, ch);
+            self.cursor += 1;
+        }
+    }
+
+    pub fn cursor_right(&mut self) {
+        if self.cursor < self.data.len() {
+            self.cursor += 1;
+        }
+    }
+
+    pub fn cursor_left(&mut self) {
+        if self.cursor > 0 {
+            self.cursor -= 1;
+        }
+    }
+
+    pub fn cursor_home(&mut self) {
+        self.cursor = 0;
+    }
+
+    pub fn cursor_end(&mut self) {
+        self.cursor = self.data.len();
+    }
+
+    pub fn backspace(&mut self) {
+        if self.cursor > 0 {
+            self.cursor -= 1;
+            self.data.remove(self.cursor);
+        }
+    }
+
+    pub fn delete(&mut self) {
+        if self.cursor < self.data.len() {
+            self.data.remove(self.cursor);
+        }
+    }
+}
+
+pub struct TextArea {
+    lines: Vec<String>,
+    cursor: (usize, usize),
+}
+
+impl TextArea {
+    pub fn new() -> Self {
+        Self::from("")
+    }
+
+    pub fn from(data: &str) -> Self {
+        let lines = if data.is_empty() {
+            vec![String::new()]
+        } else {
+            data.lines().map(|s| s.to_string()).collect()
+        };
+        Self {
+            lines,
             cursor: (0, 0),
-            // selection: None,
         }
     }
 
@@ -49,9 +118,11 @@ impl Field {
     }
 
     pub fn insert(&mut self, ch: char) {
-        let cursor_x = self.cursor.1;
-        self.cursor_line_mut().insert(cursor_x, ch);
-        self.cursor.1 += 1;
+        if ch.is_ascii_graphic() || ch.is_ascii_whitespace() {
+            let cursor_x = self.cursor.1;
+            self.cursor_line_mut().insert(cursor_x, ch);
+            self.cursor.1 += 1;
+        }
     }
 
     pub fn enter(&mut self) {
@@ -63,7 +134,12 @@ impl Field {
     }
 
     fn cursor_x_clamped(&self) -> usize {
-        min(self.cursor.1, self.cursor_line().len() - 1)
+        let cursor_line_len = self.cursor_line().len();
+        if cursor_line_len == 0 {
+            0
+        } else {
+            min(self.cursor.1, cursor_line_len - 1)
+        }
     }
 
     pub fn cursor_right(&mut self) {
@@ -109,19 +185,6 @@ impl Field {
         self.cursor.0 = self.lines.len() - 1;
         self.cursor.1 = self.cursor_x_clamped();
     }
-
-    /*
-    fn remove_selection(&mut self) -> bool {
-        if let Some((begin, len)) = self.selection {
-            for _ in 0..len {
-                self.data.remove(begin);
-            }
-            true
-        } else {
-            false
-        }
-    }
-    */
 
     pub fn backspace(&mut self) {
         if self.cursor.1 == 0 {

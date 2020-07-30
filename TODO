@@ -1,3 +1,11 @@
+bundle ncurses source with crate
+    source tarball: http://ftp.gnu.org/pub/gnu/ncurses/ncurses-6.1.tar.gz
+    steps
+        ./configure --prefix=./build
+        make
+        make install
+    example build.rs: https://github.com/jeaye/ncurses-rs/blob/master/build.rs
+    example tutorial: https://matt-harrison.com/posts/rust-sys-crate/
 interpreter
     prevent complex logical infinite loops
         execute code in another thread

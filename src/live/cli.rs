@@ -7,6 +7,7 @@ use std::time::Duration;
 use pancurses::{
     endwin, has_colors, initscr, noecho, raw, resize_term, start_color,
     Input::*, Window, A_BOLD, COLOR_BLACK, COLOR_CYAN, COLOR_GREEN, COLOR_RED,
+    COLOR_YELLOW,
 };
 use structopt::StructOpt;
 
@@ -51,9 +52,6 @@ struct Live {
     frame_delay: Duration,
 }
 
-const WARN_UNSAVED_CHANGES: &str =
-    "Warning: there are unsaved changes, are you sure you want to exit \
-    [y/N]? ";
 const ERROR_CREATE_WINDOW: &str = "Error: failed to create windows";
 const ERROR_EMPTY_FILENAME: &str = "Error: filename cannot be empty";
 
@@ -84,6 +82,7 @@ impl Live {
             Style::StatusOk.init(COLOR_GREEN, COLOR_BLACK);
             Style::StatusErr.init(COLOR_RED, COLOR_BLACK);
             Style::Info.init(COLOR_GREEN, COLOR_BLACK);
+            Style::Warning.init(COLOR_YELLOW, COLOR_BLACK);
         }
 
         let (code, original_script) = if let Some(path) = &infile {
@@ -112,7 +111,22 @@ impl Live {
     }
 
     fn can_exit_safely(&self) -> bool {
-        !self.is_dirty() || self.prompt_yn(WARN_UNSAVED_CHANGES)
+        if !self.is_dirty() {
+            return true;
+        }
+
+        let msg_prefix = "Warning: ";
+        let msg = "there are unsaved changes, are you sure you want to \
+                   exit [y/N]? ";
+
+        style_do(&self.win_footer, Style::Warning.get(), || {
+            self.win_footer.mvprintw(0, 0, &msg_prefix)
+        });
+        self.win_footer.printw(msg);
+        let ret = self.prompt_yn((msg_prefix.len() + msg.len()) as i32);
+
+        self.draw_footer();
+        ret
     }
 
     fn run(&mut self) {
@@ -338,10 +352,7 @@ impl Live {
         }
     }
 
-    fn prompt_yn<S: AsRef<str>>(&self, msg: S) -> bool {
-        let msg_len = msg.as_ref().len() as i32;
-
-        self.win_footer.mvprintw(0, 0, &msg);
+    fn prompt_yn(&self, start_x: i32) -> bool {
         self.win_footer.refresh();
 
         let mut response: Option<char> = None;
@@ -362,9 +373,11 @@ impl Live {
                     _ => (),
                 }
 
-                self.win_footer.mvprintw(0, 0, &msg);
+                self.win_footer.mv(0, start_x);
                 if let Some(c) = response {
-                    self.win_footer.mvprintw(0, msg_len, c.to_string());
+                    style_do(&self.win_footer, A_BOLD, || {
+                        self.win_footer.printw(c.to_string())
+                    });
                 }
                 self.win_footer.clrtoeol();
             }

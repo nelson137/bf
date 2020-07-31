@@ -7,6 +7,7 @@ pub enum Style {
     StatusOk,
     StatusErr,
     Info,
+    Warning,
 }
 
 impl Style {

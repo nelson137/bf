@@ -1,4 +1,4 @@
-use pancurses::{init_pair, COLOR_PAIR};
+use pancurses::{chtype, has_colors, init_pair, Window, COLOR_PAIR};
 
 #[derive(Clone, Copy)]
 pub enum Style {
@@ -16,6 +16,16 @@ impl Style {
 
     pub fn get(&self) -> u64 {
         COLOR_PAIR(*self as u64)
+    }
+}
+
+pub fn style_do<F: FnOnce() -> i32>(win: &Window, attr: chtype, func: F) {
+    if has_colors() {
+        win.attron(attr);
+    }
+    func();
+    if has_colors() {
+        win.attroff(attr);
     }
 }
 

@@ -5,16 +5,15 @@ use std::thread::sleep;
 use std::time::Duration;
 
 use pancurses::{
-    chtype, endwin, has_colors, initscr, noecho, raw, resize_term,
-    start_color, Input::*, Window, A_BOLD, COLOR_BLACK, COLOR_CYAN,
-    COLOR_GREEN, COLOR_RED,
+    endwin, has_colors, initscr, noecho, raw, resize_term, start_color,
+    Input::*, Window, A_BOLD, COLOR_BLACK, COLOR_CYAN, COLOR_GREEN, COLOR_RED,
 };
 use structopt::StructOpt;
 
 use crate::interpreter::Interpreter;
 use crate::read::read_script;
 use crate::subcmd::SubCmd;
-use crate::ui::Style;
+use crate::ui::{style_do, Style};
 use crate::util::{die, EOL};
 
 use super::editable::{Field, TextArea};
@@ -41,7 +40,10 @@ impl SubCmd for LiveCli {
 }
 
 struct Live {
-    window: Window,
+    win: Window,
+    win_header: Window,
+    win_content: Window,
+    win_footer: Window,
     ascii_values: bool,
     infile: Option<PathBuf>,
     original_script: String,
@@ -52,15 +54,28 @@ struct Live {
 const WARN_UNSAVED_CHANGES: &str =
     "Warning: there are unsaved changes, are you sure you want to exit \
     [y/N]? ";
+const ERROR_CREATE_WINDOW: &str = "Error: failed to create windows";
 const ERROR_EMPTY_FILENAME: &str = "Error: filename cannot be empty";
 
 impl Live {
     fn new(ascii_values: bool, infile: Option<PathBuf>) -> Self {
-        let window = initscr();
-        window.keypad(true);
-        window.nodelay(true);
+        let win = initscr();
+        win.keypad(true);
+        win.nodelay(true);
         raw();
         noecho();
+
+        let sub = |parent: &Window, nlines, ncols, begy, begx| {
+            parent
+                .subwin(nlines, ncols, begy, begx)
+                .unwrap_or_else(|_| die(ERROR_CREATE_WINDOW.to_string()))
+        };
+
+        let (height, width) = win.get_max_yx();
+
+        let win_header = sub(&win, 1, width, 0, 0);
+        let win_content = sub(&win, height - 2, width, 1, 0);
+        let win_footer = sub(&win, 1, width, height - 1, 0);
 
         if has_colors() {
             start_color();
@@ -80,7 +95,10 @@ impl Live {
         };
 
         Self {
-            window,
+            win,
+            win_header,
+            win_content,
+            win_footer,
             ascii_values,
             infile,
             original_script,
@@ -97,23 +115,15 @@ impl Live {
         !self.is_dirty() || self.prompt_yn(WARN_UNSAVED_CHANGES)
     }
 
-    fn style_do<F: FnOnce() -> i32>(&self, attr: chtype, f: F) {
-        if has_colors() {
-            self.window.attron(attr);
-        }
-        f();
-        if has_colors() {
-            self.window.attroff(attr);
-        }
-    }
-
     fn run(&mut self) {
-        self.draw();
+        self.draw_header();
+        self.draw_footer();
+        self.draw_content();
 
         loop {
             sleep(self.frame_delay);
 
-            let input = match self.window.getch() {
+            let input = match self.win_content.getch() {
                 Some(i) => i,
                 None => continue,
             };
@@ -155,21 +165,32 @@ impl Live {
                 // Terminal resize
                 KeyResize => {
                     resize_term(0, 0);
-                    self.window.clear();
+                    self.win.clear();
                 }
 
                 // Other
                 _ => (),
             }
 
-            self.draw();
+            self.draw_content();
         }
 
         endwin();
     }
 
-    fn draw(&self) {
-        let (height, width) = self.window.get_max_yx();
+    fn draw_header(&self) {
+        // Print the file name
+        if let Some(path) = &self.infile {
+            style_do(&self.win_header, A_BOLD, || {
+                self.win_header.mvprintw(0, 0, path.display().to_string())
+            });
+        }
+        self.win_header.clrtoeol();
+        self.win_header.refresh();
+    }
+
+    fn draw_content(&self) {
+        let (height, width) = self.win_content.get_max_yx();
         const STATUS_OK: &str = "ok";
         let mut status = Ok(STATUS_OK.to_string());
 
@@ -193,125 +214,121 @@ impl Live {
             .collect();
         let output_lines = output.lines().count();
 
-        // Print the file name
-        if let Some(path) = &self.infile {
-            self.style_do(A_BOLD, || {
-                self.window.mvprintw(0, 0, path.display().to_string())
-            });
-        }
-        self.window.clrtoeol();
-
         // Print status
-        self.window.mv(2, 1);
+        self.win_content.mv(1, 1);
         let (color, msg) = match status {
             Ok(msg) => (Style::StatusOk.get(), msg),
             Err(msg) => (Style::StatusErr.get(), msg),
         };
-        self.style_do(color + A_BOLD, || {
-            self.window.printw("Status: ");
-            self.window.printw(msg)
+        style_do(&self.win_content, color + A_BOLD, || {
+            self.win_content.printw("Status: ");
+            self.win_content.printw(msg)
         });
-        self.window.clrtoeol();
+        self.win_content.clrtoeol();
 
         // Print tape
-        self.window.mv(3, 0);
-        chunks.nc_display(&self.window, " ", self.ascii_values);
+        self.win_content.mv(2, 0);
+        chunks.nc_display(&self.win_content, " ", self.ascii_values);
 
-        let code_y = (4 + n_chunks * 3) as i32;
+        let code_y = (3 + n_chunks * 3) as i32;
         let code_x = 1;
 
         // Print code
-        self.window.mv(code_y, 0);
+        self.win_content.mv(code_y, 0);
         for line in self.code.lines() {
-            self.window.printw(" ");
-            self.window.printw(line);
-            self.window.printw("\n");
+            self.win_content.printw(" ");
+            self.win_content.printw(line);
+            self.win_content.printw("\n");
         }
 
         // Print output
-        self.window.mv(height - output_lines as i32 - 2, 0);
+        self.win_content.mv(height - output_lines as i32 - 1, 0);
         for line in output.lines() {
-            self.window.printw(" ");
-            self.window.printw(line);
-            self.window.printw("\n");
+            self.win_content.printw(" ");
+            self.win_content.printw(line);
+            self.win_content.printw("\n");
         }
 
-        self.draw_border(n_chunks, output_lines);
+        self.draw_content_border(n_chunks, output_lines);
 
-        // Controls
+        // Move window cursor to cursor position in code
+        let code_cursor = self.code.cursor();
+        let y = code_y + code_cursor.0 as i32;
+        let x = code_x + code_cursor.1 as i32;
+        self.win_content.mv(y, x);
+
+        self.win.refresh();
+        self.win_content.refresh();
+    }
+
+    fn draw_content_border(&self, n_chunks: usize, output_lines: usize) {
+        let (height, width) = self.win_content.get_max_yx();
+        let print_horizontal =
+            || (2..width).map(|_| self.win_content.printw("─")).last();
+
+        // Top
+        self.win_content.mvprintw(0, 0, "┌");
+        print_horizontal();
+        self.win_content.printw("┐");
+
+        // Left and right
+        for y in 1..height - 1 {
+            self.win_content.mvprintw(y, 0, "│");
+            self.win_content.mvprintw(y, width - 1, "│");
+        }
+
+        // Bottom
+        self.win_content.printw("└");
+        print_horizontal();
+        self.win_content.printw("┘");
+
+        // Divider 1 (tape/editor)
+        let divider_y = (2 + n_chunks * 3) as i32;
+        self.win_content.mvprintw(divider_y, 0, "├");
+        print_horizontal();
+        self.win_content.printw("┤");
+
+        // Divider 2 (editor/output)
+        let divider_y = height as i32 - 2 - output_lines as i32;
+        self.win_content.mvprintw(divider_y, 0, "├");
+        print_horizontal();
+        self.win_content.printw("┤");
+    }
+
+    fn draw_footer(&self) {
         const CONTROLS: [[&str; 2]; 4] = [
             ["^S", "Save"],
             ["^X", "Save As"],
             ["^C", "Quit"],
             ["^A", "Toggle ASCII"],
         ];
-        self.window.mv(height - 1, 0);
+
+        self.win_footer.mv(0, 0);
+
         CONTROLS.iter().for_each(|[map, hint]| {
-            self.style_do(Style::ControlHint.get(), || {
-                self.window.printw(map)
+            style_do(&self.win_footer, Style::ControlHint.get(), || {
+                self.win_footer.printw(map)
             });
-            self.window.printw(":");
-            self.window.printw(hint);
-            self.window.printw("  ");
+            self.win_footer.printw(":");
+            self.win_footer.printw(hint);
+            self.win_footer.printw("  ");
         });
-        self.window.clrtoeol();
 
-        self.window.refresh();
-
-        // Move window cursor to cursor position in code
-        let code_cursor = self.code.cursor();
-        let y = code_y + code_cursor.0 as i32;
-        let x = code_x + code_cursor.1 as i32;
-        self.window.mv(y, x);
-    }
-
-    fn draw_border(&self, n_chunks: usize, output_lines: usize) {
-        let (height, width) = self.window.get_max_yx();
-        let print_horizontal =
-            || (2..width).map(|_| self.window.printw("─")).last();
-
-        // Top
-        self.window.mvprintw(1, 0, "┌");
-        print_horizontal();
-        self.window.printw("┐");
-
-        // Left and right
-        for y in 2..height - 2 {
-            self.window.mvprintw(y, 0, "│");
-            self.window.mvprintw(y, width - 1, "│");
-        }
-
-        // Bottom
-        self.window.printw("└");
-        print_horizontal();
-        self.window.printw("┘");
-
-        // Divider 1
-        let divider_y = (3 + n_chunks * 3) as i32;
-        self.window.mvprintw(divider_y, 0, "├");
-        print_horizontal();
-        self.window.printw("┤");
-
-        // Divider 2
-        let divider_y = height as i32 - 3 - output_lines as i32;
-        self.window.mvprintw(divider_y, 0, "├");
-        print_horizontal();
-        self.window.printw("┤");
+        self.win_footer.clrtoeol();
+        self.win_footer.refresh();
     }
 
     fn info_msg<S: AsRef<str>>(&self, msg: S) {
-        let height = self.window.get_max_y();
-
-        self.window.mvprintw(height - 1, 0, msg);
-        self.style_do(Style::Info.get(), || {
-            self.window.printw("  Press ENTER")
+        self.win_footer.mvprintw(0, 0, msg);
+        style_do(&self.win_footer, Style::Info.get(), || {
+            self.win_footer.printw("  Press ENTER")
         });
-        self.window.refresh();
+        self.win_footer.refresh();
 
         loop {
             sleep(self.frame_delay);
 
-            if let Some(input) = self.window.getch() {
+            if let Some(input) = self.win_footer.getch() {
                 match input {
                     KeyEnter | Character('\r') => break,
                     Character('\u{3}') => break,
@@ -323,17 +340,16 @@ impl Live {
 
     fn prompt_yn<S: AsRef<str>>(&self, msg: S) -> bool {
         let msg_len = msg.as_ref().len() as i32;
-        let height = self.window.get_max_y();
 
-        self.window.mvprintw(height - 1, 0, &msg);
-        self.window.refresh();
+        self.win_footer.mvprintw(0, 0, &msg);
+        self.win_footer.refresh();
 
         let mut response: Option<char> = None;
 
         loop {
             sleep(self.frame_delay);
 
-            if let Some(input) = self.window.getch() {
+            if let Some(input) = self.win_footer.getch() {
                 match input {
                     Character('\u{3}') => break,
                     KeyEnter | Character('\r') if response.is_some() => break,
@@ -346,11 +362,11 @@ impl Live {
                     _ => (),
                 }
 
-                self.window.mvprintw(height - 1, 0, &msg);
+                self.win_footer.mvprintw(0, 0, &msg);
                 if let Some(c) = response {
-                    self.window.mvprintw(height - 1, msg_len, c.to_string());
+                    self.win_footer.mvprintw(0, msg_len, c.to_string());
                 }
-                self.window.clrtoeol();
+                self.win_footer.clrtoeol();
             }
         }
 
@@ -368,8 +384,6 @@ impl Live {
             return;
         };
 
-        let window_bak = self.window.dupwin();
-
         let result = match File::create(path) {
             Ok(mut file) => file.write_all(self.code.text().as_bytes()),
             Err(err) => Err(err),
@@ -379,20 +393,17 @@ impl Live {
             self.info_msg(format!("Error: failed to save file: {}", err));
         }
 
-        self.window.overwrite(&window_bak);
-        self.window.refresh();
+        self.draw_footer();
     }
 
     fn save_as(&mut self) {
-        let height = self.window.get_max_y();
-        let window_bak = self.window.dupwin();
         let mut field = Field::new();
 
         let draw = |path| {
-            self.window.mvprintw(height - 1, 0, "Filename: ");
-            self.window.printw(path);
-            self.window.clrtoeol();
-            self.window.refresh();
+            self.win_footer.mvprintw(0, 0, "Filename: ");
+            self.win_footer.printw(path);
+            self.win_footer.clrtoeol();
+            self.win_footer.refresh();
         };
 
         draw(String::new());
@@ -400,7 +411,7 @@ impl Live {
         loop {
             sleep(self.frame_delay);
 
-            let input = match self.window.getch() {
+            let input = match self.win_footer.getch() {
                 Some(i) => i,
                 None => continue,
             };
@@ -429,10 +440,11 @@ impl Live {
             }
 
             draw(String::from(field.text()));
-            self.window.mv(height - 1, 10 + field.cursor() as i32);
+            self.win_footer.mv(0, 10 + field.cursor() as i32);
         }
 
-        self.window.overlay(&window_bak);
+        self.draw_header();
+        self.draw_footer();
         if self.infile.is_some() {
             self.save();
         }

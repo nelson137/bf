@@ -15,7 +15,7 @@ use crate::interpreter::Interpreter;
 use crate::read::read_script;
 use crate::subcmd::SubCmd;
 use crate::ui::{style_do, Style};
-use crate::util::{die, EOL};
+use crate::util::{die, is_valid_infile};
 
 use super::editable::{Field, TextArea};
 
@@ -30,7 +30,7 @@ pub struct LiveCli {
     #[structopt(short, long, help=ASCII_HELP)]
     ascii_values: bool,
 
-    #[structopt(help=INFILE_HELP)]
+    #[structopt(validator=is_valid_infile, help=INFILE_HELP)]
     infile: Option<PathBuf>,
 }
 
@@ -46,8 +46,7 @@ struct Live {
     win_content: Window,
     win_footer: Window,
     ascii_values: bool,
-    infile: Option<PathBuf>,
-    original_script: String,
+    file_path: Option<PathBuf>,
     code: TextArea,
     frame_delay: Duration,
 }
@@ -56,7 +55,14 @@ const ERROR_CREATE_WINDOW: &str = "Error: failed to create windows";
 const ERROR_EMPTY_FILENAME: &str = "Error: filename cannot be empty";
 
 impl Live {
-    fn new(ascii_values: bool, infile: Option<PathBuf>) -> Self {
+    fn new(ascii_values: bool, file_path: Option<PathBuf>) -> Self {
+        let code = if let Some(path) = &file_path {
+            let script_raw = read_script(&path).unwrap_or_else(|e| die(e));
+            TextArea::from(String::from_utf8_lossy(&script_raw))
+        } else {
+            TextArea::new()
+        };
+
         let win = initscr();
         win.keypad(true);
         win.nodelay(true);
@@ -85,33 +91,20 @@ impl Live {
             Style::Warning.init(COLOR_YELLOW, COLOR_BLACK);
         }
 
-        let (code, original_script) = if let Some(path) = &infile {
-            let script_raw = read_script(&path).unwrap_or_else(|e| die(e));
-            let script = String::from_utf8_lossy(&script_raw).into_owned();
-            (TextArea::from(&script), script)
-        } else {
-            (TextArea::new(), String::from(EOL))
-        };
-
         Self {
             win,
             win_header,
             win_content,
             win_footer,
             ascii_values,
-            infile,
-            original_script,
+            file_path,
             code,
             frame_delay: Duration::from_millis(10),
         }
     }
 
-    fn is_dirty(&self) -> bool {
-        self.code.text() != self.original_script
-    }
-
     fn can_exit_safely(&self) -> bool {
-        if !self.is_dirty() {
+        if !self.code.is_dirty() {
             return true;
         }
 
@@ -194,7 +187,7 @@ impl Live {
 
     fn draw_header(&self) {
         // Print the file name
-        if let Some(path) = &self.infile {
+        if let Some(path) = &self.file_path {
             style_do(&self.win_header, A_BOLD, || {
                 self.win_header.mvprintw(0, 0, path.display().to_string())
             });
@@ -393,7 +386,7 @@ impl Live {
     }
 
     fn save(&mut self) {
-        let path = if let Some(p) = &self.infile {
+        let path = if let Some(p) = &self.file_path {
             p
         } else {
             self.save_as();
@@ -438,7 +431,7 @@ impl Live {
                     if path.is_empty() {
                         self.info_msg(ERROR_EMPTY_FILENAME);
                     } else {
-                        self.infile = Some(PathBuf::from(path));
+                        self.file_path = Some(PathBuf::from(path));
                     }
                     break;
                 }
@@ -461,7 +454,7 @@ impl Live {
 
         self.draw_header();
         self.draw_footer();
-        if self.infile.is_some() {
+        if self.file_path.is_some() {
             self.save();
         }
     }

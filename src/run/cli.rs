@@ -9,7 +9,7 @@ use structopt::StructOpt;
 use crate::interpreter::Interpreter;
 use crate::read::read_script;
 use crate::subcmd::SubCmd;
-use crate::util::{die, get_width, is_valid_width};
+use crate::util::{die, get_width, is_valid_infile, is_valid_width};
 
 use super::print::Printer;
 
@@ -77,7 +77,7 @@ pub struct RunCli {
     #[structopt(short, long, help=OUTFILE_HELP)]
     outfile: Option<PathBuf>,
 
-    #[structopt(parse(from_os_str), help=INFILE_HELP)]
+    #[structopt(validator=is_valid_infile, help=INFILE_HELP)]
     infile: PathBuf,
 }
 

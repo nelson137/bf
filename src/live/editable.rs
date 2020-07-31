@@ -69,25 +69,35 @@ impl Field {
 }
 
 pub struct TextArea {
+    original_lines: Vec<String>,
     lines: Vec<String>,
     cursor: (usize, usize),
 }
 
 impl TextArea {
+    fn parse_lines(data: &str) -> Vec<String> {
+        if data.is_empty() {
+            vec![String::new()]
+        } else {
+            data.lines().map(|s| s.to_string()).collect()
+        }
+    }
+
     pub fn new() -> Self {
         Self::from("")
     }
 
-    pub fn from(data: &str) -> Self {
-        let lines = if data.is_empty() {
-            vec![String::new()]
-        } else {
-            data.lines().map(|s| s.to_string()).collect()
-        };
+    pub fn from<S: AsRef<str>>(data: S) -> Self {
+        let lines = Self::parse_lines(data.as_ref());
         Self {
+            original_lines: lines.clone(),
             lines,
             cursor: (0, 0),
         }
+    }
+
+    pub fn is_dirty(&self) -> bool {
+        self.lines != self.original_lines
     }
 
     pub fn cursor(&self) -> (usize, usize) {

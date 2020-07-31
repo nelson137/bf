@@ -362,8 +362,11 @@ impl Live {
 
             if let Some(input) = self.win_footer.getch() {
                 match input {
-                    Character('\u{3}') => break,
-                    KeyEnter | Character('\r') if response.is_some() => break,
+                    KeyEnter | Character('\r') => {
+                        if response.is_some() {
+                            break;
+                        }
+                    }
                     KeyBackspace | Character('\u{8}') => response = None,
                     Character(c) => match c {
                         '\u{1b}' | '\u{3}' => break, // Esc | ^C

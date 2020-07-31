@@ -16,8 +16,8 @@ pub struct Interpreter {
 }
 
 impl Interpreter {
-    pub fn new(code: &[u8], input: &str) -> Self {
-        let instructions = Self::sanitize(code);
+    pub fn new<C: AsRef<[u8]>>(code: C, input: &str) -> Self {
+        let instructions = Self::sanitize(code.as_ref());
         let bracemap = Self::build_bracemap(&instructions);
         Self {
             instructions,

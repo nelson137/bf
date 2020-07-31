@@ -167,8 +167,7 @@ impl Live {
         let mut status = Ok(STATUS_OK.to_string());
 
         // Run the script
-        let mut interpreter =
-            Interpreter::new(self.code.text().as_bytes(), "");
+        let mut interpreter = Interpreter::new(self.code.text(), "");
         while let Some(frame) = interpreter.next() {
             if let Err(err) = frame {
                 status = Err(err);

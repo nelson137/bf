@@ -87,7 +87,7 @@ impl SubCmd for RunCli {
 
         let width = get_width(self.width);
 
-        let mut interpreter = Interpreter::new(&script, &self.input);
+        let mut interpreter = Interpreter::new(script, &self.input);
 
         let mut printer = Printer::new();
 

@@ -11,6 +11,4 @@ interpreter
         execute code in another thread
         support execution timeout
 live
-    allow non-bf chars
-    implement infile script
-    implement controls
+    scrolling for editor and output

@@ -100,6 +100,10 @@ impl TextArea {
         self.lines != self.original_lines
     }
 
+    pub fn save(&mut self) {
+        self.original_lines = self.lines.clone();
+    }
+
     pub fn cursor(&self) -> (usize, usize) {
         self.cursor
     }

@@ -402,6 +402,7 @@ impl Live {
             self.info_msg(format!("Error: failed to save file: {}", err));
         }
 
+        self.code.save();
         self.draw_footer();
     }
 

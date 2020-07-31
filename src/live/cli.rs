@@ -407,7 +407,7 @@ impl Live {
 
             match input {
                 KeyEnter | Character('\r') => {
-                    let path = field.text();
+                    let path = field.text().trim();
                     if path.is_empty() {
                         self.info_msg(ERROR_EMPTY_FILENAME);
                     } else {

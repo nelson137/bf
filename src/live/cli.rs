@@ -89,6 +89,24 @@ impl Live {
         }
     }
 
+    fn is_dirty(&self) -> bool {
+        self.code.text() != self.original_script
+    }
+
+    fn can_exit_safely(&self) -> bool {
+        !self.is_dirty() || self.prompt_yn(WARN_UNSAVED_CHANGES)
+    }
+
+    fn style_do<F: FnOnce() -> i32>(&self, attr: chtype, f: F) {
+        if has_colors() {
+            self.window.attron(attr);
+        }
+        f();
+        if has_colors() {
+            self.window.attroff(attr);
+        }
+    }
+
     fn run(&mut self) {
         self.draw();
 
@@ -101,27 +119,26 @@ impl Live {
             };
 
             match input {
-                // Arrow keys
+                // Cursor movement
                 KeyLeft => self.code.cursor_left(),
                 KeyRight => self.code.cursor_right(),
                 KeyUp => self.code.cursor_up(),
                 KeyDown => self.code.cursor_down(),
-
-                // Control keys
-                KeyDC => self.code.delete(),
                 KeyHome => self.code.cursor_home(),
                 KeyEnd => self.code.cursor_end(),
                 KeyPPage => self.code.cursor_top(),
                 KeyNPage => self.code.cursor_bottom(),
 
-                KeyEnter | Character('\r') => self.code.enter(),
+                // Deletions
                 KeyBackspace | Character('\u{8}') => self.code.backspace(),
+                KeyDC => self.code.delete(),
 
-                // Characters and incorrect control keys
+                // Insertions and commands
+                KeyEnter | Character('\r') => self.code.enter(),
                 Character(c) => match c {
                     // ^C
                     '\u{3}' => {
-                        if self.can_exit() {
+                        if self.can_exit_safely() {
                             break;
                         }
                     }
@@ -149,16 +166,6 @@ impl Live {
         }
 
         endwin();
-    }
-
-    fn style_do<F: FnOnce() -> i32>(&self, attr: chtype, f: F) {
-        if has_colors() {
-            self.window.attron(attr);
-        }
-        f();
-        if has_colors() {
-            self.window.attroff(attr);
-        }
     }
 
     fn draw(&self) {
@@ -231,6 +238,24 @@ impl Live {
 
         self.draw_border(n_chunks, output_lines);
 
+        // Controls
+        const CONTROLS: [[&str; 2]; 4] = [
+            ["^S", "Save"],
+            ["^X", "Save As"],
+            ["^C", "Quit"],
+            ["^A", "Toggle ASCII"],
+        ];
+        self.window.mv(height - 1, 0);
+        CONTROLS.iter().for_each(|[map, hint]| {
+            self.style_do(Style::ControlHint.get(), || {
+                self.window.printw(map)
+            });
+            self.window.printw(":");
+            self.window.printw(hint);
+            self.window.printw("  ");
+        });
+        self.window.clrtoeol();
+
         self.window.refresh();
 
         // Move window cursor to cursor position in code
@@ -261,23 +286,6 @@ impl Live {
         print_horizontal();
         self.window.printw("┘");
 
-        // Controls
-        const CONTROLS: [[&str; 2]; 4] = [
-            ["^S", "Save"],
-            ["^X", "Save As"],
-            ["^C", "Quit"],
-            ["^A", "Toggle ASCII"],
-        ];
-        CONTROLS.iter().for_each(|[map, hint]| {
-            self.style_do(Style::ControlHint.get(), || {
-                self.window.printw(map)
-            });
-            self.window.printw(":");
-            self.window.printw(hint);
-            self.window.printw("  ");
-        });
-        self.window.clrtoeol();
-
         // Divider 1
         let divider_y = (3 + n_chunks * 3) as i32;
         self.window.mvprintw(divider_y, 0, "├");
@@ -289,10 +297,6 @@ impl Live {
         self.window.mvprintw(divider_y, 0, "├");
         print_horizontal();
         self.window.printw("┤");
-    }
-
-    fn is_dirty(&self) -> bool {
-        self.code.text() != self.original_script
     }
 
     fn info_msg<S: AsRef<str>>(&self, msg: S) {
@@ -317,7 +321,7 @@ impl Live {
         }
     }
 
-    fn info_prompt_yn<S: AsRef<str>>(&self, msg: S) -> bool {
+    fn prompt_yn<S: AsRef<str>>(&self, msg: S) -> bool {
         let msg_len = msg.as_ref().len() as i32;
         let height = self.window.get_max_y();
 
@@ -354,10 +358,6 @@ impl Live {
             Some('y') | Some('Y') => true,
             _ => false,
         }
-    }
-
-    fn can_exit(&self) -> bool {
-        !self.is_dirty() || self.info_prompt_yn(WARN_UNSAVED_CHANGES)
     }
 
     fn save(&mut self) {

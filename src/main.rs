@@ -36,9 +36,10 @@ fn main() {
         eprintln!("Warning: ANSI support not enabled");
     }
 
+    use Cli::*;
     match Cli::from_args() {
-        Cli::Run(cli) => cli.run(),
-        Cli::Generate(cli) => cli.run(),
-        Cli::Live(cli) => cli.run(),
+        Run(cli) => cli.run(),
+        Generate(cli) => cli.run(),
+        Live(cli) => cli.run(),
     }
 }

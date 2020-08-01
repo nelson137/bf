@@ -2,11 +2,10 @@ use std::fs::File;
 use std::io::{self, Read};
 use std::path::PathBuf;
 
-pub fn read_script(infile: &PathBuf) -> Result<Vec<u8>, String> {
-    if *infile == PathBuf::from("-") {
-        read_script_stdin()
-    } else {
-        read_script_file(infile)
+pub fn read_script(infile: &Option<PathBuf>) -> Result<Vec<u8>, String> {
+    match infile {
+        Some(path) if *path != PathBuf::from("-") => read_script_file(path),
+        _ => read_script_stdin(),
     }
 }
 

@@ -37,9 +37,9 @@ const ERROR_EMPTY_FILENAME: &str = "Error: filename cannot be empty";
 
 impl Live {
     fn new(ascii_values: bool, file_path: Option<PathBuf>) -> Self {
-        let code = if let Some(path) = &file_path {
-            let script_raw = read_script(&path).unwrap_or_else(|e| die(e));
-            TextArea::from(String::from_utf8_lossy(&script_raw))
+        let code = if file_path.is_some() {
+            let script = read_script(&file_path).unwrap_or_else(|e| die(e));
+            TextArea::from(String::from_utf8_lossy(&script))
         } else {
             TextArea::new()
         };

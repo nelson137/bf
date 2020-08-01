@@ -19,8 +19,8 @@ const WIDTH_HELP: &str = "The maximum width of the terminal for formatting \
                           the tape output.";
 const ASCII_HELP: &str = "Show the ASCII characters in the tape output \
                           instead of the decimal values.";
-const INFILE_HELP: &str = "The path to the Brainfuck script to execute. Can \
-                           be a hyphen (-) to read the script from stdin.";
+const INFILE_HELP: &str = "The path to the Brainfuck script to execute. Read \
+                           from stdin if infile is a dash (-) or is omitted.";
 const OUTFILE_HELP: &str = "The name of the file to which the final output \
                             of the Brainfuck script will be printed.";
 
@@ -72,7 +72,7 @@ pub struct RunCli {
     pub outfile: Option<PathBuf>,
 
     #[structopt(validator=is_valid_infile, help=INFILE_HELP)]
-    pub infile: PathBuf,
+    pub infile: Option<PathBuf>,
 }
 
 impl SubCmd for RunCli {

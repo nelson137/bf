@@ -22,6 +22,10 @@ pub fn get_width(width: Option<usize>) -> i32 {
 }
 
 pub fn is_valid_infile(value: String) -> Result<(), String> {
+    if value == "-" {
+        return Ok(());
+    }
+
     let path = PathBuf::from(&value);
     if path.exists() {
         if path.is_dir() {

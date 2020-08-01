@@ -1,17 +1,11 @@
-use std::fs::File;
-use std::io::Write;
 use std::path::PathBuf;
-use std::thread::sleep;
-use std::time::Duration;
 
 use structopt::StructOpt;
 
-use crate::interpreter::Interpreter;
-use crate::read::read_script;
 use crate::subcmd::SubCmd;
-use crate::util::{die, get_width, is_valid_infile, is_valid_width};
+use crate::util::{is_valid_infile, is_valid_width};
 
-use super::print::Printer;
+use super::run_subcmd;
 
 const ABOUT: &str = "Execute a Brainfuck script";
 const DELAY_HELP: &str = "The delay, in milliseconds, between the evaluation \
@@ -54,7 +48,7 @@ pub struct RunCli {
         hide_default_value=true,
         help=DELAY_HELP
     )]
-    delay: u64,
+    pub delay: u64,
 
     #[structopt(
         short,
@@ -63,69 +57,26 @@ pub struct RunCli {
         hide_default_value=true,
         help=INPUT_HELP
     )]
-    input: String,
+    pub input: String,
 
     #[structopt(short, long, help=SHOW_HELP)]
-    show_tape: bool,
+    pub show_tape: bool,
 
     #[structopt(short, long, validator=is_valid_width, help=WIDTH_HELP)]
-    width: Option<usize>,
+    pub width: Option<usize>,
 
     #[structopt(short, long, help=ASCII_HELP)]
-    ascii_values: bool,
+    pub ascii_values: bool,
 
     #[structopt(short, long, help=OUTFILE_HELP)]
-    outfile: Option<PathBuf>,
+    pub outfile: Option<PathBuf>,
 
     #[structopt(validator=is_valid_infile, help=INFILE_HELP)]
-    infile: PathBuf,
+    pub infile: PathBuf,
 }
 
 impl SubCmd for RunCli {
     fn run(self) {
-        let script = read_script(&self.infile).unwrap_or_else(|e| die(e));
-
-        let width = get_width(self.width);
-
-        let mut interpreter = Interpreter::new(script, &self.input);
-
-        let mut printer = Printer::new();
-
-        if self.show_tape {
-            printer.print(
-                &interpreter
-                    .tape
-                    .chunks(width)
-                    .display("", self.ascii_values),
-            );
-        }
-
-        while let Some(frame) = interpreter.next() {
-            if let Err(err) = frame {
-                printer.print("Error: ");
-                printer.print(&err);
-                printer.print("\n");
-                return;
-            }
-
-            printer.reset();
-            if self.show_tape {
-                sleep(Duration::from_millis(self.delay));
-                printer.print(
-                    &interpreter
-                        .tape
-                        .chunks(width)
-                        .display("", self.ascii_values),
-                );
-            }
-            printer.print(&interpreter.output);
-        }
-
-        if let Some(path) = self.outfile {
-            File::create(path)
-                .unwrap_or_else(|err| die(err.to_string()))
-                .write_all(interpreter.output.as_bytes())
-                .unwrap_or_else(|err| die(err.to_string()));
-        }
+        run_subcmd(self);
     }
 }

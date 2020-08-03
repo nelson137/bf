@@ -19,6 +19,7 @@ use subcmd::SubCmd;
 mod ui;
 
 mod util;
+use util::die;
 
 #[derive(Debug, StructOpt)]
 enum Cli {
@@ -32,8 +33,8 @@ enum Cli {
 
 fn main() {
     #[cfg(windows)]
-    if let Err(_code) = ansi_term::enable_ansi_support() {
-        eprintln!("Warning: ANSI support not enabled");
+    if ansi_term::enable_ansi_support().is_err() {
+        die("failed to enable ANSI support".to_string());
     }
 
     use Cli::*;

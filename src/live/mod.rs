@@ -6,7 +6,8 @@ use std::time::Duration;
 
 use pancurses::{
     endwin, has_colors, initscr, noecho, raw, resize_term, start_color,
-    Input::*, Window, A_BOLD, COLOR_BLACK, COLOR_CYAN, COLOR_GREEN, COLOR_RED,
+    Input::{self, *},
+    Window, A_BOLD, COLOR_BLACK, COLOR_CYAN, COLOR_GREEN, COLOR_RED,
     COLOR_YELLOW,
 };
 
@@ -128,11 +129,13 @@ impl Live {
                 KeyNPage => self.code.cursor_bottom(),
 
                 // Deletions
-                KeyBackspace | Character('\u{8}') => self.code.backspace(),
+                _ if is_backspace(input) => self.code.backspace(),
                 KeyDC => self.code.delete(),
 
                 // Insertions and commands
-                KeyEnter | Character('\r') => self.code.enter(),
+                _ if is_enter(input) => {
+                    self.code.enter();
+                }
                 Character(c) => match c {
                     // ^C
                     '\u{3}' => {
@@ -327,7 +330,7 @@ impl Live {
 
             if let Some(input) = self.win_footer.getch() {
                 match input {
-                    KeyEnter | Character('\r') => break,
+                    _ if is_enter(input) => break,
                     Character('\u{3}') => break,
                     _ => (),
                 }
@@ -345,12 +348,12 @@ impl Live {
 
             if let Some(input) = self.win_footer.getch() {
                 match input {
-                    KeyEnter | Character('\r') => {
+                    _ if is_enter(input) => {
                         if response.is_some() {
                             break;
                         }
                     }
-                    KeyBackspace | Character('\u{8}') => response = None,
+                    _ if is_backspace(input) => response = None,
                     Character(c) => match c {
                         '\u{1b}' | '\u{3}' => break, // Esc | ^C
                         'y' | 'Y' | 'n' | 'N' => response = Some(c),
@@ -417,7 +420,7 @@ impl Live {
             };
 
             match input {
-                KeyEnter | Character('\r') => {
+                _ if is_enter(input) => {
                     let path = field.text().trim();
                     if path.is_empty() {
                         self.info_msg(ERROR_EMPTY_FILENAME);
@@ -426,7 +429,7 @@ impl Live {
                     }
                     break;
                 }
-                KeyBackspace | Character('\u{8}') => field.backspace(),
+                _ if is_backspace(input) => field.backspace(),
                 KeyLeft => field.cursor_left(),
                 KeyRight => field.cursor_right(),
                 KeyHome => field.cursor_home(),
@@ -448,5 +451,19 @@ impl Live {
         if self.file_path.is_some() {
             self.save();
         }
+    }
+}
+
+fn is_enter(input: Input) -> bool {
+    match input {
+        KeyEnter | Character('\n') | Character('\r') => true,
+        _ => false,
+    }
+}
+
+fn is_backspace(input: Input) -> bool {
+    match input {
+        KeyBackspace | Character('\u{8}') | Character('\u{7f}') => true,
+        _ => false,
     }
 }

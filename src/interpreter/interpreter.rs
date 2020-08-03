@@ -86,7 +86,7 @@ impl Interpreter {
                 let mut buf = [0u8; 1];
                 if let Err(err) = io::stdin().read_exact(&mut buf) {
                     die(format!(
-                        "Failed to read character from stdin: {}",
+                        "failed to read character from stdin: {}",
                         err
                     ));
                 }

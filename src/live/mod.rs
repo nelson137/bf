@@ -33,8 +33,8 @@ struct Live {
     frame_delay: Duration,
 }
 
-const ERROR_CREATE_WINDOW: &str = "Error: failed to create windows";
-const ERROR_EMPTY_FILENAME: &str = "Error: filename cannot be empty";
+const ERROR_CREATE_WINDOW: &str = "failed to create windows";
+const ERROR_EMPTY_FILENAME: &str = "filename cannot be empty";
 
 impl Live {
     fn new(ascii_values: bool, file_path: Option<PathBuf>) -> Self {

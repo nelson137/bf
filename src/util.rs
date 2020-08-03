@@ -7,7 +7,7 @@ pub const EOL: &str = "\r\n";
 pub const EOL: &str = "\n";
 
 pub fn die(msg: String) -> ! {
-    eprintln!("bf: {}", msg);
+    eprintln!("bf: error: {}", msg);
     exit(1);
 }
 

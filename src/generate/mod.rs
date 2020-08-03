@@ -21,7 +21,7 @@ pub fn subcmd_generate(args: GenerateCli) {
     let mut out_writer: Box<dyn Write> = match args.outfile {
         Some(path) => Box::new(File::create(&path).unwrap_or_else(|err| {
             die(format!(
-                "Failed to open infile: {}: {}",
+                "failed to open infile: {}: {}",
                 path.display(),
                 err
             ));

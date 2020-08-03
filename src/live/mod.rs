@@ -240,6 +240,7 @@ impl Live {
             self.win_content.printw(line);
             self.win_content.printw("\n");
         }
+        self.win_content.clrtobot();
 
         // Print output
         self.win_content.mv(height - output_lines as i32 - 1, 0);
@@ -289,10 +290,12 @@ impl Live {
         self.win_content.printw("┤");
 
         // Divider 2 (editor/output)
-        let divider_y = height as i32 - 2 - output_lines as i32;
-        self.win_content.mvprintw(divider_y, 0, "├");
-        print_horizontal();
-        self.win_content.printw("┤");
+        if output_lines > 0 {
+            let divider_y = height as i32 - 2 - output_lines as i32;
+            self.win_content.mvprintw(divider_y, 0, "├");
+            print_horizontal();
+            self.win_content.printw("┤");
+        }
     }
 
     fn draw_footer(&self) {

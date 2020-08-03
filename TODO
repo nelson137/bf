@@ -12,4 +12,3 @@ interpreter
         support execution timeout
 live
     scrolling for editor and output
-    hide the output pane when there is no output

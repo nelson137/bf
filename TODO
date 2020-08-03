@@ -11,6 +11,5 @@ interpreter
         execute code in another thread
         support execution timeout
 live
-    fix resizing with subwindows
     scrolling for editor and output
     hide the output pane when there is no output

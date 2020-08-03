@@ -154,6 +154,15 @@ impl Live {
                 KeyResize => {
                     resize_term(0, 0);
                     self.win.clear();
+                    self.win.refresh();
+                    let (height, width) = self.win.get_max_yx();
+                    self.win_header = self.win.subwin(1, width, 0, 0).unwrap();
+                    self.win_content =
+                        self.win.subwin(height - 2, width, 1, 0).unwrap();
+                    self.win_footer =
+                        self.win.subwin(1, width, height - 1, 0).unwrap();
+                    self.draw_header();
+                    self.draw_footer();
                 }
 
                 // Other

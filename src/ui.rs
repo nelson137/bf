@@ -20,13 +20,19 @@ impl Style {
     }
 }
 
-pub fn style_do<F: FnOnce() -> i32>(win: &Window, attr: chtype, func: F) {
-    if has_colors() {
-        win.attron(attr);
-    }
-    func();
-    if has_colors() {
-        win.attroff(attr);
+pub trait WindowStyleDo {
+    fn style_do<F: FnOnce() -> i32>(&self, attr: chtype, func: F);
+}
+
+impl WindowStyleDo for Window {
+    fn style_do<F: FnOnce() -> i32>(&self, attr: chtype, func: F) {
+        if has_colors() {
+            self.attron(attr);
+        }
+        func();
+        if has_colors() {
+            self.attroff(attr);
+        }
     }
 }
 

@@ -12,7 +12,7 @@ use pancurses::{
 
 use crate::interpreter::Interpreter;
 use crate::read::read_script;
-use crate::ui::{style_do, Style};
+use crate::ui::{Style, WindowStyleDo};
 use crate::util::die;
 
 mod cli;
@@ -93,7 +93,7 @@ impl Live {
         let msg = "there are unsaved changes, are you sure you want to \
                    exit [y/N]? ";
 
-        style_do(&self.win_footer, Style::Warning.get(), || {
+        self.win_footer.style_do(Style::Warning.get(), || {
             self.win_footer.mvprintw(0, 0, &msg_prefix)
         });
         self.win_footer.printw(msg);
@@ -169,7 +169,7 @@ impl Live {
     fn draw_header(&self) {
         // Print the file name
         if let Some(path) = &self.file_path {
-            style_do(&self.win_header, A_BOLD, || {
+            self.win_header.style_do(A_BOLD, || {
                 self.win_header.mvprintw(0, 0, path.display().to_string())
             });
         }
@@ -208,7 +208,7 @@ impl Live {
             Ok(msg) => (Style::StatusOk.get(), msg),
             Err(msg) => (Style::StatusErr.get(), msg),
         };
-        style_do(&self.win_content, color + A_BOLD, || {
+        self.win_content.style_do(color + A_BOLD, || {
             self.win_content.printw("Status: ");
             self.win_content.printw(msg)
         });
@@ -294,7 +294,7 @@ impl Live {
         self.win_footer.mv(0, 0);
 
         CONTROLS.iter().for_each(|[map, hint]| {
-            style_do(&self.win_footer, Style::ControlHint.get(), || {
+            self.win_footer.style_do(Style::ControlHint.get(), || {
                 self.win_footer.printw(map)
             });
             self.win_footer.printw(":");
@@ -308,7 +308,7 @@ impl Live {
 
     fn info_msg<S: AsRef<str>>(&self, msg: S) {
         self.win_footer.mvprintw(0, 0, msg);
-        style_do(&self.win_footer, Style::Info.get(), || {
+        self.win_footer.style_do(Style::Info.get(), || {
             self.win_footer.printw("  Press ENTER")
         });
         self.win_footer.refresh();
@@ -352,7 +352,7 @@ impl Live {
 
                 self.win_footer.mv(0, start_x);
                 if let Some(c) = response {
-                    style_do(&self.win_footer, A_BOLD, || {
+                    self.win_footer.style_do(A_BOLD, || {
                         self.win_footer.printw(c.to_string())
                     });
                 }

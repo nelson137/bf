@@ -7,7 +7,7 @@ use std::{
 use crossterm::{
     event::{EnableMouseCapture, Event, EventStream, KeyCode},
     execute,
-    terminal::{EnterAlternateScreen, disable_raw_mode, enable_raw_mode},
+    terminal::{EnterAlternateScreen, disable_raw_mode, enable_raw_mode, size},
 };
 use futures::{StreamExt, executor::block_on, future::FutureExt, select};
 use futures_timer::Delay;
@@ -40,14 +40,23 @@ const SPINNER: &str = "|/-\\";
 
 struct State {
     spinner_i: usize,
-    input_history: VecDeque<InputHistoryEntry>
+    input_history_size: usize,
+    input_history: VecDeque<InputHistoryEntry>,
 }
 
 impl State {
-    pub fn new(hist_size: usize) -> Self {
+    pub fn new(input_history_size: usize) -> Self {
         Self {
             spinner_i: 0,
-            input_history: VecDeque::with_capacity(hist_size),
+            input_history_size,
+            input_history: VecDeque::with_capacity(input_history_size),
+        }
+    }
+
+    pub fn input_history_resize(&mut self, size: usize) {
+        self.input_history_size = size;
+        while self.input_history.len() > self.input_history_size {
+            self.input_history.pop_back();
         }
     }
 }
@@ -100,8 +109,10 @@ async fn run() {
         Terminal::new(CrosstermBackend::new(io::stdout()))
         .unwrap_or_else(|e| die(e.to_string()));
 
+    let (_w, h) = size().unwrap_or_else(|e| die(e.to_string())).into();
+
     let mut reader = EventStream::new();
-    let mut state = State::new(10);
+    let mut state = State::new((h as usize).saturating_sub(3));
 
     loop {
         terminal.draw(|f| draw(f, &state))
@@ -115,20 +126,27 @@ async fn run() {
             some_event = event_async => match some_event {
                 None => break,
                 Some(Err(err)) => die(err.to_string()),
-                Some(Ok(event)) => {
-                    if event == Event::Key(KeyCode::Esc.into()) {
-                        break;
+                Some(Ok(event)) => match event {
+                    Event::Key(key_event) => {
+                        if key_event == KeyCode::Esc.into() {
+                            break;
+                        }
+                        if state.input_history.len() >= 10 {
+                            state.input_history.pop_back();
+                        }
+                        state.input_history.push_front(InputHistoryEntry {
+                            event,
+                            timestamp: SystemTime::now()
+                                .duration_since(UNIX_EPOCH)
+                                .expect("Time went backwards")
+                                .as_secs_f64(),
+                        });
                     }
-                    if state.input_history.len() >= 10 {
-                        state.input_history.pop_back();
+                    Event::Resize(_w, h) => {
+                        let new_size = (h as usize).saturating_sub(3);
+                        state.input_history_resize(new_size);
                     }
-                    state.input_history.push_front(InputHistoryEntry {
-                        event,
-                        timestamp: SystemTime::now()
-                            .duration_since(UNIX_EPOCH)
-                            .expect("Time went backwards")
-                            .as_secs_f64(),
-                    });
+                    _ => {}
                 },
             },
         };

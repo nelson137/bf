@@ -8,6 +8,9 @@ mod interpreter;
 mod live;
 use live::LiveCli;
 
+mod input_debug;
+use input_debug::InputDebugCli;
+
 mod read;
 
 mod run;
@@ -29,6 +32,8 @@ enum Cli {
     Generate(GenerateCli),
 
     Live(LiveCli),
+
+    InputDebug(InputDebugCli),
 }
 
 fn main() {
@@ -42,5 +47,6 @@ fn main() {
         Run(cli) => cli.run(),
         Generate(cli) => cli.run(),
         Live(cli) => cli.run(),
+        InputDebug(cli) => cli.run(),
     }
 }

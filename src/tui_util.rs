@@ -55,20 +55,12 @@ fn mutex_safe_do<T, Ret, Func>(data: &Mutex<T>, func: Func) -> Ret
 
 #[derive(Clone)]
 pub struct EventQueue {
-    data: Arc<Mutex<VecDeque<BfEvent>>>
+    data: Arc<Mutex<VecDeque<BfEvent>>>,
 }
 
 impl EventQueue {
-    pub fn with_tick_delay(tick_delay: u64) -> Self {
+    pub fn new() -> Self {
         let data = Arc::new(Mutex::new(VecDeque::new()));
-
-        let _tick_thread = {
-            let data = data.clone();
-            thread::spawn(move || loop {
-                mutex_safe_do(&*data, |mut q| q.push_back(BfEvent::Tick));
-                thread::sleep(Duration::from_millis(tick_delay));
-            })
-        };
 
         let _input_thread = {
             let data = data.clone();
@@ -84,6 +76,17 @@ impl EventQueue {
         };
 
         Self { data }
+    }
+
+    pub fn with_tick_delay(self, tick_delay: u64) -> Self {
+        let _tick_thread = {
+            let data = self.data.clone();
+            thread::spawn(move || loop {
+                mutex_safe_do(&*data, |mut q| q.push_back(BfEvent::Tick));
+                thread::sleep(Duration::from_millis(tick_delay));
+            })
+        };
+        self
     }
 
     pub fn pop_event(&self) -> Option<BfEvent> {

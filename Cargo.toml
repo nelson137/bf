@@ -6,9 +6,7 @@ edition = "2018"
 
 [dependencies]
 ansi_term = "0.12"
-crossterm = { version = "0.17", features = ["event-stream"] }
-futures = "0.3.14"
-futures-timer = "3.0.2"
+crossterm = "0.17"
 itertools = "0.9"
 pancurses = { version = "0.16", features = ["wide"] }
 structopt = "0.3"

@@ -1,22 +1,36 @@
 use std::{
     collections::vec_deque::{self, VecDeque},
     io::{self, Write},
+    sync::{Arc, Mutex, MutexGuard},
+    thread,
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
 use crossterm::{
-    event::{EnableMouseCapture, Event, EventStream, KeyCode, KeyModifiers},
+    event::{
+        DisableMouseCapture,
+        EnableMouseCapture,
+        Event,
+        KeyCode,
+        KeyModifiers,
+        read
+    },
     execute,
-    terminal::{EnterAlternateScreen, disable_raw_mode, enable_raw_mode, size},
+    terminal::{
+        EnterAlternateScreen,
+        LeaveAlternateScreen,
+        disable_raw_mode,
+        enable_raw_mode,
+        size
+    },
 };
-use futures::{StreamExt, executor::block_on, future::FutureExt, select};
-use futures_timer::Delay;
 use structopt::StructOpt;
 use tui::{
     Frame,
-    backend::{Backend, CrosstermBackend}, Terminal,
+    Terminal,
+    backend::{Backend, CrosstermBackend},
     layout::{Constraint, Direction, Layout},
-    widgets::{Borders, Block, Row, Table},
+    widgets::{Block, Borders, Row, Table},
 };
 
 use crate::{
@@ -59,6 +73,59 @@ impl PrintableEvent for Event {
             }
             event => format!("{:?}", event)
         }
+    }
+}
+
+enum BfEvent {
+    Tick,
+    Input(Event),
+}
+
+#[derive(Clone)]
+struct EventQueue {
+    data: Arc<Mutex<VecDeque<BfEvent>>>
+}
+
+fn mutex_safe_do<T, Ret, Func>(data: &Mutex<T>, func: Func) -> Ret
+    where Func: FnOnce(MutexGuard<T>) -> Ret
+{
+    if let Ok(queue) = data.lock() {
+        func(queue)
+    } else {
+        panic!("EventQueue: failed because of poisoned mutex");
+    }
+}
+
+impl EventQueue {
+    pub fn with_tick_delay(tick_delay: u64) -> Self {
+        let data = Arc::new(Mutex::new(VecDeque::new()));
+
+        let _tick_thread = {
+            let data = data.clone();
+            thread::spawn(move || loop {
+                mutex_safe_do(&*data, |mut q| q.push_back(BfEvent::Tick));
+                thread::sleep(Duration::from_millis(tick_delay));
+            })
+        };
+
+        let _input_thread = {
+            let data = data.clone();
+            thread::spawn(move || loop {
+                if let Ok(evt) = read() {
+                    mutex_safe_do(
+                        &*data,
+                        |mut q| q.push_back(BfEvent::Input(evt))
+                    );
+                }
+                thread::yield_now();
+            })
+        };
+
+        Self { data }
+    }
+
+    pub fn pop_event(&self) -> Option<BfEvent> {
+        mutex_safe_do(&*self.data, |mut q| q.pop_front())
     }
 }
 
@@ -135,7 +202,7 @@ fn draw<B: Backend>(frame: &mut Frame<B>, state: &State) {
         .split(frame.size());
 
     let title_table_items = vec![Row::new(vec![
-        String::from(" Input Debugger"),
+        String::from(" Input Debugger (Press Esc to quit)"),
         format!("{} ", state.get_spinner()),
     ])];
     let title_constraints = [
@@ -165,54 +232,54 @@ fn draw<B: Backend>(frame: &mut Frame<B>, state: &State) {
     frame.render_widget(table, sections[1]);
 }
 
-async fn run() {
+fn run() {
     let mut terminal =
         Terminal::new(CrosstermBackend::new(io::stdout()))
         .unwrap_or_else(|e| die(e.to_string()));
 
     let (_w, h) = size().unwrap_or_else(|e| die(e.to_string())).into();
 
-    let mut reader = EventStream::new();
+    let event_queue = EventQueue::with_tick_delay(100);
     let mut state = State::new((h as usize).saturating_sub(3));
+    let delay = Duration::from_millis(5);
 
-    loop {
+    'main: loop {
         terminal.draw(|f| draw(f, &state))
             .unwrap_or_else(|e| die(e.to_string()));
 
-        let mut delay_async = Delay::new(Duration::from_millis(100)).fuse();
-        let mut event_async = reader.next().fuse();
-
-        select! {
-            _ = delay_async => state.spinner_inc(),
-            some_event = event_async => match some_event {
-                None => break,
-                Some(Err(err)) => die(err.to_string()),
-                Some(Ok(event)) => match event {
+        while let Some(bf_event) = event_queue.pop_event() {
+            match bf_event {
+                BfEvent::Tick => state.spinner_inc(),
+                BfEvent::Input(event) => match event {
                     Event::Key(key_event) => {
                         if key_event == KeyCode::Esc.into() {
-                            break;
+                            break 'main;
                         }
                         state.input_history_add(event);
                     }
+                    Event::Mouse(_) => state.input_history_add(event),
                     Event::Resize(_w, h) => {
                         let new_size = (h as usize).saturating_sub(3);
                         state.input_history_resize(new_size);
                     }
-                    _ => {}
-                },
-            },
-        };
+                }
+            }
+        }
+
+        thread::sleep(delay);
     }
 }
 
 impl SubCmd for InputDebugCli {
     fn run(self) {
         enable_raw_mode().unwrap_or_else(|e| die(e.to_string()));
-        let mut stdout = io::stdout();
-        execute!(stdout, EnableMouseCapture, EnterAlternateScreen)
+        execute!(io::stdout(), EnableMouseCapture, EnterAlternateScreen)
             .unwrap_or_else(|e| die(e.to_string()));
 
-        block_on(run());
+        run();
+
+        execute!(io::stdout(), DisableMouseCapture, LeaveAlternateScreen)
+            .unwrap_or_else(|e| die(e.to_string()));
         disable_raw_mode().unwrap_or_else(|e| die(e.to_string()));
     }
 }

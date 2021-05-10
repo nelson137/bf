@@ -19,6 +19,8 @@ use run::RunCli;
 mod subcmd;
 use subcmd::SubCmd;
 
+mod tui_util;
+
 mod ui;
 
 mod util;

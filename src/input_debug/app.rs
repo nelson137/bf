@@ -28,6 +28,7 @@ use crate::tui_util::{BfEvent, EventQueue};
 use super::state::State;
 
 pub struct App {
+    enable_mouse: bool,
     state: State,
 }
 
@@ -39,13 +40,14 @@ impl Drop for App {
 }
 
 impl App {
-    pub fn new() -> Result<Self, Box<dyn Error>> {
+    pub fn new(enable_mouse: bool) -> Result<Self, Box<dyn Error>> {
         let (_w, h) = terminal::size()?;
 
         enable_raw_mode()?;
         execute!(stdout(), EnableMouseCapture, EnterAlternateScreen)?;
 
         Ok(Self {
+            enable_mouse,
             state: State::new((h as usize).saturating_sub(3)),
         })
     }
@@ -72,7 +74,9 @@ impl App {
                             self.state.input_history_add(bf_event);
                         }
                         Event::Mouse(_) => {
-                            self.state.input_history_add(bf_event);
+                            if self.enable_mouse {
+                                self.state.input_history_add(bf_event);
+                            }
                         }
                         Event::Resize(_w, h) => {
                             let new_size = (h as usize).saturating_sub(3);

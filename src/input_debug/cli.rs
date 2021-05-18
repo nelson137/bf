@@ -1,9 +1,8 @@
+use std::error::Error;
+
 use structopt::StructOpt;
 
-use crate::{
-    subcmd::SubCmd,
-    util::die,
-};
+use crate::subcmd::SubCmd;
 
 use super::app::App;
 
@@ -14,14 +13,11 @@ const MOUSE_HELP: &str = "Whether to show mouse events";
 #[structopt(about=ABOUT)]
 pub struct InputDebugCli {
     #[structopt(short="m", long, help=MOUSE_HELP)]
-    enable_mouse: bool,
+    pub enable_mouse: bool,
 }
 
 impl SubCmd for InputDebugCli {
-    fn run(self) {
-        App::new(self.enable_mouse)
-            .unwrap_or_else(|e| die(e.to_string()))
-            .run()
-            .unwrap_or_else(|e| die(e.to_string()));
+    fn run(self) -> Result<(), Box<dyn Error>> {
+        App::new(self).and_then(|mut app| app.run())
     }
 }

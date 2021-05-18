@@ -1,9 +1,12 @@
-use std::collections::{HashMap, HashSet};
-use std::fs::File;
-use std::io::{self, Write};
-use std::iter::FromIterator;
+use std::{
+    collections::{HashMap, HashSet},
+    error::Error,
+    fs::File,
+    io::{self, Write},
+    iter::FromIterator,
+};
 
-use crate::util::{die, EOL};
+use crate::{bf_err, util::EOL};
 
 mod cli;
 pub use cli::GenerateCli;
@@ -11,7 +14,7 @@ pub use cli::GenerateCli;
 mod read;
 use read::read_data;
 
-pub fn subcmd_generate(args: GenerateCli) {
+pub fn subcmd_generate(args: GenerateCli) -> Result<(), Box<dyn Error>> {
     let mut data = read_data(args.infile);
 
     if args.newline && !data.ends_with(EOL) {
@@ -19,26 +22,20 @@ pub fn subcmd_generate(args: GenerateCli) {
     }
 
     let mut out_writer: Box<dyn Write> = match args.outfile {
-        Some(path) => Box::new(File::create(&path).unwrap_or_else(|err| {
-            die(format!(
-                "failed to open infile: {}: {}",
-                path.display(),
-                err
-            ));
-        })),
+        Some(path) => Box::new(File::create(&path)?),
         None => Box::new(io::stdout()),
     };
 
-    let script = match &*args.mode {
+    let gen_func = match &*args.mode {
         "charwise" => generator_charwise,
         "linewise" => generator_linewise,
         "unique-chars" => generator_unique_chars,
-        _ => die("invalid mode: not possible".to_string()),
-    }(data);
+        _ => return Err(bf_err!("invalid mode (not possible): {}", args.mode)),
+    };
 
-    out_writer
-        .write_all(&script.as_bytes())
-        .unwrap_or_else(|err| die(format!("failed to write script: {}", err)));
+    out_writer.write_all(&gen_func(data).as_bytes())?;
+
+    Ok(())
 }
 
 fn generator_charwise(data: String) -> String {

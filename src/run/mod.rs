@@ -1,11 +1,14 @@
-use std::fs::File;
-use std::io::Write;
-use std::thread::sleep;
-use std::time::Duration;
+use std::{
+    error::Error,
+    fs::File,
+    io::Write,
+    thread::sleep,
+    time::Duration,
+};
 
 use crate::interpreter::Interpreter;
 use crate::read::read_script;
-use crate::util::{die, get_width};
+use crate::util::get_width;
 
 mod cli;
 pub use cli::RunCli;
@@ -13,8 +16,8 @@ pub use cli::RunCli;
 mod print;
 use print::Printer;
 
-fn run_subcmd(args: RunCli) {
-    let script = read_script(&args.infile).unwrap_or_else(|e| die(e));
+fn run_subcmd(args: RunCli) -> Result<(), Box<dyn Error>> {
+    let script = read_script(&args.infile)?;
 
     let width = get_width(args.width);
 
@@ -36,7 +39,7 @@ fn run_subcmd(args: RunCli) {
             printer.print("Error: ");
             printer.print(&err);
             printer.print("\n");
-            return;
+            return Ok(());
         }
 
         printer.reset();
@@ -53,9 +56,9 @@ fn run_subcmd(args: RunCli) {
     }
 
     if let Some(path) = args.outfile {
-        File::create(path)
-            .unwrap_or_else(|err| die(err.to_string()))
-            .write_all(interpreter.output.as_bytes())
-            .unwrap_or_else(|err| die(err.to_string()));
+        File::create(path)?
+            .write_all(interpreter.output.as_bytes())?;
     }
+
+    Ok(())
 }

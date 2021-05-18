@@ -1,9 +1,14 @@
-use std::path::PathBuf;
+use std::{
+    error::Error,
+    path::PathBuf,
+};
 
 use structopt::StructOpt;
 
-use crate::subcmd::SubCmd;
-use crate::util::is_valid_infile;
+use crate::{
+    subcmd::SubCmd,
+    util::is_valid_infile,
+};
 
 use super::Live;
 
@@ -23,7 +28,8 @@ pub struct LiveCli {
 }
 
 impl SubCmd for LiveCli {
-    fn run(self) {
+    fn run(self) -> Result<(), Box<dyn Error>> {
         Live::new(self.ascii_values, self.infile).run();
+        Ok(())
     }
 }

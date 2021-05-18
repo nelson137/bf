@@ -1,4 +1,7 @@
-use std::path::PathBuf;
+use std::{
+    error::Error,
+    path::PathBuf,
+};
 
 use structopt::StructOpt;
 
@@ -50,7 +53,7 @@ pub struct GenerateCli {
 }
 
 impl SubCmd for GenerateCli {
-    fn run(self) {
-        subcmd_generate(self);
+    fn run(self) -> Result<(), Box<dyn Error>> {
+        subcmd_generate(self)
     }
 }

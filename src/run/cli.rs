@@ -1,4 +1,7 @@
-use std::path::PathBuf;
+use std::{
+    error::Error,
+    path::PathBuf,
+};
 
 use structopt::StructOpt;
 
@@ -76,7 +79,7 @@ pub struct RunCli {
 }
 
 impl SubCmd for RunCli {
-    fn run(self) {
-        run_subcmd(self);
+    fn run(self) -> Result<(), Box<dyn Error>> {
+        run_subcmd(self)
     }
 }

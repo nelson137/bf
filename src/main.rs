@@ -1,3 +1,5 @@
+use std::error::Error;
+
 use structopt::StructOpt;
 
 mod generate;
@@ -23,6 +25,7 @@ mod tui_util;
 
 mod ui;
 
+#[macro_use]
 mod util;
 use util::die;
 
@@ -50,5 +53,5 @@ fn main() {
         Generate(cli) => cli.run(),
         Live(cli) => cli.run(),
         InputDebug(cli) => cli.run(),
-    }
+    }.or_else::<Box<dyn Error>, _>(|err| die(err.to_string())).ok();
 }

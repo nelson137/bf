@@ -1,10 +1,43 @@
-use std::path::PathBuf;
-use std::process::exit;
+use std::{
+    error::Error,
+    fmt,
+    path::PathBuf,
+    process::exit,
+};
 
 #[cfg(windows)]
 pub const EOL: &str = "\r\n";
 #[cfg(not(windows))]
 pub const EOL: &str = "\n";
+
+#[derive(Debug)]
+pub struct BfError {
+    msg: String,
+}
+
+impl BfError {
+    pub fn from<S: AsRef<str>>(s: S) -> Self {
+        Self {
+            msg: String::from(s.as_ref()),
+        }
+    }
+}
+
+impl fmt::Display for BfError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}\n", self.msg)
+    }
+}
+
+impl Error for BfError {
+}
+
+#[macro_export]
+macro_rules! bf_err {
+    ($($args:tt)*) => {
+        crate::util::BfError::from(format!($($args)*)).into()
+    }
+}
 
 pub fn die(msg: String) -> ! {
     eprintln!("bf: error: {}", msg);

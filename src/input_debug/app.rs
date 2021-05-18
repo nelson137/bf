@@ -25,10 +25,13 @@ use tui::{
 
 use crate::tui_util::{BfEvent, EventQueue};
 
-use super::state::State;
+use super::{
+    cli::InputDebugCli,
+    state::State,
+};
 
 pub struct App {
-    enable_mouse: bool,
+    cli: InputDebugCli,
     state: State,
 }
 
@@ -40,14 +43,14 @@ impl Drop for App {
 }
 
 impl App {
-    pub fn new(enable_mouse: bool) -> Result<Self, Box<dyn Error>> {
+    pub fn new(cli: InputDebugCli) -> Result<Self, Box<dyn Error>> {
         let (_w, h) = terminal::size()?;
 
         enable_raw_mode()?;
         execute!(stdout(), EnableMouseCapture, EnterAlternateScreen)?;
 
         Ok(Self {
-            enable_mouse,
+            cli,
             state: State::new((h as usize).saturating_sub(3)),
         })
     }
@@ -74,7 +77,7 @@ impl App {
                             self.state.input_history_add(bf_event);
                         }
                         Event::Mouse(_) => {
-                            if self.enable_mouse {
+                            if self.cli.enable_mouse {
                                 self.state.input_history_add(bf_event);
                             }
                         }

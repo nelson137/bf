@@ -53,7 +53,7 @@ pub struct App {
     event_queue: EventQueue,
     delay: Duration,
     dialogue_for: DialogueFor,
-    dialogue: Option<Dialogue>,
+    dialogue: Option<Box<dyn Dialogue>>,
 }
 
 impl Drop for App {
@@ -116,33 +116,28 @@ impl App {
                             self.dialogue = None;
                         }
                         DialogueDecision::Yes => {
-                            if let Dialogue::Button(_) = dialogue {
-                                if self.dialogue_for == DialogueFor::DirtyExit
-                                {
-                                    break 'main;
-                                }
-                            }
-                            if let Dialogue::PromptStr(d) = dialogue {
-                                self.file_path = Some(
-                                    PathBuf::from(d.input_text()));
-                                self.save();
+                            if self.dialogue_for == DialogueFor::DirtyExit {
+                                break 'main;
                             }
                             self.dialogue_for = DialogueFor::Null;
                             self.dialogue = None;
+                        }
+                        DialogueDecision::Input(input) => {
+                            self.file_path = Some(PathBuf::from(input));
+                            self.on_save();
                         }
                     }
                 } else {
                     self.code.on_event(event);
                     match event.code {
                         KeyCode::Char(c) if event.is_ctrl() => match c {
-                            's' => self.save(),
-                            'x' => self.save_as(),
+                            's' => self.on_save(),
+                            'x' => self.on_save_as(),
                             'a' => self.ascii_values ^= true,
                             'c' => {
                                 if self.is_dirty() {
-                                    self.dialogue_for =
-                                        DialogueFor::DirtyExit;
-                                    self.dialogue = Some(Dialogue::Button(
+                                    self.dialogue_for = DialogueFor::DirtyExit;
+                                    self.dialogue = Some(Box::new(
                                         ButtonDialogue::confirm(
                                             "Warning: there are unsaved \
                                             changes, are you sure you want to \
@@ -282,9 +277,9 @@ impl App {
         frame.render_widget(p, area);
     }
 
-    fn save(&mut self) {
+    fn on_save(&mut self) {
         match self.get_file_path() {
-            None => self.save_as(),
+            None => self.on_save_as(),
             Some(path) => {
                 let res = File::create(&path)
                     .and_then(|mut file| {
@@ -292,24 +287,23 @@ impl App {
                     });
                 if let Err(err) = res {
                     self.dialogue_for = DialogueFor::Info;
-                    self.dialogue = Some(
-                        Dialogue::Button(ButtonDialogue::error(format!(
+                    self.dialogue = Some(Box::new(ButtonDialogue::error(
+                        format!(
                             "Error while saving file: {}\n\n{}",
                             &path,
                             err
-                        )))
-                    );
+                        )
+                    )));
                 } else {
                     self.clean_hash = self.code.hash();
-                    // self.code.save();
                 }
             }
         }
     }
 
-    fn save_as(&mut self) {
+    fn on_save_as(&mut self) {
         self.dialogue_for = DialogueFor::SaveAs;
-        self.dialogue = Some(Dialogue::PromptStr(PromptStrDialogue::new(
+        self.dialogue = Some(Box::new(PromptStrDialogue::new(
             " Save As ",
             "Filename: ",
             self.get_file_path().as_deref()

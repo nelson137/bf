@@ -31,15 +31,17 @@ pub fn centered_rect(percent_x: u16, percent_y: u16, area: Rect) -> Rect {
         .split(centered_vert_area)[1]
 }
 
-pub trait DialogueEventListener {
+pub trait Dialogue: Widget {
+    fn draw(&self, frame: &mut Frame, area: Rect);
     fn on_event(&mut self, event: KeyEvent) -> DialogueDecision;
 }
 
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub enum DialogueDecision {
     Waiting,
-    Yes,
     No,
+    Yes,
+    Input(String)
 }
 
 #[derive(Clone)]
@@ -199,7 +201,12 @@ impl Widget for ButtonDialogue {
     }
 }
 
-impl DialogueEventListener for ButtonDialogue {
+impl Dialogue for ButtonDialogue {
+
+    fn draw(&self, frame: &mut Frame, area: Rect) {
+        frame.render_widget(self.clone(), area);
+    }
+
     fn on_event(&mut self, event: KeyEvent) -> DialogueDecision {
         match event.code {
             KeyCode::Esc
@@ -223,6 +230,7 @@ impl DialogueEventListener for ButtonDialogue {
             _ => DialogueDecision::Waiting,
         }
     }
+
 }
 
 #[derive(Clone)]
@@ -232,7 +240,6 @@ pub struct PromptStrDialogue {
 }
 
 impl PromptStrDialogue {
-
     pub fn new<S>(title: S, prompt: S, default: Option<S>) -> Self
     where S: Into<String> {
         let input = if let Some(s) = default {
@@ -254,23 +261,30 @@ impl PromptStrDialogue {
             input,
         }
     }
-
-    pub fn input_text(&self) -> &str {
-        self.input.text()
-    }
-
 }
 
-impl DialogueEventListener for PromptStrDialogue {
+impl Dialogue for PromptStrDialogue {
+
+    fn draw(&self, frame: &mut Frame, area: Rect) {
+        frame.render_widget(self.clone(), area);
+        frame.set_cursor(
+            area.x + 4 + self.input.cursor() as u16,
+            area.y + 5,
+        );
+    }
+
     fn on_event(&mut self, event: KeyEvent) -> DialogueDecision {
         match self.button_dialogue.on_event(event) {
             DialogueDecision::Waiting => {
                 self.input.on_event(event);
                 DialogueDecision::Waiting
             }
+            DialogueDecision::Yes =>
+                DialogueDecision::Input(self.input.text().into()),
             d => d,
         }
     }
+
 }
 
 impl Widget for PromptStrDialogue {
@@ -290,35 +304,4 @@ impl Widget for PromptStrDialogue {
             // .scroll((0u16, 1u16))
             .render(input_area, buf);
     }
-}
-
-pub enum Dialogue {
-    Button(ButtonDialogue),
-    PromptStr(PromptStrDialogue),
-}
-
-impl Dialogue {
-
-    pub fn on_event(&mut self, event: KeyEvent) -> DialogueDecision {
-        match self {
-            Self::Button(d) => d.on_event(event),
-            Self::PromptStr(d) => d.on_event(event),
-        }
-    }
-
-    pub fn draw(&self, frame: &mut Frame, area: Rect) {
-        match self {
-            Self::Button(d) => {
-                frame.render_widget(d.clone(), area);
-            }
-            Self::PromptStr(d) => {
-                frame.render_widget(d.clone(), area);
-                frame.set_cursor(
-                    area.x + 4 + d.input.cursor() as u16,
-                    area.y + 5,
-                );
-            }
-        }
-    }
-
 }

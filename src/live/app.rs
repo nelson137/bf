@@ -2,6 +2,7 @@ use std::{
     fs::File,
     io::{Write, stdout},
     path::PathBuf,
+    sync::{Arc, atomic::{AtomicBool, Ordering}},
     thread,
     time::Duration,
 };
@@ -36,22 +37,14 @@ use super::{
     editable::{Editable, TextArea},
 };
 
-#[derive(PartialEq)]
-enum DialogueFor {
-    Null,
-    DirtyExit,
-    SaveAs,
-    Info,
-}
-
 pub struct App {
     ascii_values: bool,
     file_path: Option<PathBuf>,
+    should_quit: Arc<AtomicBool>,
     code: TextArea,
     clean_hash: Sha1Digest,
     event_queue: EventQueue,
     delay: Duration,
-    dialogue_for: DialogueFor,
     dialogue: Option<Box<dyn Dialogue>>,
 }
 
@@ -77,12 +70,12 @@ impl App {
         Ok(Self {
             ascii_values: cli.ascii_values,
             file_path: cli.infile,
+            should_quit: Arc::new(AtomicBool::new(false)),
             code: TextArea::from(&file_contents),
             clean_hash: sha1_digest(&file_contents),
             event_queue: EventQueue::new(),
             delay: Duration::from_millis(5),
             dialogue: None,
-            dialogue_for: DialogueFor::Null,
         })
     }
 
@@ -97,7 +90,7 @@ impl App {
     pub fn run(&mut self) -> BfResult<()> {
         let mut terminal = Terminal::new(CrosstermBackend::new(stdout()))?;
 
-        'main: loop {
+        while !self.should_quit.load(Ordering::Relaxed) {
             terminal.draw(|f| self.draw(f))?;
 
             while let Some(event) = self.event_queue.pop() {
@@ -110,15 +103,9 @@ impl App {
                 if let Some(dialogue) = &mut self.dialogue {
                     match dialogue.on_event(event) {
                         DialogueDecision::Waiting => (),
-                        DialogueDecision::No => {
-                            self.dialogue_for = DialogueFor::Null;
-                            self.dialogue = None;
-                        }
+                        DialogueDecision::No => self.dialogue = None,
                         DialogueDecision::Yes => {
-                            if self.dialogue_for == DialogueFor::DirtyExit {
-                                break 'main;
-                            }
-                            self.dialogue_for = DialogueFor::Null;
+                            dialogue.run_action();
                             self.dialogue = None;
                         }
                         DialogueDecision::Input(input) => {
@@ -133,20 +120,7 @@ impl App {
                             's' => self.on_save(),
                             'x' => self.on_save_as(),
                             'a' => self.ascii_values ^= true,
-                            'c' => {
-                                if self.is_dirty() {
-                                    self.dialogue_for = DialogueFor::DirtyExit;
-                                    self.dialogue = Some(Box::new(
-                                        ButtonDialogue::confirm(
-                                            "Warning: there are unsaved \
-                                            changes, are you sure you want to \
-                                            exit?"
-                                        )
-                                    ));
-                                } else {
-                                    break 'main;
-                                }
-                            }
+                            'c' => self.on_exit(),
                             _ => (),
                         }
                         _ => (),
@@ -276,6 +250,23 @@ impl App {
         frame.render_widget(p, area);
     }
 
+    fn on_exit(&mut self) {
+        if self.is_dirty() {
+            let should_quit = self.should_quit.clone();
+            let mut dialogue = ButtonDialogue::confirm(
+                "Warning:\n\nThere are unsaved changes, are you sure you want \
+                to quit?"
+            );
+            dialogue.set_action(Box::new(move || {
+                should_quit.store(
+                    true, Ordering::Relaxed);
+            }));
+            self.dialogue = Some(Box::new(dialogue));
+        } else {
+            self.should_quit.store(true, Ordering::Relaxed);
+        }
+    }
+
     fn on_save(&mut self) {
         match self.get_file_path() {
             None => self.on_save_as(),
@@ -285,14 +276,13 @@ impl App {
                         file.write_all(self.code.text().as_bytes())
                     });
                 if let Err(err) = res {
-                    self.dialogue_for = DialogueFor::Info;
-                    self.dialogue = Some(Box::new(ButtonDialogue::error(
-                        format!(
+                    self.dialogue = Some(Box::new(
+                        ButtonDialogue::error(format!(
                             "Error while saving file: {}\n\n{}",
                             &path,
                             err
-                        )
-                    )));
+                        ))
+                    ));
                 } else {
                     self.clean_hash = self.code.hash();
                 }
@@ -301,7 +291,6 @@ impl App {
     }
 
     fn on_save_as(&mut self) {
-        self.dialogue_for = DialogueFor::SaveAs;
         self.dialogue = Some(Box::new(PromptStrDialogue::new(
             " Save As ",
             "Filename: ",

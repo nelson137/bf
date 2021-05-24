@@ -32,6 +32,8 @@ pub fn centered_rect(percent_x: u16, percent_y: u16, area: Rect) -> Rect {
 }
 
 pub trait Dialogue: Widget {
+    fn set_action(&mut self, f: Box<dyn FnOnce()>);
+    fn run_action(&mut self);
     fn draw(&self, frame: &mut Frame, area: Rect);
     fn on_event(&mut self, event: KeyEvent) -> DialogueDecision;
 }
@@ -44,11 +46,33 @@ pub enum DialogueDecision {
     Input(String)
 }
 
-#[derive(Clone)]
 struct DialogueBox {
     bg: Color,
     fg: Color,
     title: String,
+    action: Option<Box<dyn FnOnce()>>,
+}
+
+impl DialogueBox {
+
+    fn set_action(&mut self, f: Box<dyn FnOnce()>) {
+        self.action = Some(f);
+    }
+
+    fn run_action(&mut self) {
+        if let Some(action) = self.action.take() {
+            action();
+        }
+    }
+
+    fn clone_data(&self) -> Self {
+        Self {
+            action: None,
+            title: self.title.clone(),
+            ..*self
+        }
+    }
+
 }
 
 impl Widget for DialogueBox {
@@ -90,7 +114,6 @@ impl DialogueButton {
     }
 }
 
-#[derive(Clone)]
 pub struct ButtonDialogue {
     dialogue: DialogueBox,
     msg: String,
@@ -108,6 +131,7 @@ impl ButtonDialogue {
                 bg: Color::Black,
                 fg: Color::Red,
                 title: " Error ".to_string(),
+                action: None,
             },
             msg: msg.into(),
             buttons: vec![DialogueButton::Ok],
@@ -121,10 +145,20 @@ impl ButtonDialogue {
                 bg: Color::Black,
                 fg: Color::Yellow,
                 title: " Confirm ".to_string(),
+                action: None,
             },
             msg: msg.into(),
             buttons: vec![DialogueButton::Cancel, DialogueButton::Yes],
             button_cursor: 0,
+        }
+    }
+
+    fn clone_data(&self) -> Self {
+        Self {
+            dialogue: self.dialogue.clone_data(),
+            msg: self.msg.clone(),
+            buttons: self.buttons.clone(),
+            ..*self
         }
     }
 
@@ -203,8 +237,16 @@ impl Widget for ButtonDialogue {
 
 impl Dialogue for ButtonDialogue {
 
+    fn set_action(&mut self, f: Box<dyn FnOnce()>) {
+        self.dialogue.set_action(f);
+    }
+
+    fn run_action(&mut self) {
+        self.dialogue.run_action();
+    }
+
     fn draw(&self, frame: &mut Frame, area: Rect) {
-        frame.render_widget(self.clone(), area);
+        frame.render_widget(self.clone_data(), area);
     }
 
     fn on_event(&mut self, event: KeyEvent) -> DialogueDecision {
@@ -233,13 +275,13 @@ impl Dialogue for ButtonDialogue {
 
 }
 
-#[derive(Clone)]
 pub struct PromptStrDialogue {
     button_dialogue: ButtonDialogue,
     input: Field,
 }
 
 impl PromptStrDialogue {
+
     pub fn new<S>(title: S, prompt: S, default: Option<S>) -> Self
     where S: Into<String> {
         let input = if let Some(s) = default {
@@ -253,6 +295,7 @@ impl PromptStrDialogue {
                     bg: Color::Black,
                     fg: Color::Green,
                     title: title.into(),
+                    action: None,
                 },
                 msg: prompt.into(),
                 buttons: vec![DialogueButton::Cancel, DialogueButton::Ok],
@@ -261,12 +304,28 @@ impl PromptStrDialogue {
             input,
         }
     }
+
+    fn clone_data(&self) -> Self {
+        Self {
+            button_dialogue: self.button_dialogue.clone_data(),
+            input: self.input.clone(),
+        }
+    }
+
 }
 
 impl Dialogue for PromptStrDialogue {
 
+    fn set_action(&mut self, f: Box<dyn FnOnce()>) {
+        self.button_dialogue.set_action(f);
+    }
+
+    fn run_action(&mut self) {
+        self.button_dialogue.run_action();
+    }
+
     fn draw(&self, frame: &mut Frame, area: Rect) {
-        frame.render_widget(self.clone(), area);
+        frame.render_widget(self.clone_data(), area);
         frame.set_cursor(
             area.x + 4 + self.input.cursor() as u16,
             area.y + 5,

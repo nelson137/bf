@@ -173,18 +173,25 @@ impl TextArea {
         if cursor_line_len == 0 {
             0
         } else {
-            min(self.cursor.1, cursor_line_len - 1)
+            min(self.cursor.1, cursor_line_len)
         }
     }
 
     pub fn cursor_right(&mut self) {
-        if self.cursor.1 < self.cursor_line().len() {
+        let line_len = self.cursor_line().len();
+        if self.cursor.1 == line_len && self.cursor.0 < self.lines.len() - 1 {
+            self.cursor.0 += 1;
+            self.cursor.1 = 0;
+        } else if self.cursor.1 < line_len {
             self.cursor.1 += 1;
         }
     }
 
     pub fn cursor_left(&mut self) {
-        if self.cursor.1 > 0 {
+        if self.cursor.1 == 0 && self.cursor.0 > 0 {
+            self.cursor.0 -= 1;
+            self.cursor_end();
+        } else if self.cursor.1 > 0 {
             self.cursor.1 -= 1;
         }
     }

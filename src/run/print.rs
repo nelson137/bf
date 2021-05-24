@@ -1,6 +1,6 @@
 use std::io::{self, Write};
 
-use crate::util::{die, EOL};
+use crate::{err, util::{BfResult, EOL}};
 
 pub struct Printer {
     writer: Box<dyn Write>,
@@ -17,42 +17,38 @@ impl Printer {
         }
     }
 
-    pub fn reset(&mut self) {
+    pub fn reset(&mut self) -> BfResult<()> {
         // Go back to top of output, clearing each line
         while self.lines_printed > 0 {
             if self.has_final_eol {
                 // Go up one line
-                self.writer
-                    .write_all(b"\x1b[1A")
-                    .unwrap_or_else(|err| die(err.to_string()));
+                self.writer.write_all(b"\x1b[1A").map_err(|e| err!(Print, e))?;
             } else {
                 // All lines printed before the last have an EOL by definition
                 self.has_final_eol = true;
             }
 
             // Clear line
-            self.writer
-                .write_all(b"\r\x1b[K")
-                .unwrap_or_else(|err| die(err.to_string()));
+            self.writer.write_all(b"\r\x1b[K").map_err(|e| err!(Print, e))?;
 
             self.lines_printed -= 1;
         }
+
+        Ok(())
     }
 
-    pub fn print(&mut self, data: &str) {
+    pub fn print(&mut self, data: &str) -> BfResult<()> {
         // Detect if last line has EOL
         let has_final_eol = data.ends_with(EOL);
 
         // Print data
         let lines: Vec<_> = data.lines().collect();
         for (i, line) in lines.iter().enumerate() {
-            self.writer
-                .write_all(line.as_bytes())
-                .unwrap_or_else(|err| die(err.to_string()));
+            self.writer.write_all(line.as_bytes())
+                .map_err(|e| err!(Print, e))?;
             if i < lines.len() - 1 || has_final_eol {
-                self.writer
-                    .write_all(EOL.as_bytes())
-                    .unwrap_or_else(|err| die(err.to_string()));
+                self.writer.write_all(EOL.as_bytes())
+                    .map_err(|e| err!(Print, e))?;
             }
             self.lines_printed += 1;
         }
@@ -62,8 +58,8 @@ impl Printer {
             self.has_final_eol = has_final_eol;
         }
 
-        self.writer
-            .flush()
-            .unwrap_or_else(|err| die(err.to_string()));
+        self.writer.flush().map_err(|e| err!(Print, e))?;
+
+        Ok(())
     }
 }

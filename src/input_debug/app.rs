@@ -1,5 +1,4 @@
 use std::{
-    error::Error,
     io::{Write, stdout},
     thread,
     time::Duration,
@@ -22,7 +21,10 @@ use tui::{
     widgets::{Block, Borders, Row, Table},
 };
 
-use crate::tui_util::{BfEvent, EventQueue, Terminal};
+use crate::{
+    tui_util::{BfEvent, EventQueue, Terminal},
+    util::BfResult,
+};
 
 use super::{
     cli::InputDebugCli,
@@ -42,7 +44,7 @@ impl Drop for App {
 }
 
 impl App {
-    pub fn new(cli: InputDebugCli) -> Result<Self, Box<dyn Error>> {
+    pub fn new(cli: InputDebugCli) -> BfResult<Self> {
         let (_w, h) = terminal::size()?;
 
         enable_raw_mode()?;
@@ -54,7 +56,7 @@ impl App {
         })
     }
 
-    pub fn run(&mut self) -> Result<(), Box<dyn Error>> {
+    pub fn run(&mut self) -> BfResult<()> {
         let mut terminal = Terminal::new(CrosstermBackend::new(stdout()))?;
 
         let event_queue = EventQueue::new().with_tick_delay(100);
@@ -94,8 +96,8 @@ impl App {
         Ok(())
     }
 
-    fn draw(&self, terminal: &mut Terminal) -> Result<(), Box<dyn Error>> {
-        terminal.draw(|frame| {
+    fn draw(&self, terminal: &mut Terminal) -> BfResult<()> {
+        Ok(terminal.draw(|frame| {
             let width = frame.size().width;
             let sections = Layout::default()
                 .direction(Direction::Vertical)
@@ -134,7 +136,7 @@ impl App {
                 ])
                 .column_spacing(2);
             frame.render_widget(table, sections[1]);
-        }).map(|_| ()).map_err(|e| Box::from(e))
+        }).and(Ok(()))?)
     }
 
 }

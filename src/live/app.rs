@@ -1,5 +1,4 @@
 use std::{
-    error::Error,
     fs::File,
     io::{Write, stdout},
     path::PathBuf,
@@ -28,7 +27,7 @@ use tui::{
 use crate::{
     read::read_script_file,
     tui_util::*,
-    util::{Sha1Digest, StrExt, sha1_digest},
+    util::{BfResult, Sha1Digest, StrExt, sha1_digest},
 };
 
 use super::{
@@ -65,7 +64,7 @@ impl Drop for App {
 
 impl App {
 
-    pub fn new(cli: LiveCli) -> Result<Self, Box<dyn Error>> {
+    pub fn new(cli: LiveCli) -> BfResult<Self> {
         enable_raw_mode()?;
         execute!(stdout(), EnableMouseCapture, EnterAlternateScreen)?;
 
@@ -95,7 +94,7 @@ impl App {
         self.code.hash() != self.clean_hash
     }
 
-    pub fn run(&mut self) -> Result<(), Box<dyn Error>> {
+    pub fn run(&mut self) -> BfResult<()> {
         let mut terminal = Terminal::new(CrosstermBackend::new(stdout()))?;
 
         'main: loop {

@@ -1,7 +1,6 @@
-use std::collections::{HashMap, VecDeque};
-use std::io::{self, Read};
+use std::{collections::{HashMap, VecDeque}, io::{self, Read}};
 
-use crate::util::die;
+use crate::util::BfResult;
 
 use super::tape::Tape;
 
@@ -58,8 +57,8 @@ impl Interpreter {
         bracemap
     }
 
-    fn jump_bracket(&self) -> Result<usize, String> {
-        match self.bracemap.get(&self.ip) {
+    fn jump_bracket(&self) -> BfResult<usize> {
+        Ok(match self.bracemap.get(&self.ip) {
             Some(next) => {
                 let (begin, end) = if self.ip < *next {
                     (self.ip + 1, *next)
@@ -71,34 +70,31 @@ impl Interpreter {
                 if loop_body.iter().any(|c| *c == 43 || *c == 45) {
                     Ok(next + 1)
                 } else {
-                    Err("infinite loop".to_string())
+                    Err("infinite loop")
                 }
             }
-            None => Err("mismatched brackets".to_string()),
-        }
+            None => Err("mismatched brackets"),
+        }?)
     }
 
-    fn read_char(&mut self) -> char {
-        match self.input.pop_front() {
-            Some(c) => c,
+    fn read_char(&mut self) -> BfResult<char> {
+        Ok(match self.input.pop_front() {
+            Some(c) => Ok(c),
             None => {
                 // Read one character from stdin
                 let mut buf = [0u8; 1];
-                if let Err(err) = io::stdin().read_exact(&mut buf) {
-                    die(format!(
-                        "failed to read character from stdin: {}",
-                        err
-                    ));
+                match io::stdin().read_exact(&mut buf) {
+                    Ok(_) => Ok(buf[0] as char),
+                    Err(e) => Err(
+                        format!("failed to read character from stdin: {}", e))
                 }
-                buf[0] as char
             }
-        }
+        }?)
     }
 }
 
 impl Iterator for Interpreter {
-    type Item = Result<char, String>;
-
+    type Item = BfResult<char>;
     fn next(&mut self) -> Option<Self::Item> {
         if self.instructions.is_empty()
             || self.ip > self.instructions.len() - 1
@@ -119,7 +115,7 @@ impl Iterator for Interpreter {
                 // Always check for mismatched bracket error
                 let ni = self.jump_bracket();
                 if let Err(err) = ni {
-                    return Some(Err(err));
+                    return Some(Err(err.into()));
                 } else if self.tape.current().value() == 0 {
                     next_ip = ni;
                 }
@@ -128,15 +124,17 @@ impl Iterator for Interpreter {
                 // Always check for mismatched bracket error
                 let ni = self.jump_bracket();
                 if let Err(err) = ni {
-                    return Some(Err(err));
+                    return Some(Err(err.into()));
                 } else if self.tape.current().value() != 0 {
                     next_ip = ni;
                 }
             }
             '.' => self.output.push(self.tape.current().ascii()),
             ',' => {
-                let c = self.read_char();
-                self.tape.current().set(c);
+                match self.read_char() {
+                    Ok(c) => self.tape.current().set(c),
+                    Err(e) => return Some(Err(e)),
+                }
             }
             _ => return None,
         }

@@ -17,13 +17,12 @@ use crossterm::{
     },
 };
 use tui::{
-    Terminal,
-    backend::{Backend, CrosstermBackend},
+    backend::CrosstermBackend,
     layout::{Constraint, Direction, Layout},
     widgets::{Block, Borders, Row, Table},
 };
 
-use crate::tui_util::{BfEvent, EventQueue};
+use crate::tui_util::{BfEvent, EventQueue, Terminal};
 
 use super::{
     cli::InputDebugCli,
@@ -64,7 +63,7 @@ impl App {
         'main: loop {
             self.draw(&mut terminal)?;
 
-            while let Some(bf_event) = event_queue.pop_event() {
+            while let Some(bf_event) = event_queue.pop() {
                 match bf_event {
                     BfEvent::Tick => {
                         self.state.spinner_inc();
@@ -95,9 +94,7 @@ impl App {
         Ok(())
     }
 
-    fn draw<B>(&self, terminal: &mut Terminal<B>) -> Result<(), Box<dyn Error>>
-        where B: Backend
-    {
+    fn draw(&self, terminal: &mut Terminal) -> Result<(), Box<dyn Error>> {
         terminal.draw(|frame| {
             let width = frame.size().width;
             let sections = Layout::default()

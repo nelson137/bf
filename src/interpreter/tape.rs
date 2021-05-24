@@ -1,9 +1,8 @@
 use std::vec::Vec;
 
 use itertools::Itertools;
-use pancurses::{has_colors, Window, A_UNDERLINE};
 
-use crate::ui::{BoxLid, Style, TAPE_UNICODE};
+use crate::ui::{BoxLid, TAPE_UNICODE};
 use crate::util::EOL;
 
 use super::cell::{Cell, CellDisplay};
@@ -70,10 +69,6 @@ impl<'a> ChunkedTape<'a> {
         }
     }
 
-    pub fn len(&self) -> usize {
-        self.chunks.len()
-    }
-
     pub fn display(&mut self, prefix: &str, ascii_values: bool) -> String {
         let (cursor_y, cursor_x) = self.cursor;
         self.chunks
@@ -88,23 +83,6 @@ impl<'a> ChunkedTape<'a> {
                 chunk.display(prefix, ascii_values)
             })
             .collect::<String>()
-    }
-
-    pub fn nc_display(
-        &mut self,
-        window: &Window,
-        prefix: &str,
-        ascii_values: bool,
-    ) {
-        let (cursor_y, cursor_x) = self.cursor;
-        for (chunk_i, chunk) in self.chunks.iter_mut().enumerate() {
-            for (i, cell_disp) in chunk.iter_mut().enumerate() {
-                if chunk_i == cursor_y && i == cursor_x {
-                    cell_disp.highlight();
-                }
-            }
-            chunk.nc_display(window, prefix, ascii_values);
-        }
     }
 }
 
@@ -176,45 +154,5 @@ impl<'a> TapeChunkDisplay<'a> {
         buf.push_str(EOL);
 
         buf
-    }
-
-    pub fn nc_display(
-        &self,
-        window: &Window,
-        prefix: &str,
-        ascii_values: bool,
-    ) {
-        let cursor_style = || {
-            if has_colors() {
-                Style::Cursor.get()
-            } else {
-                A_UNDERLINE
-            }
-        };
-
-        // Top lid
-        window.printw(prefix);
-        window.printw(self.display_lid(&TAPE_UNICODE.top));
-        window.printw("\n");
-
-        // Values and separators
-        window.printw(prefix);
-        for cell in self.chunk.iter() {
-            window.printw(TAPE_UNICODE.vert_sep.to_string());
-            if cell.is_highlighted() {
-                window.attron(cursor_style());
-            }
-            cell.nc_display(window, ascii_values);
-            if cell.is_highlighted() {
-                window.attroff(cursor_style());
-            }
-        }
-        window.printw(TAPE_UNICODE.vert_sep.to_string());
-        window.printw("\n");
-
-        // Bottom lid
-        window.printw(prefix);
-        window.printw(self.display_lid(&TAPE_UNICODE.bot));
-        window.printw("\n");
     }
 }

@@ -1,40 +1,28 @@
-use std::fs::File;
-use std::io::{self, Read};
-use std::path::PathBuf;
+use std::{fs::File, io::{self, Read}, path::PathBuf};
 
-use crate::util::die;
+use crate::{err, util::BfResult};
 
-pub fn read_data(infile: Option<PathBuf>) -> String {
+pub fn read_data(infile: Option<PathBuf>) -> BfResult<String> {
     match infile {
         Some(path) => read_data_file(&path),
         None => read_data_stdin(),
     }
 }
 
-fn read_data_stdin() -> String {
+fn read_data_stdin() -> BfResult<String> {
     let mut data = String::new();
-    if let Some(err) = io::stdin().read_to_string(&mut data).err() {
-        die(format!("failed to read data from stdin: {}", err))
-    } else {
-        data
+    match io::stdin().read_to_string(&mut data) {
+        Ok(_) => Ok(data),
+        Err(e) => Err(err!(FileRead, e, PathBuf::from("STDIN")))
     }
 }
 
-fn read_data_file(path: &PathBuf) -> String {
-    let mut file = File::open(path).unwrap_or_else(|err| {
-        die(format!(
-            "failed to open infile: {}: {}",
-            path.display(),
-            err
-        ))
-    });
+fn read_data_file(path: &PathBuf) -> BfResult<String> {
+    let mut file = File::open(path)
+        .map_err(|e| err!(FileOpen, e, path.clone()))?;
     let mut data = String::new();
     match file.read_to_string(&mut data) {
-        Ok(_) => data,
-        Err(err) => die(format!(
-            "failed to read infile: {}: {}",
-            path.display(),
-            err
-        )),
+        Ok(_) => Ok(data),
+        Err(e) => Err(err!(FileRead, e, path.clone())),
     }
 }

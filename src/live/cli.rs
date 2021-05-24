@@ -1,13 +1,10 @@
-use std::{
-    error::Error,
-    path::PathBuf,
-};
+use std::path::PathBuf;
 
 use structopt::StructOpt;
 
 use crate::{
     subcmd::SubCmd,
-    util::is_valid_infile,
+    util::{BfResult, is_valid_infile},
 };
 
 use super::app::App;
@@ -28,7 +25,7 @@ pub struct LiveCli {
 }
 
 impl SubCmd for LiveCli {
-    fn run(self) -> Result<(), Box<dyn Error>> {
+    fn run(self) -> BfResult<()> {
         App::new(self).and_then(|mut app| app.run())
     }
 }

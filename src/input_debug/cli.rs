@@ -1,8 +1,6 @@
-use std::error::Error;
-
 use structopt::StructOpt;
 
-use crate::subcmd::SubCmd;
+use crate::{subcmd::SubCmd, util::BfResult};
 
 use super::app::App;
 
@@ -17,7 +15,7 @@ pub struct InputDebugCli {
 }
 
 impl SubCmd for InputDebugCli {
-    fn run(self) -> Result<(), Box<dyn Error>> {
+    fn run(self) -> BfResult<()> {
         App::new(self).and_then(|mut app| app.run())
     }
 }

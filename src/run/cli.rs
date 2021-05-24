@@ -1,12 +1,11 @@
-use std::{
-    error::Error,
-    path::PathBuf,
-};
+use std::path::PathBuf;
 
 use structopt::StructOpt;
 
-use crate::subcmd::SubCmd;
-use crate::util::{is_valid_infile, is_valid_width};
+use crate::{
+    subcmd::SubCmd,
+    util::{BfResult, is_valid_infile, is_valid_width},
+};
 
 use super::run_subcmd;
 
@@ -79,7 +78,7 @@ pub struct RunCli {
 }
 
 impl SubCmd for RunCli {
-    fn run(self) -> Result<(), Box<dyn Error>> {
+    fn run(self) -> BfResult<()> {
         run_subcmd(self)
     }
 }

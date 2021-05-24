@@ -1,11 +1,8 @@
-use std::{
-    error::Error,
-    path::PathBuf,
-};
+use std::path::PathBuf;
 
 use structopt::StructOpt;
 
-use crate::subcmd::SubCmd;
+use crate::{subcmd::SubCmd, util::BfResult};
 
 use super::subcmd_generate;
 
@@ -53,7 +50,7 @@ pub struct GenerateCli {
 }
 
 impl SubCmd for GenerateCli {
-    fn run(self) -> Result<(), Box<dyn Error>> {
+    fn run(self) -> BfResult<()> {
         subcmd_generate(self)
     }
 }

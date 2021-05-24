@@ -1,12 +1,12 @@
 use std::{
     collections::{HashMap, HashSet},
-    error::Error,
     fs::File,
     io::{self, Write},
     iter::FromIterator,
+    path::PathBuf,
 };
 
-use crate::{bf_err, util::EOL};
+use crate::{err, util::{BfResult, EOL}};
 
 mod cli;
 pub use cli::GenerateCli;
@@ -14,28 +14,31 @@ pub use cli::GenerateCli;
 mod read;
 use read::read_data;
 
-pub fn subcmd_generate(args: GenerateCli) -> Result<(), Box<dyn Error>> {
-    let mut data = read_data(args.infile);
+pub fn subcmd_generate(args: GenerateCli) -> BfResult<()> {
+    let mut data = read_data(args.infile)?;
 
     if args.newline && !data.ends_with(EOL) {
         data.push_str(EOL);
     }
 
-    let mut out_writer: Box<dyn Write> = match args.outfile {
-        Some(path) => Box::new(File::create(&path)?),
-        None => Box::new(io::stdout()),
+    let mut writer: (Box<dyn Write>, PathBuf) = match args.outfile {
+        Some(path) => (
+            Box::new(File::create(&path)
+                .map_err(|e| err!(FileOpen, e, path.clone()))?),
+            path
+        ),
+        None => (Box::new(io::stdout()), PathBuf::from("STDOUT")),
     };
 
     let gen_func = match &*args.mode {
         "charwise" => generator_charwise,
         "linewise" => generator_linewise,
         "unique-chars" => generator_unique_chars,
-        _ => return Err(bf_err!("invalid mode (not possible): {}", args.mode)),
+        _ => Err(format!("invalid mode (impossible): {}", args.mode))?,
     };
 
-    out_writer.write_all(&gen_func(data).as_bytes())?;
-
-    Ok(())
+    writer.0.write_all(&gen_func(data).as_bytes())
+        .map_err(|e| err!(FileWrite, e, writer.1))
 }
 
 fn generator_charwise(data: String) -> String {

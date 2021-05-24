@@ -1,5 +1,5 @@
-use std::error::Error;
+use crate::util::BfResult;
 
 pub trait SubCmd {
-    fn run(self) -> Result<(), Box<dyn Error>>;
+    fn run(self) -> BfResult<()>;
 }

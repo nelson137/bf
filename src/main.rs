@@ -1,17 +1,17 @@
-use std::error::Error;
+use std::process::exit;
 
 use structopt::StructOpt;
 
 mod generate;
 use generate::GenerateCli;
 
+mod input_debug;
+use input_debug::InputDebugCli;
+
 mod interpreter;
 
 mod live;
 use live::LiveCli;
-
-mod input_debug;
-use input_debug::InputDebugCli;
 
 mod read;
 
@@ -27,7 +27,7 @@ mod ui;
 
 #[macro_use]
 mod util;
-use util::die;
+use util::BfResult;
 
 #[derive(Debug, StructOpt)]
 enum Cli {
@@ -41,10 +41,10 @@ enum Cli {
     InputDebug(InputDebugCli),
 }
 
-fn main() {
+fn bf_main() -> BfResult<()> {
     #[cfg(windows)]
     if ansi_term::enable_ansi_support().is_err() {
-        die("failed to enable ANSI support".to_string());
+        return Err(err!("failed to enable ANSI support"));
     }
 
     use Cli::*;
@@ -53,5 +53,14 @@ fn main() {
         Generate(cli) => cli.run(),
         Live(cli) => cli.run(),
         InputDebug(cli) => cli.run(),
-    }.or_else::<Box<dyn Error>, _>(|err| die(err.to_string())).ok();
+    }
+}
+
+fn main() {
+    if let Err(err) = bf_main() {
+        eprintln!("error: {}", err);
+        exit(1);
+    } else {
+        exit(0);
+    }
 }

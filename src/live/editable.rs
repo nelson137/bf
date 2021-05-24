@@ -1,21 +1,31 @@
 use std::cmp::min;
 
-use crate::util::EOL;
+use crossterm::event::{KeyCode, KeyEvent};
 
+use crate::{tui_util::KeyEventExt, util::{EOL, Sha1Digest, sha1_digest}};
+
+pub trait Editable {
+    fn on_event(&mut self, event: KeyEvent);
+}
+
+#[derive(Clone)]
 pub struct Field {
     data: String,
     cursor: usize,
 }
 
 impl Field {
+
     pub fn new() -> Self {
         Self::from("")
     }
 
-    pub fn from(data: &str) -> Self {
+    pub fn from<S: Into<String>>(data: S) -> Self {
+        let data = data.into();
+        let cursor = data.len();
         Self {
-            data: data.to_string(),
-            cursor: data.len(),
+            data,
+            cursor,
         }
     }
 
@@ -66,42 +76,49 @@ impl Field {
             self.data.remove(self.cursor);
         }
     }
+
+}
+
+impl Editable for Field {
+    fn on_event(&mut self, event: KeyEvent) {
+        match event.code {
+            // Cursor movement
+            KeyCode::Left => self.cursor_left(),
+            KeyCode::Right => self.cursor_right(),
+            KeyCode::Home => self.cursor_home(),
+            KeyCode::End => self.cursor_end(),
+
+            // Insertions
+            KeyCode::Char(c) if !event.is_ctrl() && !event.is_alt() =>
+                self.insert(c),
+
+            // Deletions
+            KeyCode::Backspace => self.backspace(),
+            KeyCode::Delete => self.delete(),
+
+            // Others
+            _ => (),
+        }
+    }
 }
 
 pub struct TextArea {
-    original_lines: Vec<String>,
     lines: Vec<String>,
     cursor: (usize, usize),
 }
 
 impl TextArea {
-    fn parse_lines(data: &str) -> Vec<String> {
-        if data.is_empty() {
-            vec![String::new()]
-        } else {
-            data.lines().map(|s| s.to_string()).collect()
-        }
-    }
-
-    pub fn new() -> Self {
-        Self::from("")
-    }
 
     pub fn from<S: AsRef<str>>(data: S) -> Self {
-        let lines = Self::parse_lines(data.as_ref());
+        let lines = if data.as_ref().is_empty() {
+            vec![String::new()]
+        } else {
+            data.as_ref().lines().map(|s| s.to_string()).collect()
+        };
         Self {
-            original_lines: lines.clone(),
             lines,
             cursor: (0, 0),
         }
-    }
-
-    pub fn is_dirty(&self) -> bool {
-        self.lines != self.original_lines
-    }
-
-    pub fn save(&mut self) {
-        self.original_lines = self.lines.clone();
     }
 
     pub fn cursor(&self) -> (usize, usize) {
@@ -129,6 +146,10 @@ impl TextArea {
                 l
             })
             .collect::<String>()
+    }
+
+    pub fn hash(&self) -> Sha1Digest {
+        sha1_digest(self.text())
     }
 
     pub fn insert(&mut self, ch: char) {
@@ -233,6 +254,36 @@ impl TextArea {
         } else {
             // Cursor is not at last col
             self.cursor_line_mut().remove(x);
+        }
+    }
+
+}
+
+impl Editable for TextArea {
+    fn on_event(&mut self, event: KeyEvent) {
+        match event.code {
+            // Cursor movement
+            KeyCode::Left => self.cursor_left(),
+            KeyCode::Right => self.cursor_right(),
+            KeyCode::Up => self.cursor_up(),
+            KeyCode::Down => self.cursor_down(),
+            KeyCode::Home => self.cursor_home(),
+            KeyCode::End => self.cursor_end(),
+            KeyCode::PageUp => self.cursor_top(),
+            KeyCode::PageDown => self.cursor_bottom(),
+
+            // Insertions
+            KeyCode::Enter => self.enter(),
+            KeyCode::Tab => self.insert('\t'),
+            KeyCode::Char(c) if !event.is_ctrl() && !event.is_alt() =>
+                self.insert(c),
+
+            // Deletions
+            KeyCode::Backspace => self.backspace(),
+            KeyCode::Delete => self.delete(),
+
+            // Others
+            _ => (),
         }
     }
 }

@@ -1,7 +1,5 @@
 use std::num::Wrapping;
 
-use pancurses::Window;
-
 use crate::ui::BoxLid;
 
 #[derive(Debug, Clone)]
@@ -82,19 +80,5 @@ impl<'a> CellDisplay<'a> {
             _ => &num,
         };
         format!("{:^3}", value)
-    }
-
-    pub fn nc_display(&self, window: &Window, ascii_value: bool) {
-        let escaped = self.cell.ascii().escape_default().to_string();
-        let num = self.cell.value().to_string();
-        let value = match self.cell.ascii() {
-            _ if !ascii_value => &num,
-            '\0' => r"\0",
-            ' ' => "' '",
-            '%' if ascii_value => " %% ",
-            '\t' | '\n' | '\r' | '!'..='~' => &escaped,
-            _ => &num,
-        };
-        window.printw(format!("{:^3}", value));
     }
 }

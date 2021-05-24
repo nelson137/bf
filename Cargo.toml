@@ -9,6 +9,7 @@ ansi_term = "0.12"
 crossterm = "0.17"
 itertools = "0.9"
 pancurses = { version = "0.16", features = ["wide"] }
+sha-1 = "0.9.6"
 structopt = "0.3"
 term_size = "0.3"
 tui = { version = "0.15.0", features = ["crossterm"] }

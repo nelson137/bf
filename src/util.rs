@@ -1,9 +1,12 @@
 use std::{
     error::Error,
     fmt,
+    iter,
     path::PathBuf,
     process::exit,
 };
+
+use sha1::{Digest, Sha1};
 
 #[cfg(windows)]
 pub const EOL: &str = "\r\n";
@@ -34,8 +37,21 @@ impl Error for BfError {
 
 #[macro_export]
 macro_rules! bf_err {
+    ($msg:tt) => {
+        crate::util::BfError::from($msg).into()
+    };
     ($($args:tt)*) => {
         crate::util::BfError::from(format!($($args)*)).into()
+    };
+}
+
+pub trait StrExt {
+    fn repeated(&self, n: usize) -> String;
+}
+
+impl StrExt for str {
+    fn repeated(&self, n: usize) -> String {
+        iter::repeat(self).take(n).collect::<String>()
     }
 }
 
@@ -82,4 +98,10 @@ pub fn is_valid_width(value: String) -> Result<(), String> {
         }
         Err(err) => Err(err.to_string()),
     }
+}
+
+pub type Sha1Digest = [u8; 20];
+
+pub fn sha1_digest<D: AsRef<[u8]>>(data: D) -> Sha1Digest {
+    Sha1::new().chain(data).finalize().into()
 }

@@ -10,7 +10,7 @@ use crate::{
     util::is_valid_infile,
 };
 
-use super::Live;
+use super::app::App;
 
 const ABOUT: &str = "Live scripting playground";
 const ASCII_HELP: &str = "Show the ASCII characters in the tape output \
@@ -29,7 +29,6 @@ pub struct LiveCli {
 
 impl SubCmd for LiveCli {
     fn run(self) -> Result<(), Box<dyn Error>> {
-        Live::new(self.ascii_values, self.infile).run();
-        Ok(())
+        App::new(self).and_then(|mut app| app.run())
     }
 }

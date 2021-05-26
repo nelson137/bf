@@ -199,10 +199,14 @@ impl App {
         }
 
         // Draw filename
-        if let Some(path) = self.get_file_path() {
-            let p = Paragraph::new(Span::from(path));
-            frame.render_widget(p, fn_area);
-        }
+        let p = Paragraph::new(match self.get_file_path() {
+            Some(path) => Span::raw(path),
+            None => Span::styled(
+                "New File",
+                Style::default().add_modifier(Modifier::ITALIC)
+            ),
+        });
+        frame.render_widget(p, fn_area);
 
         // Draw status
         let style = Style::default().add_modifier(Modifier::BOLD);

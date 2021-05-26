@@ -65,7 +65,7 @@ impl App {
         'main: loop {
             self.draw(&mut terminal)?;
 
-            while let Some(bf_event) = event_queue.pop() {
+            for bf_event in event_queue.pop_all() {
                 match bf_event {
                     BfEvent::Tick => {
                         self.state.spinner_inc();

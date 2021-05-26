@@ -102,7 +102,7 @@ impl App {
 
             terminal.draw(|f| self.draw(f))?;
 
-            while let Some(event) = self.event_queue.pop() {
+            for event in self.event_queue.pop_all() {
                 let event = if let BfEvent::Input(Event::Key(e)) = event {
                     e
                 } else {

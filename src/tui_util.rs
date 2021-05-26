@@ -95,6 +95,7 @@ pub struct EventQueue {
 }
 
 impl EventQueue {
+
     pub fn new() -> Self {
         let data = Arc::new(Mutex::new(VecDeque::new()));
 
@@ -125,9 +126,10 @@ impl EventQueue {
         self
     }
 
-    pub fn pop(&self) -> Option<BfEvent> {
-        mutex_safe_do(&*self.data, |mut q| q.pop_front())
+    pub fn pop_all(&self) -> Vec<BfEvent> {
+        mutex_safe_do(&*self.data, |mut q| q.drain(..).collect())
     }
+
 }
 
 pub const TAPE_BORDER_SET: symbols::line::Set = symbols::line::NORMAL;

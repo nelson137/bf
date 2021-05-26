@@ -156,15 +156,24 @@ impl App {
     }
 
     fn draw_header(&self, frame: &mut Frame, area: Rect) {
+        let sections = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints(vec![
+                Constraint::Length(2), // Dirty indicator
+                Constraint::Min(0),    // Filename
+            ])
+            .split(area);
+        let (indicator_area, fn_area) = (sections[0], sections[1]);
+
+        // Draw dirty indicator
+        if self.is_dirty() {
+            frame.render_widget(Paragraph::new("*"), indicator_area);
+        }
+
         // Draw filename
         if let Some(path) = self.get_file_path() {
-            let status = if self.is_dirty() {
-                format!("* {}", path)
-            } else {
-                path
-            };
-            let p = Paragraph::new(Span::from(status));
-            frame.render_widget(p, area);
+            let p = Paragraph::new(Span::from(path));
+            frame.render_widget(p, fn_area);
         }
     }
 

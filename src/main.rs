@@ -21,9 +21,9 @@ use run::RunCli;
 mod subcmd;
 use subcmd::SubCmd;
 
-mod tui_util;
+mod sync_util;
 
-mod ui;
+mod tui_util;
 
 #[macro_use]
 mod util;

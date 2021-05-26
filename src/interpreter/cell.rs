@@ -1,11 +1,23 @@
 use std::num::Wrapping;
 
-use crate::ui::BoxLid;
+use tui::{
+    buffer::Buffer,
+    layout::{Constraint, Direction, Layout, Rect},
+    style::{Color, Style},
+    text::{Span, Spans},
+    widgets::{Paragraph, Widget},
+};
+
+use crate::{
+    tui_util::{TAPE_BORDER_SET, LineSymbolsExt, TapeBorderHorizontal},
+    util::StrExt,
+};
 
 #[derive(Debug, Clone)]
 pub struct Cell(Wrapping<u8>);
 
 impl Cell {
+
     pub fn new() -> Self {
         Self(Wrapping(0))
     }
@@ -29,18 +41,32 @@ impl Cell {
     pub fn set(&mut self, value: char) {
         self.0 = Wrapping(value as u8);
     }
+
 }
 
 pub struct CellDisplay<'a> {
     cell: &'a Cell,
+    left_cap: bool,
+    right_border_cap: Option<bool>,
     is_highlighted: bool,
+    ascii: bool,
 }
 
 impl<'a> CellDisplay<'a> {
-    pub fn new(cell: &'a Cell) -> Self {
+
+    pub fn new(
+        cell: &'a Cell,
+        left_cap: bool,
+        right_border_cap: Option<bool>,
+        is_highlighted: bool,
+        ascii: bool,
+    ) -> Self {
         Self {
             cell,
-            is_highlighted: false,
+            left_cap,
+            right_border_cap,
+            is_highlighted,
+            ascii,
         }
     }
 
@@ -48,37 +74,69 @@ impl<'a> CellDisplay<'a> {
         self.is_highlighted
     }
 
-    pub fn highlight(&mut self) {
-        self.is_highlighted = true;
-    }
+    fn display_horizontal_edge(&self, edge: TapeBorderHorizontal) -> String {
+        let mut buf = String::with_capacity(5);
 
-    pub fn display_lid(
-        &self,
-        lid: &BoxLid,
-        left_cap: bool,
-        right: Option<bool>,
-    ) -> String {
-        let mut buf = String::new();
+        buf.push_str(edge.left(self.left_cap));
 
-        buf.push(if left_cap { lid.left } else { lid.sep });
-        (0..3).for_each(|_| buf.push(lid.spacer));
-        if let Some(is_cap) = right {
-            buf.push(if is_cap { lid.right } else { lid.sep });
+        buf.push_str(&edge.middle().repeated(3));
+
+        if let Some(right_cap) = self.right_border_cap {
+            buf.push_str(edge.right(right_cap));
         }
 
         buf
     }
 
-    pub fn display(&self, ascii_value: bool) -> String {
-        let escaped = self.cell.ascii().escape_default().to_string();
+    pub fn display_top(&self) -> String {
+        self.display_horizontal_edge(TAPE_BORDER_SET.top())
+    }
+
+    pub fn display_bottom(&self) -> String {
+        self.display_horizontal_edge(TAPE_BORDER_SET.bottom())
+    }
+
+    pub fn display_value(&self) -> String {
         let num = self.cell.value().to_string();
-        let value = match self.cell.ascii() {
-            _ if !ascii_value => &num,
+        let c = self.cell.ascii();
+        let escaped = c.escape_default().to_string();
+        let value_str = match c {
+            _ if !self.ascii => &num,
             '\0' => r"\0",
             ' ' => "' '",
             '\t' | '\n' | '\r' | '!'..='~' => &escaped,
             _ => &num,
         };
-        format!("{:^3}", value)
+        format!("{:^3}", value_str)
+    }
+
+}
+
+impl<'a> Widget for CellDisplay<'a> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        let line_areas = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints(vec![
+                Constraint::Length(1),
+                Constraint::Length(1),
+                Constraint::Length(1),
+            ])
+            .split(area);
+
+        Paragraph::new(self.display_top())
+            .render(line_areas[0], buf);
+
+        let border = Span::raw(TAPE_BORDER_SET.vertical);
+        let style = match self.is_highlighted {
+            true => Style::default().bg(Color::White).fg(Color::Black),
+            false => Style::default(),
+        };
+        let value = Span::styled(self.display_value(), style);
+        Paragraph::new(Spans::from(
+            vec![border.clone(), value, border.clone()]
+        )).render(line_areas[1], buf);
+
+        Paragraph::new(self.display_bottom())
+            .render(line_areas[2], buf);
     }
 }

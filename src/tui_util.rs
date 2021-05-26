@@ -10,6 +10,7 @@ use std::{
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
 use tui::{
     backend::CrosstermBackend,
+    symbols,
     terminal,
 };
 
@@ -127,4 +128,61 @@ impl EventQueue {
     pub fn pop(&self) -> Option<BfEvent> {
         mutex_safe_do(&*self.data, |mut q| q.pop_front())
     }
+}
+
+pub const TAPE_BORDER_SET: symbols::line::Set = symbols::line::NORMAL;
+
+pub struct TapeBorderHorizontal {
+    left_capped: &'static str,
+    left_uncapped: &'static str,
+    middle: &'static str,
+    right_capped: &'static str,
+    right_uncapped: &'static str,
+}
+
+impl TapeBorderHorizontal {
+
+    pub fn left(&self, capped: bool) -> &'static str {
+        if capped { self.left_capped   }
+        else      { self.left_uncapped }
+    }
+
+    pub fn middle(&self) -> &'static str {
+        self.middle
+    }
+
+    pub fn right(&self, capped: bool) -> &'static str {
+        if capped { self.right_capped   }
+        else      { self.right_uncapped }
+    }
+
+}
+
+pub trait LineSymbolsExt {
+    fn top(&self) -> TapeBorderHorizontal;
+    fn bottom(&self) -> TapeBorderHorizontal;
+}
+
+impl LineSymbolsExt for symbols::line::Set {
+
+    fn top(&self) -> TapeBorderHorizontal {
+        TapeBorderHorizontal {
+            left_capped: self.top_left,
+            left_uncapped: self.horizontal_down,
+            middle: self.horizontal,
+            right_capped: self.top_right,
+            right_uncapped: self.horizontal_down,
+        }
+    }
+
+    fn bottom(&self) -> TapeBorderHorizontal {
+        TapeBorderHorizontal {
+            left_capped: self.bottom_left,
+            left_uncapped: self.horizontal_up,
+            middle: self.horizontal,
+            right_capped: self.bottom_right,
+            right_uncapped: self.horizontal_up,
+        }
+    }
+
 }

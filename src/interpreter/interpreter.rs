@@ -15,15 +15,16 @@ pub struct Interpreter {
 }
 
 impl Interpreter {
-    pub fn new<C: AsRef<[u8]>>(code: C, input: &str) -> Self {
+
+    pub fn new<C: AsRef<[u8]>, S: AsRef<str>>(code: C, input: S) -> Self {
         let instructions = Self::sanitize(code.as_ref());
         let bracemap = Self::build_bracemap(&instructions);
         Self {
             instructions,
             bracemap,
             ip: 0,
-            tape: Tape::new(),
-            input: input.chars().collect(),
+            tape: Tape::default(),
+            input: input.as_ref().chars().collect(),
             output: String::new(),
         }
     }
@@ -91,6 +92,7 @@ impl Interpreter {
             }
         }?)
     }
+
 }
 
 impl Iterator for Interpreter {

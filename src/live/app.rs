@@ -20,7 +20,7 @@ use crossterm::{
 use tui::{
     backend::CrosstermBackend,
     layout::{Constraint, Direction, Layout, Rect},
-    style::{Color, Style},
+    style::{Color, Modifier, Style},
     text::{Span, Spans},
     widgets::{Block, BorderType, Borders, Paragraph, Wrap},
 };
@@ -32,6 +32,7 @@ use crate::{
 };
 
 use super::{
+    async_interpreter::{AsyncInterpreter, Status},
     cli::LiveCli,
     dialogue::*,
     editable::{Editable, TextArea},
@@ -46,6 +47,7 @@ pub struct App {
     event_queue: EventQueue,
     delay: Duration,
     dialogue: Option<Box<dyn Dialogue>>,
+    async_interpreter: AsyncInterpreter,
 }
 
 impl Drop for App {
@@ -76,6 +78,10 @@ impl App {
             event_queue: EventQueue::new(),
             delay: Duration::from_millis(5),
             dialogue: None,
+            async_interpreter: AsyncInterpreter::new(
+                file_contents.clone(),
+                String::new(),
+            ),
         })
     }
 
@@ -89,8 +95,11 @@ impl App {
 
     pub fn run(&mut self) -> BfResult<()> {
         let mut terminal = Terminal::new(CrosstermBackend::new(stdout()))?;
+        let mut restart_interpreter: bool;
 
         while !self.should_quit.load(Ordering::Relaxed) {
+            restart_interpreter = false;
+
             terminal.draw(|f| self.draw(f))?;
 
             while let Some(event) = self.event_queue.pop() {
@@ -123,9 +132,24 @@ impl App {
                             'c' => self.on_exit(),
                             _ => (),
                         }
+                        KeyCode::Backspace | KeyCode::Delete |
+                        KeyCode::Enter | KeyCode::Tab | KeyCode::Char(_)
+                                if !event.is_ctrl() && !event.is_alt() =>
+                                    restart_interpreter = true,
                         _ => (),
                     }
                 }
+            }
+
+            if restart_interpreter {
+                let status = self.async_interpreter.state().status;
+                if let Status::FatalError(fe) = status {
+                    self.dialogue = Some(Box::new(ButtonDialogue::error(fe)));
+                }
+                self.async_interpreter.restart(
+                    self.code.text(),
+                    String::new()
+                )?;
             }
 
             thread::sleep(self.delay);
@@ -161,9 +185,12 @@ impl App {
             .constraints(vec![
                 Constraint::Length(2), // Dirty indicator
                 Constraint::Min(0),    // Filename
+                Constraint::Length(1), // Spacer (skip)
+                Constraint::Length(9), // Status
             ])
             .split(area);
-        let (indicator_area, fn_area) = (sections[0], sections[1]);
+        let (indicator_area, fn_area,     status_area) =
+            (sections[0],    sections[1], sections[3]);
 
         // Draw dirty indicator
         if self.is_dirty() {
@@ -175,6 +202,19 @@ impl App {
             let p = Paragraph::new(Span::from(path));
             frame.render_widget(p, fn_area);
         }
+
+        // Draw status
+        let style = Style::default().add_modifier(Modifier::BOLD);
+        let status = match self.async_interpreter.state().status {
+            Status::Done =>
+                Span::styled("Done", style),
+            Status::Running =>
+                Span::styled("Running…", style.clone().fg(Color::Green)),
+            Status::Error(_) |
+            Status::FatalError(_) =>
+                Span::styled("ERROR", style.clone().fg(Color::Red)),
+        };
+        frame.render_widget(Paragraph::new(status), status_area);
     }
 
     fn draw_content(&self, frame: &mut Frame, area: Rect) {
@@ -199,12 +239,13 @@ impl App {
     fn draw_content_tape(&self, frame: &mut Frame, area: Rect) {
         let block = Block::default()
             .borders(Borders::TOP | Borders::LEFT | Borders::RIGHT);
-        let content_area = block.inner(area);
+        let tape_area = block.inner(area);
         frame.render_widget(block, area);
 
-        let content = Block::default()
-            .style(Style::default().bg(Color::DarkGray));
-        frame.render_widget(content, content_area);
+        let tape = self.async_interpreter.state().tape;
+        let max_cells = (tape_area.width as f32 / 4f32).ceil() as usize;
+        let window = tape.window(0, max_cells, self.ascii_values);
+        frame.render_widget(window, tape_area);
     }
 
     fn draw_content_divider(&self, frame: &mut Frame, area: Rect) {

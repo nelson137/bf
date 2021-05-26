@@ -31,8 +31,8 @@ fn run_subcmd(args: RunCli) -> BfResult<()> {
         printer.print(
             &interpreter
                 .tape
-                .chunks(width)
-                .display("", args.ascii_values),
+                .chunks(width, args.ascii_values)
+                .display(""),
         )?;
     }
 
@@ -50,8 +50,8 @@ fn run_subcmd(args: RunCli) -> BfResult<()> {
             printer.print(
                 &interpreter
                     .tape
-                    .chunks(width)
-                    .display("", args.ascii_values),
+                    .chunks(width, args.ascii_values)
+                    .display(""),
             )?;
         }
         printer.print(&interpreter.output)?;

@@ -119,6 +119,7 @@ impl App {
                         }
                         DialogueDecision::Input(input) => {
                             self.file_path = Some(PathBuf::from(input));
+                            self.dialogue = None;
                             self.on_save();
                         }
                     }

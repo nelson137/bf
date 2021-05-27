@@ -153,6 +153,7 @@ impl App {
                 )?;
             }
 
+            thread::yield_now();
             thread::sleep(self.delay);
         }
 

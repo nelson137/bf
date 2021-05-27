@@ -41,19 +41,24 @@ enum Cli {
     InputDebug(InputDebugCli),
 }
 
+impl Cli {
+    fn run_subcmd(self) -> BfResult<()> {
+        match Self::from_args() {
+            Self::Run(cli) => cli.run(),
+            Self::Generate(cli) => cli.run(),
+            Self::Live(cli) => cli.run(),
+            Self::InputDebug(cli) => cli.run(),
+        }
+    }
+}
+
 fn bf_main() -> BfResult<()> {
     #[cfg(windows)]
     if ansi_term::enable_ansi_support().is_err() {
         return Err(err!("failed to enable ANSI support"));
     }
 
-    use Cli::*;
-    match Cli::from_args() {
-        Run(cli) => cli.run(),
-        Generate(cli) => cli.run(),
-        Live(cli) => cli.run(),
-        InputDebug(cli) => cli.run(),
-    }
+    Cli::from_args().run_subcmd()
 }
 
 fn main() {

@@ -76,7 +76,7 @@ impl App {
             code: TextArea::from(&file_contents),
             clean_hash: sha1_digest(&file_contents),
             event_queue: EventQueue::new(),
-            delay: Duration::from_millis(5),
+            delay: Duration::from_millis(20),
             dialogue: None,
             async_interpreter: AsyncInterpreter::new(
                 file_contents.clone(),

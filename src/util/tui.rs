@@ -2,7 +2,7 @@ use std::{
     collections::VecDeque,
     fmt::{self, Display, Formatter},
     io::Stdout,
-    sync::{Arc, Mutex, MutexGuard},
+    sync::{Arc, Mutex},
     thread,
     time::Duration,
 };
@@ -10,9 +10,70 @@ use std::{
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
 use tui::{backend::CrosstermBackend, symbols, terminal};
 
+use super::common::mutex_safe_do;
+
 type Backend = CrosstermBackend<Stdout>;
 pub type Terminal = terminal::Terminal<Backend>;
 pub type Frame<'a> = terminal::Frame<'a, Backend>;
+
+pub const TAPE_BORDER_SET: symbols::line::Set = symbols::line::NORMAL;
+
+pub struct TapeBorderHorizontal {
+    left_capped: &'static str,
+    left_uncapped: &'static str,
+    middle: &'static str,
+    right_capped: &'static str,
+    right_uncapped: &'static str,
+}
+
+impl TapeBorderHorizontal {
+    pub fn left(&self, capped: bool) -> &'static str {
+        if capped {
+            self.left_capped
+        } else {
+            self.left_uncapped
+        }
+    }
+
+    pub fn middle(&self) -> &'static str {
+        self.middle
+    }
+
+    pub fn right(&self, capped: bool) -> &'static str {
+        if capped {
+            self.right_capped
+        } else {
+            self.right_uncapped
+        }
+    }
+}
+
+pub trait LineSymbolsExt {
+    fn top(&self) -> TapeBorderHorizontal;
+    fn bottom(&self) -> TapeBorderHorizontal;
+}
+
+impl LineSymbolsExt for symbols::line::Set {
+    fn top(&self) -> TapeBorderHorizontal {
+        TapeBorderHorizontal {
+            left_capped: self.top_left,
+            left_uncapped: self.horizontal_down,
+            middle: self.horizontal,
+            right_capped: self.top_right,
+            right_uncapped: self.horizontal_down,
+        }
+    }
+
+    fn bottom(&self) -> TapeBorderHorizontal {
+        TapeBorderHorizontal {
+            left_capped: self.bottom_left,
+            left_uncapped: self.horizontal_up,
+            middle: self.horizontal,
+            right_capped: self.bottom_right,
+            right_uncapped: self.horizontal_up,
+        }
+    }
+}
 
 pub trait KeyEventExt {
     fn is_alt(&self) -> bool;
@@ -76,17 +137,6 @@ impl Display for BfEvent {
     }
 }
 
-fn mutex_safe_do<T, Ret, Func>(data: &Mutex<T>, func: Func) -> Ret
-where
-    Func: FnOnce(MutexGuard<T>) -> Ret,
-{
-    if let Ok(queue) = data.lock() {
-        func(queue)
-    } else {
-        panic!("EventQueue: failed because of poisoned mutex");
-    }
-}
-
 #[derive(Clone)]
 pub struct EventQueue {
     data: Arc<Mutex<VecDeque<BfEvent>>>,
@@ -124,64 +174,5 @@ impl EventQueue {
 
     pub fn pop_all(&self) -> Vec<BfEvent> {
         mutex_safe_do(&*self.data, |mut q| q.drain(..).collect())
-    }
-}
-
-pub const TAPE_BORDER_SET: symbols::line::Set = symbols::line::NORMAL;
-
-pub struct TapeBorderHorizontal {
-    left_capped: &'static str,
-    left_uncapped: &'static str,
-    middle: &'static str,
-    right_capped: &'static str,
-    right_uncapped: &'static str,
-}
-
-impl TapeBorderHorizontal {
-    pub fn left(&self, capped: bool) -> &'static str {
-        if capped {
-            self.left_capped
-        } else {
-            self.left_uncapped
-        }
-    }
-
-    pub fn middle(&self) -> &'static str {
-        self.middle
-    }
-
-    pub fn right(&self, capped: bool) -> &'static str {
-        if capped {
-            self.right_capped
-        } else {
-            self.right_uncapped
-        }
-    }
-}
-
-pub trait LineSymbolsExt {
-    fn top(&self) -> TapeBorderHorizontal;
-    fn bottom(&self) -> TapeBorderHorizontal;
-}
-
-impl LineSymbolsExt for symbols::line::Set {
-    fn top(&self) -> TapeBorderHorizontal {
-        TapeBorderHorizontal {
-            left_capped: self.top_left,
-            left_uncapped: self.horizontal_down,
-            middle: self.horizontal,
-            right_capped: self.top_right,
-            right_uncapped: self.horizontal_down,
-        }
-    }
-
-    fn bottom(&self) -> TapeBorderHorizontal {
-        TapeBorderHorizontal {
-            left_capped: self.bottom_left,
-            left_uncapped: self.horizontal_up,
-            middle: self.horizontal,
-            right_capped: self.bottom_right,
-            right_uncapped: self.horizontal_up,
-        }
     }
 }

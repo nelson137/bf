@@ -2,7 +2,7 @@ use std::cmp::min;
 
 use crossterm::event::{KeyCode, KeyEvent};
 
-use crate::{tui_util::KeyEventExt, util::{EOL, Sha1Digest, sha1_digest}};
+use crate::util::{common::{EOL, Sha1Digest, sha1_digest}, tui::KeyEventExt};
 
 pub trait Editable {
     fn on_event(&mut self, event: KeyEvent);

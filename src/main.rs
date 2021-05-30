@@ -13,21 +13,12 @@ mod interpreter;
 mod live;
 use live::LiveCli;
 
-mod read;
-
 mod run;
 use run::RunCli;
 
-mod subcmd;
-use subcmd::SubCmd;
-
-mod sync_util;
-
-mod tui_util;
-
 #[macro_use]
 mod util;
-use util::BfResult;
+use util::{err::BfResult, subcmd::SubCmd};
 
 #[derive(Debug, StructOpt)]
 enum Cli {

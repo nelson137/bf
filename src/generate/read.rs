@@ -1,6 +1,6 @@
 use std::{fs::File, io::{self, Read}, path::PathBuf};
 
-use crate::{err, util::BfResult};
+use crate::{err, util::err::BfResult};
 
 pub fn read_data(infile: Option<PathBuf>) -> BfResult<String> {
     match infile {

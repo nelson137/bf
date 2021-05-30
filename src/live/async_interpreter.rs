@@ -1,12 +1,8 @@
-use std::{
-    sync::{Arc, Barrier},
-    thread,
-};
+use std::{sync::{Arc, Barrier}, thread};
 
 use crate::{
     interpreter::{Interpreter, Tape},
-    sync_util::{SharedBool, SharedCell},
-    util::BfResult,
+    util::{err::BfResult, sync::{SharedBool, SharedCell}},
 };
 
 #[derive(Clone)]

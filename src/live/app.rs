@@ -25,10 +25,11 @@ use tui::{
     widgets::{Block, BorderType, Borders, Paragraph, Wrap},
 };
 
-use crate::{
+use crate::util::{
+    common::{Sha1Digest, StrExt, sha1_digest},
+    err::BfResult,
     read::read_script_file,
-    tui_util::*,
-    util::{BfResult, Sha1Digest, StrExt, sha1_digest},
+    tui::{BfEvent, EventQueue, Frame, KeyEventExt, Terminal},
 };
 
 use super::{

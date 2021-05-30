@@ -1,6 +1,6 @@
 use structopt::StructOpt;
 
-use crate::{subcmd::SubCmd, util::BfResult};
+use crate::util::{err::BfResult, subcmd::SubCmd};
 
 use super::app::App;
 

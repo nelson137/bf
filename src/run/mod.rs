@@ -1,15 +1,9 @@
-use std::{
-    fs::File,
-    io::Write,
-    thread::sleep,
-    time::Duration,
-};
+use std::{fs::File, io::Write, thread::sleep, time::Duration};
 
 use crate::{
     err,
     interpreter::Interpreter,
-    read::read_script,
-    util::{BfResult, get_width},
+    util::{common::get_width, err::BfResult, read::read_script},
 };
 
 mod cli;

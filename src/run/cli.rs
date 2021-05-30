@@ -2,9 +2,10 @@ use std::path::PathBuf;
 
 use structopt::StructOpt;
 
-use crate::{
+use crate::util::{
+    err::BfResult,
     subcmd::SubCmd,
-    util::{BfResult, is_valid_infile, is_valid_width},
+    common::{is_valid_infile, is_valid_width},
 };
 
 use super::run_subcmd;

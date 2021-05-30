@@ -6,7 +6,7 @@ use std::{
     path::PathBuf,
 };
 
-use crate::{err, util::{BfResult, EOL}};
+use crate::{err, util::{common::EOL, err::BfResult}};
 
 mod cli;
 pub use cli::GenerateCli;

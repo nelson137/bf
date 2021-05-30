@@ -1,6 +1,6 @@
 use std::{collections::{HashMap, VecDeque}, io::{self, Read}};
 
-use crate::util::BfResult;
+use crate::util::err::BfResult;
 
 use super::tape::Tape;
 

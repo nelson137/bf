@@ -7,7 +7,7 @@ use tui::{
     widgets::Widget,
 };
 
-use crate::{tui_util::TAPE_BORDER_SET, util::EOL};
+use crate::util::{common::EOL, tui::TAPE_BORDER_SET};
 
 use super::cell::{Cell, CellDisplay};
 

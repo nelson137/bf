@@ -1,9 +1,6 @@
-use std::{
-    collections::{VecDeque, vec_deque},
-    time::{SystemTime, UNIX_EPOCH},
-};
+use std::{collections::{VecDeque, vec_deque}, time::{SystemTime, UNIX_EPOCH}};
 
-use crate::tui_util::BfEvent;
+use crate::util::tui::BfEvent;
 
 pub struct InputHistoryEntry {
     pub event: BfEvent,

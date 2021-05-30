@@ -8,9 +8,9 @@ use tui::{
     widgets::{Paragraph, Widget},
 };
 
-use crate::{
-    tui_util::{TAPE_BORDER_SET, LineSymbolsExt, TapeBorderHorizontal},
-    util::StrExt,
+use crate::util::{
+    common::StrExt,
+    tui::{TAPE_BORDER_SET, LineSymbolsExt, TapeBorderHorizontal},
 };
 
 #[derive(Debug, Clone)]

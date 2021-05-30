@@ -1,6 +1,6 @@
 use std::io::{self, Write};
 
-use crate::{err, util::{BfResult, EOL}};
+use crate::{err, util::{common::EOL, err::BfResult}};
 
 pub struct Printer {
     writer: Box<dyn Write>,

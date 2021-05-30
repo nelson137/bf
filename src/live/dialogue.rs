@@ -9,7 +9,7 @@ use tui::{
 
 use super::editable::{Editable, Field};
 
-use crate::tui_util::{Frame, KeyEventExt};
+use crate::util::tui::{Frame, KeyEventExt};
 
 pub fn centered_rect(percent_x: u16, percent_y: u16, area: Rect) -> Rect {
     let centered_vert_area = Layout::default()

@@ -1,8 +1,4 @@
-use std::{
-    io::{Write, stdout},
-    thread,
-    time::Duration,
-};
+use std::{io::{Write, stdout}, thread, time::Duration};
 
 use crossterm::{
     event::{DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
@@ -21,15 +17,9 @@ use tui::{
     widgets::{Block, Borders, Row, Table},
 };
 
-use crate::{
-    tui_util::{BfEvent, EventQueue, Terminal},
-    util::BfResult,
-};
+use crate::util::{err::BfResult, tui::{BfEvent, EventQueue, Terminal}};
 
-use super::{
-    cli::InputDebugCli,
-    state::State,
-};
+use super::{cli::InputDebugCli, state::State};
 
 pub struct App {
     cli: InputDebugCli,

@@ -4,7 +4,9 @@ use std::{
     path::PathBuf,
 };
 
-use crate::{err, util::BfResult};
+use crate::err;
+
+use super::err::BfResult;
 
 pub fn read_script(infile: &Option<PathBuf>) -> BfResult<Vec<u8>> {
     match infile {

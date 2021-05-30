@@ -2,7 +2,10 @@ use std::cmp::min;
 
 use crossterm::event::{KeyCode, KeyEvent};
 
-use crate::util::{common::{EOL, Sha1Digest, sha1_digest}, tui::KeyEventExt};
+use crate::util::{
+    common::{sha1_digest, Sha1Digest, EOL},
+    tui::KeyEventExt,
+};
 
 pub trait Editable {
     fn on_event(&mut self, event: KeyEvent);
@@ -15,7 +18,6 @@ pub struct Field {
 }
 
 impl Field {
-
     pub fn new() -> Self {
         Self::from("")
     }
@@ -23,10 +25,7 @@ impl Field {
     pub fn from<S: Into<String>>(data: S) -> Self {
         let data = data.into();
         let cursor = data.len();
-        Self {
-            data,
-            cursor,
-        }
+        Self { data, cursor }
     }
 
     pub fn cursor(&self) -> usize {
@@ -76,7 +75,6 @@ impl Field {
             self.data.remove(self.cursor);
         }
     }
-
 }
 
 impl Editable for Field {
@@ -89,8 +87,9 @@ impl Editable for Field {
             KeyCode::End => self.cursor_end(),
 
             // Insertions
-            KeyCode::Char(c) if !event.is_ctrl() && !event.is_alt() =>
-                self.insert(c),
+            KeyCode::Char(c) if !event.is_ctrl() && !event.is_alt() => {
+                self.insert(c)
+            }
 
             // Deletions
             KeyCode::Backspace => self.backspace(),
@@ -108,7 +107,6 @@ pub struct TextArea {
 }
 
 impl TextArea {
-
     pub fn from<S: AsRef<str>>(data: S) -> Self {
         let lines = if data.as_ref().is_empty() {
             vec![String::new()]
@@ -263,7 +261,6 @@ impl TextArea {
             self.cursor_line_mut().remove(x);
         }
     }
-
 }
 
 impl Editable for TextArea {
@@ -282,8 +279,9 @@ impl Editable for TextArea {
             // Insertions
             KeyCode::Enter => self.enter(),
             KeyCode::Tab => self.insert('\t'),
-            KeyCode::Char(c) if !event.is_ctrl() && !event.is_alt() =>
-                self.insert(c),
+            KeyCode::Char(c) if !event.is_ctrl() && !event.is_alt() => {
+                self.insert(c)
+            }
 
             // Deletions
             KeyCode::Backspace => self.backspace(),

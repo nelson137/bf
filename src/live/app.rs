@@ -1,8 +1,11 @@
 use std::{
     fs::File,
-    io::{Write, stdout},
+    io::{stdout, Write},
     path::PathBuf,
-    sync::{Arc, atomic::{AtomicBool, Ordering}},
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc,
+    },
     thread,
     time::Duration,
 };
@@ -11,10 +14,8 @@ use crossterm::{
     event::*,
     execute,
     terminal::{
-        EnterAlternateScreen,
+        disable_raw_mode, enable_raw_mode, EnterAlternateScreen,
         LeaveAlternateScreen,
-        disable_raw_mode,
-        enable_raw_mode,
     },
 };
 use tui::{
@@ -26,7 +27,7 @@ use tui::{
 };
 
 use crate::util::{
-    common::{Sha1Digest, StrExt, sha1_digest},
+    common::{sha1_digest, Sha1Digest, StrExt},
     err::BfResult,
     read::read_script_file,
     tui::{BfEvent, EventQueue, Frame, KeyEventExt, Terminal},
@@ -59,7 +60,6 @@ impl Drop for App {
 }
 
 impl App {
-
     pub fn new(cli: LiveCli) -> BfResult<Self> {
         enable_raw_mode()?;
         execute!(stdout(), EnableMouseCapture, EnterAlternateScreen)?;
@@ -87,7 +87,9 @@ impl App {
     }
 
     fn get_file_path(&self) -> Option<String> {
-        self.file_path.as_ref().map(|path| path.display().to_string())
+        self.file_path
+            .as_ref()
+            .map(|path| path.display().to_string())
     }
 
     fn is_dirty(&self) -> bool {
@@ -133,11 +135,16 @@ impl App {
                             'a' => self.ascii_values ^= true,
                             'c' => self.on_exit(),
                             _ => (),
+                        },
+                        KeyCode::Backspace
+                        | KeyCode::Delete
+                        | KeyCode::Enter
+                        | KeyCode::Tab
+                        | KeyCode::Char(_)
+                            if !event.is_ctrl() && !event.is_alt() =>
+                        {
+                            restart_interpreter = true
                         }
-                        KeyCode::Backspace | KeyCode::Delete |
-                        KeyCode::Enter | KeyCode::Tab | KeyCode::Char(_)
-                                if !event.is_ctrl() && !event.is_alt() =>
-                                    restart_interpreter = true,
                         _ => (),
                     }
                 }
@@ -148,10 +155,8 @@ impl App {
                 if let Status::FatalError(fe) = status {
                     self.dialogue = Some(Box::new(ButtonDialogue::error(fe)));
                 }
-                self.async_interpreter.restart(
-                    self.code.text(),
-                    String::new()
-                )?;
+                self.async_interpreter
+                    .restart(self.code.text(), String::new())?;
             }
 
             thread::yield_now();
@@ -192,8 +197,8 @@ impl App {
                 Constraint::Length(9), // Status
             ])
             .split(area);
-        let (indicator_area, fn_area,     status_area) =
-            (sections[0],    sections[1], sections[3]);
+        let (indicator_area, fn_area, status_area) =
+            (sections[0], sections[1], sections[3]);
 
         // Draw dirty indicator
         if self.is_dirty() {
@@ -205,7 +210,7 @@ impl App {
             Some(path) => Span::raw(path),
             None => Span::styled(
                 "New File",
-                Style::default().add_modifier(Modifier::ITALIC)
+                Style::default().add_modifier(Modifier::ITALIC),
             ),
         });
         frame.render_widget(p, fn_area);
@@ -213,13 +218,13 @@ impl App {
         // Draw status
         let style = Style::default().add_modifier(Modifier::BOLD);
         let status = match self.async_interpreter.state().status {
-            Status::Done =>
-                Span::styled("Done", style),
-            Status::Running =>
-                Span::styled("Running…", style.clone().fg(Color::Green)),
-            Status::Error(_) |
-            Status::FatalError(_) =>
-                Span::styled("ERROR", style.clone().fg(Color::Red)),
+            Status::Done => Span::styled("Done", style),
+            Status::Running => {
+                Span::styled("Running…", style.clone().fg(Color::Green))
+            }
+            Status::Error(_) | Status::FatalError(_) => {
+                Span::styled("ERROR", style.clone().fg(Color::Red))
+            }
         };
         frame.render_widget(Paragraph::new(status), status_area);
     }
@@ -258,8 +263,7 @@ impl App {
     fn draw_content_divider(&self, frame: &mut Frame, area: Rect) {
         let inner_width = area.width as usize - 2;
         let symbols = BorderType::line_symbols(BorderType::Plain);
-        let divider =
-            symbols.vertical_right.to_owned()
+        let divider = symbols.vertical_right.to_owned()
             + &symbols.horizontal.repeated(inner_width)
             + symbols.vertical_left;
         frame.render_widget(Paragraph::new(divider), area);
@@ -271,7 +275,8 @@ impl App {
         let content_area = block.inner(area);
         frame.render_widget(block, area);
 
-        let lines = self.code
+        let lines = self
+            .code
             .lines()
             .map(|line| Spans::from(line.as_ref()))
             .collect::<Vec<_>>();
@@ -282,7 +287,7 @@ impl App {
         let (cur_x, cur_y) = self.code.cursor();
         frame.set_cursor(
             content_area.x + cur_y as u16,
-            content_area.y + cur_x as u16
+            content_area.y + cur_x as u16,
         );
     }
 
@@ -296,12 +301,19 @@ impl App {
         let desc_style = Style::default().fg(Color::Black).bg(Color::Cyan);
 
         let text = Spans::from(
-            CONTROLS.iter().map(|[keys, desc]| vec![
-                Span::styled(*keys, desc_style),
-                Span::from(":"),
-                Span::from(*desc),
-                Span::from("  "),
-            ].into_iter()).flatten().collect::<Vec<_>>()
+            CONTROLS
+                .iter()
+                .map(|[keys, desc]| {
+                    vec![
+                        Span::styled(*keys, desc_style),
+                        Span::from(":"),
+                        Span::from(*desc),
+                        Span::from("  "),
+                    ]
+                    .into_iter()
+                })
+                .flatten()
+                .collect::<Vec<_>>(),
         );
         let p = Paragraph::new(text).block(Block::default());
         frame.render_widget(p, area);
@@ -315,8 +327,7 @@ impl App {
                 to quit?"
             );
             dialogue.set_action(Box::new(move || {
-                should_quit.store(
-                    true, Ordering::Relaxed);
+                should_quit.store(true, Ordering::Relaxed);
             }));
             self.dialogue = Some(Box::new(dialogue));
         } else {
@@ -328,18 +339,15 @@ impl App {
         match self.get_file_path() {
             None => self.on_save_as(),
             Some(path) => {
-                let res = File::create(&path)
-                    .and_then(|mut file| {
-                        file.write_all(self.code.text().as_bytes())
-                    });
+                let res = File::create(&path).and_then(|mut file| {
+                    file.write_all(self.code.text().as_bytes())
+                });
                 if let Err(err) = res {
-                    self.dialogue = Some(Box::new(
-                        ButtonDialogue::error(format!(
+                    self.dialogue =
+                        Some(Box::new(ButtonDialogue::error(format!(
                             "Error while saving file: {}\n\n{}",
-                            &path,
-                            err
-                        ))
-                    ));
+                            &path, err
+                        ))));
                 } else {
                     self.clean_hash = self.code.hash();
                 }
@@ -351,8 +359,7 @@ impl App {
         self.dialogue = Some(Box::new(PromptStrDialogue::new(
             " Save As ",
             "Filename: ",
-            self.get_file_path().as_deref()
+            self.get_file_path().as_deref(),
         )));
     }
-
 }

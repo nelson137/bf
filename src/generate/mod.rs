@@ -6,7 +6,10 @@ use std::{
     path::PathBuf,
 };
 
-use crate::{err, util::{common::EOL, err::BfResult}};
+use crate::{
+    err,
+    util::{common::EOL, err::BfResult},
+};
 
 mod cli;
 pub use cli::GenerateCli;
@@ -23,9 +26,11 @@ pub fn subcmd_generate(args: GenerateCli) -> BfResult<()> {
 
     let mut writer: (Box<dyn Write>, PathBuf) = match args.outfile {
         Some(path) => (
-            Box::new(File::create(&path)
-                .map_err(|e| err!(FileOpen, e, path.clone()))?),
-            path
+            Box::new(
+                File::create(&path)
+                    .map_err(|e| err!(FileOpen, e, path.clone()))?,
+            ),
+            path,
         ),
         None => (Box::new(io::stdout()), PathBuf::from("STDOUT")),
     };
@@ -37,7 +42,9 @@ pub fn subcmd_generate(args: GenerateCli) -> BfResult<()> {
         _ => Err(format!("invalid mode (impossible): {}", args.mode))?,
     };
 
-    writer.0.write_all(&gen_func(data).as_bytes())
+    writer
+        .0
+        .write_all(&gen_func(data).as_bytes())
         .map_err(|e| err!(FileWrite, e, writer.1))
 }
 

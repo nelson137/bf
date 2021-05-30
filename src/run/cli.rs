@@ -3,9 +3,9 @@ use std::path::PathBuf;
 use structopt::StructOpt;
 
 use crate::util::{
+    common::{is_valid_infile, is_valid_width},
     err::BfResult,
     subcmd::SubCmd,
-    common::{is_valid_infile, is_valid_width},
 };
 
 use super::run_subcmd;

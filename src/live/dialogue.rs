@@ -4,7 +4,7 @@ use tui::{
     layout::{Alignment, Constraint, Direction, Layout, Margin, Rect},
     style::{Color, Modifier, Style},
     text::Span,
-    widgets::{Block, Borders, Clear, Paragraph, Widget, Wrap}
+    widgets::{Block, Borders, Clear, Paragraph, Widget, Wrap},
 };
 
 use super::editable::{Editable, Field};
@@ -43,7 +43,7 @@ pub enum DialogueDecision {
     Waiting,
     No,
     Yes,
-    Input(String)
+    Input(String),
 }
 
 struct DialogueBox {
@@ -54,7 +54,6 @@ struct DialogueBox {
 }
 
 impl DialogueBox {
-
     fn set_action(&mut self, f: Box<dyn FnOnce()>) {
         self.action = Some(f);
     }
@@ -72,7 +71,6 @@ impl DialogueBox {
             ..*self
         }
     }
-
 }
 
 impl Widget for DialogueBox {
@@ -86,7 +84,10 @@ impl Widget for DialogueBox {
             .render(area, buf);
 
         // Box with outline and title
-        let box_area = area.inner(&Margin { horizontal: 1, vertical: 0 });
+        let box_area = area.inner(&Margin {
+            horizontal: 1,
+            vertical: 0,
+        });
         Block::default()
             .title(self.title)
             .borders(Borders::ALL)
@@ -122,7 +123,6 @@ pub struct ButtonDialogue {
 }
 
 impl ButtonDialogue {
-
     const BUTTON_WIDTH: u16 = 10;
 
     pub fn error<S: Into<String>>(msg: S) -> Self {
@@ -167,7 +167,6 @@ impl ButtonDialogue {
             self.button_cursor ^= 1;
         }
     }
-
 }
 
 impl Widget for ButtonDialogue {
@@ -181,7 +180,10 @@ impl Widget for ButtonDialogue {
                 Constraint::Length(1),
                 Constraint::Length(1),
             ])
-            .split(area.inner(&Margin { horizontal: 3, vertical: 2 }));
+            .split(area.inner(&Margin {
+                horizontal: 3,
+                vertical: 2,
+            }));
 
         // Text
         Paragraph::new(self.msg)
@@ -192,12 +194,12 @@ impl Widget for ButtonDialogue {
         let w = content_area[2].width;
         let btn_style = Style::default().bg(Color::Blue).fg(Color::White);
         let text_style = Style::default();
-        let text_style_sel = text_style.clone()
-            .add_modifier(Modifier::UNDERLINED);
-        let buttons_area = Layout::default()
-            .direction(Direction::Horizontal);
+        let text_style_sel =
+            text_style.clone().add_modifier(Modifier::UNDERLINED);
+        let buttons_area = Layout::default().direction(Direction::Horizontal);
         if self.buttons.len() == 1 {
-            let buttons_area = buttons_area.constraints(vec![
+            let buttons_area = buttons_area
+                .constraints(vec![
                     Constraint::Length((w - Self::BUTTON_WIDTH) / 2),
                     Constraint::Length(Self::BUTTON_WIDTH),
                     Constraint::Min(0),
@@ -209,8 +211,9 @@ impl Widget for ButtonDialogue {
                 .alignment(Alignment::Center)
                 .render(buttons_area[1], buf);
         } else {
-            let space_w = w.saturating_sub(Self::BUTTON_WIDTH*2) / 3;
-            let buttons_area = buttons_area.constraints(vec![
+            let space_w = w.saturating_sub(Self::BUTTON_WIDTH * 2) / 3;
+            let buttons_area = buttons_area
+                .constraints(vec![
                     Constraint::Length(space_w),
                     Constraint::Length(Self::BUTTON_WIDTH),
                     Constraint::Length(space_w),
@@ -236,7 +239,6 @@ impl Widget for ButtonDialogue {
 }
 
 impl Dialogue for ButtonDialogue {
-
     fn set_action(&mut self, f: Box<dyn FnOnce()>) {
         self.dialogue.set_action(f);
     }
@@ -251,10 +253,10 @@ impl Dialogue for ButtonDialogue {
 
     fn on_event(&mut self, event: KeyEvent) -> DialogueDecision {
         match event.code {
-            KeyCode::Esc
-                => return DialogueDecision::No,
-            KeyCode::Char('c') if event.is_ctrl()
-                => return DialogueDecision::No,
+            KeyCode::Esc => return DialogueDecision::No,
+            KeyCode::Char('c') if event.is_ctrl() => {
+                return DialogueDecision::No
+            }
             KeyCode::Enter => {
                 return if self.button_cursor == 0 {
                     DialogueDecision::No
@@ -263,8 +265,10 @@ impl Dialogue for ButtonDialogue {
                 };
             }
 
-            KeyCode::Tab | KeyCode::Right |
-            KeyCode::BackTab | KeyCode::Left => {
+            KeyCode::Tab
+            | KeyCode::Right
+            | KeyCode::BackTab
+            | KeyCode::Left => {
                 self.button_select_toggle();
                 DialogueDecision::Waiting
             }
@@ -272,7 +276,6 @@ impl Dialogue for ButtonDialogue {
             _ => DialogueDecision::Waiting,
         }
     }
-
 }
 
 pub struct PromptStrDialogue {
@@ -281,9 +284,10 @@ pub struct PromptStrDialogue {
 }
 
 impl PromptStrDialogue {
-
     pub fn new<S>(title: S, prompt: S, default: Option<S>) -> Self
-    where S: Into<String> {
+    where
+        S: Into<String>,
+    {
         let input = if let Some(s) = default {
             Field::from(s)
         } else {
@@ -311,11 +315,9 @@ impl PromptStrDialogue {
             input: self.input.clone(),
         }
     }
-
 }
 
 impl Dialogue for PromptStrDialogue {
-
     fn set_action(&mut self, f: Box<dyn FnOnce()>) {
         self.button_dialogue.set_action(f);
     }
@@ -326,10 +328,7 @@ impl Dialogue for PromptStrDialogue {
 
     fn draw(&self, frame: &mut Frame, area: Rect) {
         frame.render_widget(self.clone_data(), area);
-        frame.set_cursor(
-            area.x + 4 + self.input.cursor() as u16,
-            area.y + 5,
-        );
+        frame.set_cursor(area.x + 4 + self.input.cursor() as u16, area.y + 5);
     }
 
     fn on_event(&mut self, event: KeyEvent) -> DialogueDecision {
@@ -338,12 +337,12 @@ impl Dialogue for PromptStrDialogue {
                 self.input.on_event(event);
                 DialogueDecision::Waiting
             }
-            DialogueDecision::Yes =>
-                DialogueDecision::Input(self.input.text().into()),
+            DialogueDecision::Yes => {
+                DialogueDecision::Input(self.input.text().into())
+            }
             d => d,
         }
     }
-
 }
 
 impl Widget for PromptStrDialogue {
@@ -352,11 +351,11 @@ impl Widget for PromptStrDialogue {
 
         let input_area = Layout::default()
             .direction(Direction::Vertical)
-            .constraints(vec![
-                Constraint::Length(3),
-                Constraint::Min(0),
-            ])
-            .split(area.inner(&Margin { horizontal: 3, vertical: 4 }))[0];
+            .constraints(vec![Constraint::Length(3), Constraint::Min(0)])
+            .split(area.inner(&Margin {
+                horizontal: 3,
+                vertical: 4,
+            }))[0];
 
         Paragraph::new(self.input.text())
             .block(Block::default().borders(Borders::ALL))

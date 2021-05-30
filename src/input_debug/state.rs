@@ -1,4 +1,7 @@
-use std::{collections::{VecDeque, vec_deque}, time::{SystemTime, UNIX_EPOCH}};
+use std::{
+    collections::{vec_deque, VecDeque},
+    time::{SystemTime, UNIX_EPOCH},
+};
 
 use crate::util::tui::BfEvent;
 
@@ -37,7 +40,9 @@ impl State {
     }
 
     pub fn get_spinner(&self) -> char {
-        SPINNER.chars().nth(self.spinner_i)
+        SPINNER
+            .chars()
+            .nth(self.spinner_i)
             .expect("Invalid spinner char index")
     }
 

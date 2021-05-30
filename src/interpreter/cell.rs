@@ -10,14 +10,13 @@ use tui::{
 
 use crate::util::{
     common::StrExt,
-    tui::{TAPE_BORDER_SET, LineSymbolsExt, TapeBorderHorizontal},
+    tui::{LineSymbolsExt, TapeBorderHorizontal, TAPE_BORDER_SET},
 };
 
 #[derive(Debug, Clone)]
 pub struct Cell(Wrapping<u8>);
 
 impl Cell {
-
     pub fn new() -> Self {
         Self(Wrapping(0))
     }
@@ -41,7 +40,6 @@ impl Cell {
     pub fn set(&mut self, value: char) {
         self.0 = Wrapping(value as u8);
     }
-
 }
 
 pub struct CellDisplay<'a> {
@@ -53,7 +51,6 @@ pub struct CellDisplay<'a> {
 }
 
 impl<'a> CellDisplay<'a> {
-
     pub fn new(
         cell: &'a Cell,
         left_cap: bool,
@@ -109,7 +106,6 @@ impl<'a> CellDisplay<'a> {
         };
         format!("{:^3}", value_str)
     }
-
 }
 
 impl<'a> Widget for CellDisplay<'a> {
@@ -123,8 +119,7 @@ impl<'a> Widget for CellDisplay<'a> {
             ])
             .split(area);
 
-        Paragraph::new(self.display_top())
-            .render(line_areas[0], buf);
+        Paragraph::new(self.display_top()).render(line_areas[0], buf);
 
         let border = Span::raw(TAPE_BORDER_SET.vertical);
         let style = match self.is_highlighted {
@@ -132,11 +127,13 @@ impl<'a> Widget for CellDisplay<'a> {
             false => Style::default(),
         };
         let value = Span::styled(self.display_value(), style);
-        Paragraph::new(Spans::from(
-            vec![border.clone(), value, border.clone()]
-        )).render(line_areas[1], buf);
+        Paragraph::new(Spans::from(vec![
+            border.clone(),
+            value,
+            border.clone(),
+        ]))
+        .render(line_areas[1], buf);
 
-        Paragraph::new(self.display_bottom())
-            .render(line_areas[2], buf);
+        Paragraph::new(self.display_bottom()).render(line_areas[2], buf);
     }
 }

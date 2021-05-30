@@ -1,6 +1,9 @@
 use std::io::{self, Write};
 
-use crate::{err, util::{common::EOL, err::BfResult}};
+use crate::{
+    err,
+    util::{common::EOL, err::BfResult},
+};
 
 pub struct Printer {
     writer: Box<dyn Write>,
@@ -22,14 +25,18 @@ impl Printer {
         while self.lines_printed > 0 {
             if self.has_final_eol {
                 // Go up one line
-                self.writer.write_all(b"\x1b[1A").map_err(|e| err!(Print, e))?;
+                self.writer
+                    .write_all(b"\x1b[1A")
+                    .map_err(|e| err!(Print, e))?;
             } else {
                 // All lines printed before the last have an EOL by definition
                 self.has_final_eol = true;
             }
 
             // Clear line
-            self.writer.write_all(b"\r\x1b[K").map_err(|e| err!(Print, e))?;
+            self.writer
+                .write_all(b"\r\x1b[K")
+                .map_err(|e| err!(Print, e))?;
 
             self.lines_printed -= 1;
         }
@@ -44,10 +51,12 @@ impl Printer {
         // Print data
         let lines: Vec<_> = data.lines().collect();
         for (i, line) in lines.iter().enumerate() {
-            self.writer.write_all(line.as_bytes())
+            self.writer
+                .write_all(line.as_bytes())
                 .map_err(|e| err!(Print, e))?;
             if i < lines.len() - 1 || has_final_eol {
-                self.writer.write_all(EOL.as_bytes())
+                self.writer
+                    .write_all(EOL.as_bytes())
                     .map_err(|e| err!(Print, e))?;
             }
             self.lines_printed += 1;

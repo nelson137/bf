@@ -8,11 +8,7 @@ use std::{
 };
 
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
-use tui::{
-    backend::CrosstermBackend,
-    symbols,
-    terminal,
-};
+use tui::{backend::CrosstermBackend, symbols, terminal};
 
 type Backend = CrosstermBackend<Stdout>;
 pub type Terminal = terminal::Terminal<Backend>;
@@ -39,10 +35,11 @@ impl KeyEventExt for KeyEvent {
     }
 
     fn is_shift(&self) -> bool {
-        self.modifiers.intersects(KeyModifiers::SHIFT) || match self.code {
-            KeyCode::Char(c) if 'A' <= c && c <= 'Z' => true,
-            _ => false,
-        }
+        self.modifiers.intersects(KeyModifiers::SHIFT)
+            || match self.code {
+                KeyCode::Char(c) if 'A' <= c && c <= 'Z' => true,
+                _ => false,
+            }
     }
 }
 
@@ -80,7 +77,8 @@ impl Display for BfEvent {
 }
 
 fn mutex_safe_do<T, Ret, Func>(data: &Mutex<T>, func: Func) -> Ret
-where Func: FnOnce(MutexGuard<T>) -> Ret
+where
+    Func: FnOnce(MutexGuard<T>) -> Ret,
 {
     if let Ok(queue) = data.lock() {
         func(queue)
@@ -95,7 +93,6 @@ pub struct EventQueue {
 }
 
 impl EventQueue {
-
     pub fn new() -> Self {
         let data = Arc::new(Mutex::new(VecDeque::new()));
 
@@ -103,10 +100,9 @@ impl EventQueue {
             let data = data.clone();
             thread::spawn(move || loop {
                 if let Ok(evt) = event::read() {
-                    mutex_safe_do(
-                        &*data,
-                        |mut q| q.push_back(BfEvent::Input(evt))
-                    );
+                    mutex_safe_do(&*data, |mut q| {
+                        q.push_back(BfEvent::Input(evt))
+                    });
                 }
                 thread::yield_now();
             })
@@ -129,7 +125,6 @@ impl EventQueue {
     pub fn pop_all(&self) -> Vec<BfEvent> {
         mutex_safe_do(&*self.data, |mut q| q.drain(..).collect())
     }
-
 }
 
 pub const TAPE_BORDER_SET: symbols::line::Set = symbols::line::NORMAL;
@@ -143,10 +138,12 @@ pub struct TapeBorderHorizontal {
 }
 
 impl TapeBorderHorizontal {
-
     pub fn left(&self, capped: bool) -> &'static str {
-        if capped { self.left_capped   }
-        else      { self.left_uncapped }
+        if capped {
+            self.left_capped
+        } else {
+            self.left_uncapped
+        }
     }
 
     pub fn middle(&self) -> &'static str {
@@ -154,10 +151,12 @@ impl TapeBorderHorizontal {
     }
 
     pub fn right(&self, capped: bool) -> &'static str {
-        if capped { self.right_capped   }
-        else      { self.right_uncapped }
+        if capped {
+            self.right_capped
+        } else {
+            self.right_uncapped
+        }
     }
-
 }
 
 pub trait LineSymbolsExt {
@@ -166,7 +165,6 @@ pub trait LineSymbolsExt {
 }
 
 impl LineSymbolsExt for symbols::line::Set {
-
     fn top(&self) -> TapeBorderHorizontal {
         TapeBorderHorizontal {
             left_capped: self.top_left,
@@ -186,5 +184,4 @@ impl LineSymbolsExt for symbols::line::Set {
             right_uncapped: self.horizontal_up,
         }
     }
-
 }

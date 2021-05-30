@@ -27,7 +27,6 @@ impl Default for Tape {
 }
 
 impl Tape {
-
     fn get(&mut self, index: usize) -> &mut Cell {
         while index > self.cells.len() - 1 {
             self.cells.push(Cell::new());
@@ -55,23 +54,30 @@ impl Tape {
         &self,
         offset: usize,
         size: usize,
-        ascii: bool
+        ascii: bool,
     ) -> WindowDisplay {
         let end_tape = self.cells.len() - 1;
         let end_chunk = (offset + size - 1).min(end_tape);
         WindowDisplay(
-            self.cells.iter()
+            self.cells
+                .iter()
                 .enumerate()
                 .skip(offset)
                 .take(size)
-                .map(|(i, c)| CellDisplay::new(
-                    c,
-                    i == 0,
-                    if i == end_chunk { Some(i == end_tape) } else { None },
-                    i == self.cursor,
-                    ascii,
-                ))
-                .collect::<Vec<_>>()
+                .map(|(i, c)| {
+                    CellDisplay::new(
+                        c,
+                        i == 0,
+                        if i == end_chunk {
+                            Some(i == end_tape)
+                        } else {
+                            None
+                        },
+                        i == self.cursor,
+                        ascii,
+                    )
+                })
+                .collect::<Vec<_>>(),
         )
     }
 
@@ -81,15 +87,16 @@ impl Tape {
         let end_tape = self.cells.len() - 1;
 
         ChunkedTapeDisplay(
-            self.cells.iter()
+            self.cells
+                .iter()
                 .enumerate()
-                .chunks(chunk_size).into_iter()
+                .chunks(chunk_size)
+                .into_iter()
                 .map(|chunk| {
                     let chunk = chunk.collect::<Vec<_>>();
                     let end_chunk = chunk.len() - 1;
-                    chunk.into_iter()
-                        .enumerate()
-                        .map(move |(chunk_i, (tape_i, cell))| {
+                    chunk.into_iter().enumerate().map(
+                        move |(chunk_i, (tape_i, cell))| {
                             let right = if chunk_i == end_chunk {
                                 Some(tape_i == end_tape)
                             } else {
@@ -102,37 +109,38 @@ impl Tape {
                                 tape_i == self.cursor,
                                 ascii,
                             )
-                        })
+                        },
+                    )
                 })
                 .map(|chunk| WindowDisplay(chunk.into_iter().collect()))
                 .collect::<Vec<_>>(),
         )
     }
-
 }
 
 pub struct ChunkedTapeDisplay<'a>(Vec<WindowDisplay<'a>>);
 
 impl<'a> ChunkedTapeDisplay<'a> {
-
     pub fn display(&mut self, prefix: &str) -> String {
-        self.0.iter()
-            .map(|chunk| chunk.display(prefix))
-            .collect()
+        self.0.iter().map(|chunk| chunk.display(prefix)).collect()
     }
-
 }
 
 pub struct WindowDisplay<'a>(Vec<CellDisplay<'a>>);
 
 impl<'a> WindowDisplay<'a> {
-
     fn display_top(&self) -> String {
-        self.0.iter().map(|cell| cell.display_top()).collect::<String>()
+        self.0
+            .iter()
+            .map(|cell| cell.display_top())
+            .collect::<String>()
     }
 
     fn display_bottom(&self) -> String {
-        self.0.iter().map(|cell| cell.display_bottom()).collect::<String>()
+        self.0
+            .iter()
+            .map(|cell| cell.display_bottom())
+            .collect::<String>()
     }
 
     fn display(&self, prefix: &str) -> String {
@@ -165,7 +173,6 @@ impl<'a> WindowDisplay<'a> {
 
         buf
     }
-
 }
 
 impl<'a> Widget for WindowDisplay<'a> {
@@ -181,7 +188,7 @@ impl<'a> Widget for WindowDisplay<'a> {
                 iter::repeat(Constraint::Length(4))
                     .take(len - 1)
                     .chain(iter::once(Constraint::Min(0)))
-                    .collect::<Vec<Constraint>>()
+                    .collect::<Vec<Constraint>>(),
             )
             .split(area);
 

@@ -24,11 +24,11 @@ fn read_script_stdin() -> BfResult<Vec<u8>> {
 }
 
 pub fn read_script_file(path: &PathBuf) -> BfResult<Vec<u8>> {
-    let mut file = File::open(path)
-        .map_err(|e| err!(FileOpen, e, path.clone()))?;
+    let mut file =
+        File::open(path).map_err(|e| err!(FileOpen, e, path.clone()))?;
     let mut buf = Vec::new();
     match file.read_to_end(&mut buf) {
         Ok(_) => Ok(buf),
-        Err(e) => Err(err!(FileRead, e, path.clone()))
+        Err(e) => Err(err!(FileRead, e, path.clone())),
     }
 }

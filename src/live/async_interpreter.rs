@@ -1,8 +1,14 @@
-use std::{sync::{Arc, Barrier}, thread};
+use std::{
+    sync::{Arc, Barrier},
+    thread,
+};
 
 use crate::{
     interpreter::{Interpreter, Tape},
-    util::{err::BfResult, sync::{SharedBool, SharedCell}},
+    util::{
+        err::BfResult,
+        sync::{SharedBool, SharedCell},
+    },
 };
 
 #[derive(Clone)]
@@ -14,7 +20,9 @@ pub enum Status {
 }
 
 impl Default for Status {
-    fn default() -> Self { Self::Done }
+    fn default() -> Self {
+        Self::Done
+    }
 }
 
 #[derive(Clone, Default)]
@@ -35,7 +43,6 @@ const ERROR_POISONED: &'static str =
     "an interpreter thread mutex was poisoned";
 
 impl AsyncInterpreter {
-
     pub fn new(code: String, input: String) -> Self {
         let this = Self {
             stop: SharedBool::new(false),
@@ -55,11 +62,15 @@ impl AsyncInterpreter {
                 }
             };
 
-            let set_state = |status: Status, int: &Interpreter|
-                shared.state.store(State {
-                    status,
-                    tape: int.tape.clone(),
-                }).ok();
+            let set_state = |status: Status, int: &Interpreter| {
+                shared
+                    .state
+                    .store(State {
+                        status,
+                        tape: int.tape.clone(),
+                    })
+                    .ok()
+            };
 
             shared.stop.store(false);
 
@@ -88,7 +99,9 @@ impl AsyncInterpreter {
 
     pub fn restart(&self, code: String, input: String) -> BfResult<()> {
         self.stop.store(true);
-        self.program.store((code, input)).or(Err(ERROR_POISONED.clone()))?;
+        self.program
+            .store((code, input))
+            .or(Err(ERROR_POISONED.clone()))?;
         self.restart_barrier.wait();
         self.stop.store(false);
         Ok(())
@@ -103,5 +116,4 @@ impl AsyncInterpreter {
             },
         }
     }
-
 }

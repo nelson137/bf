@@ -1,4 +1,7 @@
-use std::{collections::{HashMap, VecDeque}, io::{self, Read}};
+use std::{
+    collections::{HashMap, VecDeque},
+    io::{self, Read},
+};
 
 use crate::util::err::BfResult;
 
@@ -15,7 +18,6 @@ pub struct Interpreter {
 }
 
 impl Interpreter {
-
     pub fn new<C: AsRef<[u8]>, S: AsRef<str>>(code: C, input: S) -> Self {
         let instructions = Self::sanitize(code.as_ref());
         let bracemap = Self::build_bracemap(&instructions);
@@ -86,13 +88,14 @@ impl Interpreter {
                 let mut buf = [0u8; 1];
                 match io::stdin().read_exact(&mut buf) {
                     Ok(_) => Ok(buf[0] as char),
-                    Err(e) => Err(
-                        format!("failed to read character from stdin: {}", e))
+                    Err(e) => Err(format!(
+                        "failed to read character from stdin: {}",
+                        e
+                    )),
                 }
             }
         }?)
     }
-
 }
 
 impl Iterator for Interpreter {
@@ -132,12 +135,10 @@ impl Iterator for Interpreter {
                 }
             }
             '.' => self.output.push(self.tape.current().ascii()),
-            ',' => {
-                match self.read_char() {
-                    Ok(c) => self.tape.current().set(c),
-                    Err(e) => return Some(Err(e)),
-                }
-            }
+            ',' => match self.read_char() {
+                Ok(c) => self.tape.current().set(c),
+                Err(e) => return Some(Err(e)),
+            },
             _ => return None,
         }
 

@@ -1,14 +1,17 @@
-bundle ncurses source with crate
-    source tarball: http://ftp.gnu.org/pub/gnu/ncurses/ncurses-6.1.tar.gz
-    steps
-        ./configure --prefix=./build
-        make
-        make install
-    example build.rs: https://github.com/jeaye/ncurses-rs/blob/master/build.rs
-    example tutorial: https://matt-harrison.com/posts/rust-sys-crate/
-interpreter
+mod(interpreter)
+    rename -> runtime
+        gets rid of #[allow(clippy::module_inception)]
     prevent complex logical infinite loops
         execute code in another thread
         support execution timeout
-live
-    scrolling for editor and output
+subcmd(live)
+    add spinner next to "Running..." status
+    support program output
+        another sub-box below/above code
+    support program input
+        key-bind for PromptStrDialogue
+        allow defining default byte to use if no input available
+    fix : a new blank file is dirty
+    support resizing code & output by dragging border
+    support scrolling in editor and output
+    re-bind keys ??

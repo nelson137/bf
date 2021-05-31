@@ -6,9 +6,9 @@ use std::{
     path::PathBuf,
 };
 
-use crate::{
-    err,
-    util::{common::EOL, err::BfResult},
+use crate::util::{
+    common::EOL,
+    err::{err, BfResult},
 };
 
 mod cli;

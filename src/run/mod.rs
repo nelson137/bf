@@ -1,9 +1,12 @@
 use std::{fs::File, io::Write, thread::sleep, time::Duration};
 
 use crate::{
-    err,
     interpreter::Interpreter,
-    util::{common::get_width, err::BfResult, read::read_script},
+    util::{
+        common::get_width,
+        err::{err, BfResult},
+        read::read_script,
+    },
 };
 
 mod cli;

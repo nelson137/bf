@@ -4,7 +4,7 @@ use std::{
     path::PathBuf,
 };
 
-use crate::{err, util::err::BfResult};
+use crate::util::err::{err, BfResult};
 
 pub fn read_data(infile: Option<PathBuf>) -> BfResult<String> {
     match infile {

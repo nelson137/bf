@@ -8,9 +8,8 @@ use tui::{
     widgets::{Paragraph, Widget},
 };
 
-use crate::util::{
-    common::StrExt,
-    tui::{LineSymbolsExt, TapeBorderHorizontal, TAPE_BORDER_SET},
+use crate::util::tui::{
+    sublayouts, LineSymbolsExt, TapeBorderHorizontal, TAPE_BORDER_SET,
 };
 
 #[derive(Debug, Clone)]
@@ -43,30 +42,14 @@ impl Cell {
 }
 
 pub struct CellDisplay<'a> {
-    cell: &'a Cell,
-    left_cap: bool,
-    right_border_cap: Option<bool>,
-    is_highlighted: bool,
-    ascii: bool,
+    pub cell: &'a Cell,
+    pub left_cap: bool,
+    pub right_border_cap: Option<bool>,
+    pub is_highlighted: bool,
+    pub ascii: bool,
 }
 
 impl<'a> CellDisplay<'a> {
-    pub fn new(
-        cell: &'a Cell,
-        left_cap: bool,
-        right_border_cap: Option<bool>,
-        is_highlighted: bool,
-        ascii: bool,
-    ) -> Self {
-        Self {
-            cell,
-            left_cap,
-            right_border_cap,
-            is_highlighted,
-            ascii,
-        }
-    }
-
     pub fn is_highlighted(&self) -> bool {
         self.is_highlighted
     }
@@ -76,7 +59,7 @@ impl<'a> CellDisplay<'a> {
 
         buf.push_str(edge.left(self.left_cap));
 
-        buf.push_str(&edge.middle().repeated(3));
+        buf.push_str(&edge.middle().repeat(3));
 
         if let Some(right_cap) = self.right_border_cap {
             buf.push_str(edge.right(right_cap));
@@ -108,9 +91,9 @@ impl<'a> CellDisplay<'a> {
     }
 }
 
-impl<'a> Widget for CellDisplay<'a> {
+impl Widget for CellDisplay<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let line_areas = Layout::default()
+        let layout = Layout::default()
             .direction(Direction::Vertical)
             .constraints(vec![
                 Constraint::Length(1),
@@ -118,8 +101,9 @@ impl<'a> Widget for CellDisplay<'a> {
                 Constraint::Length(1),
             ])
             .split(area);
+        sublayouts!([top_area, middle_area, bottom_area] = layout);
 
-        Paragraph::new(self.display_top()).render(line_areas[0], buf);
+        Paragraph::new(self.display_top()).render(top_area, buf);
 
         let border = Span::raw(TAPE_BORDER_SET.vertical);
         let style = match self.is_highlighted {
@@ -132,8 +116,8 @@ impl<'a> Widget for CellDisplay<'a> {
             value,
             border.clone(),
         ]))
-        .render(line_areas[1], buf);
+        .render(middle_area, buf);
 
-        Paragraph::new(self.display_bottom()).render(line_areas[2], buf);
+        Paragraph::new(self.display_bottom()).render(bottom_area, buf);
     }
 }

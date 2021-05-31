@@ -14,13 +14,13 @@ use crossterm::{
 };
 use tui::{
     backend::CrosstermBackend,
-    layout::{Constraint, Direction, Layout},
-    widgets::{Block, Borders, Row, Table},
+    layout::{Constraint, Direction, Layout, Rect},
+    widgets::{Block, Borders, Paragraph, Row, Table},
 };
 
 use crate::util::{
     err::BfResult,
-    tui::{BfEvent, EventQueue, Terminal},
+    tui::{sublayouts, BfEvent, EventQueue, Frame, Terminal},
 };
 
 use super::{cli::InputDebugCli, state::State};
@@ -57,7 +57,7 @@ impl App {
         let delay = Duration::from_millis(5);
 
         'main: loop {
-            self.draw(&mut terminal)?;
+            terminal.draw(|f| self.draw(f))?;
 
             for bf_event in event_queue.pop_all() {
                 match bf_event {
@@ -90,49 +90,48 @@ impl App {
         Ok(())
     }
 
-    fn draw(&self, terminal: &mut Terminal) -> BfResult<()> {
-        Ok(terminal
-            .draw(|frame| {
-                let width = frame.size().width;
-                let sections = Layout::default()
-                    .direction(Direction::Vertical)
-                    .constraints(vec![
-                        Constraint::Length(1),
-                        Constraint::Min(0),
-                    ])
-                    .split(frame.size());
+    fn draw(&self, frame: &mut Frame) {
+        let layout = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints(vec![Constraint::Length(1), Constraint::Min(0)])
+            .split(frame.size());
+        sublayouts!([header_area, content_area] = layout);
 
-                let title_table_items = vec![Row::new(vec![
-                    String::from(" Input Debugger (Press Esc to quit)"),
-                    format!("{} ", self.state.get_spinner()),
-                ])];
-                let title_constraints = [
-                    // -3 for the default col space (-1) and the spinner (-2)
-                    Constraint::Length(width - 3),
-                    Constraint::Length(3),
-                ];
-                let title_table = Table::new(title_table_items)
-                    .block(Block::default())
-                    .widths(&title_constraints);
-                frame.render_widget(title_table, sections[0]);
+        self.draw_header(frame, header_area);
+        self.draw_content(frame, content_area);
+    }
 
-                let table_block = Block::default().borders(Borders::ALL);
-                let items: Vec<_> = self
-                    .state
-                    .get_input_history()
-                    .map(|e| {
-                        Row::new(vec![
-                            format!("{:0.6}", e.timestamp),
-                            e.event.to_string(),
-                        ])
-                    })
-                    .collect();
-                let table = Table::new(items)
-                    .block(table_block)
-                    .widths(&[Constraint::Length(17), Constraint::Min(0)])
-                    .column_spacing(2);
-                frame.render_widget(table, sections[1]);
+    fn draw_header(&self, frame: &mut Frame, area: Rect) {
+        let layout = Layout::default()
+            .direction(Direction::Horizontal)
+            .horizontal_margin(1)
+            //                Title               Spinner
+            .constraints(vec![Constraint::Min(0), Constraint::Length(2)])
+            .split(area);
+        sublayouts!([title_area, spinner_area] = layout);
+
+        let title = Paragraph::new("Input Debugger (Press Esc to quit)");
+        frame.render_widget(title, title_area);
+
+        let spinner = Paragraph::new(format!(" {}", self.state.get_spinner()));
+        frame.render_widget(spinner, spinner_area);
+    }
+
+    fn draw_content(&self, frame: &mut Frame, area: Rect) {
+        let items: Vec<_> = self
+            .state
+            .get_input_history()
+            .map(|e| {
+                Row::new(vec![
+                    format!("{:0.6}", e.timestamp),
+                    e.event.to_string(),
+                ])
             })
-            .and(Ok(()))?)
+            .collect();
+        let table = Table::new(items)
+            .block(Block::default().borders(Borders::ALL))
+            .widths(&[Constraint::Length(17), Constraint::Min(0)])
+            .column_spacing(2);
+        frame.render_widget(table, area);
     }
 }

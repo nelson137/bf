@@ -16,6 +16,17 @@ type Backend = CrosstermBackend<Stdout>;
 pub type Terminal = terminal::Terminal<Backend>;
 pub type Frame<'a> = terminal::Frame<'a, Backend>;
 
+#[macro_export]
+macro_rules! __sublayouts__ {
+    ([$($binding:tt),*] = $layout:tt) => {
+        let mut _index = 0usize..;
+        $(
+            let $binding = $layout[_index.next().unwrap()];
+        )*
+    };
+}
+pub use __sublayouts__ as sublayouts;
+
 pub const TAPE_BORDER_SET: symbols::line::Set = symbols::line::NORMAL;
 
 pub struct TapeBorderHorizontal {

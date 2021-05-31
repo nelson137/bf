@@ -4,7 +4,7 @@ use std::{
     path::PathBuf,
 };
 
-use crate::err;
+use crate::util::err::err;
 
 use super::err::BfResult;
 

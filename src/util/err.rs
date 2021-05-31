@@ -72,8 +72,9 @@ impl fmt::Display for BfError {
 }
 
 #[macro_export]
-macro_rules! err {
+macro_rules! __err__ {
     ($type:tt, $($args:tt)*) => {
         crate::util::err::BfError::$type($($args)*)
     };
 }
+pub use __err__ as err;

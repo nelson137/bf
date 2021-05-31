@@ -1,5 +1,4 @@
 use std::{
-    iter,
     path::PathBuf,
     sync::{Mutex, MutexGuard},
 };
@@ -10,16 +9,6 @@ use sha1::{Digest, Sha1};
 pub const EOL: &str = "\r\n";
 #[cfg(not(windows))]
 pub const EOL: &str = "\n";
-
-pub trait StrExt {
-    fn repeated(&self, n: usize) -> String;
-}
-
-impl StrExt for str {
-    fn repeated(&self, n: usize) -> String {
-        iter::repeat(self).take(n).collect::<String>()
-    }
-}
 
 pub fn get_width(width: Option<usize>) -> i32 {
     (match width {

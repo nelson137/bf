@@ -64,18 +64,16 @@ impl Tape {
                 .enumerate()
                 .skip(offset)
                 .take(size)
-                .map(|(i, c)| {
-                    CellDisplay::new(
-                        c,
-                        i == 0,
-                        if i == end_chunk {
-                            Some(i == end_tape)
-                        } else {
-                            None
-                        },
-                        i == self.cursor,
-                        ascii,
-                    )
+                .map(|(i, c)| CellDisplay {
+                    cell: c,
+                    left_cap: i == 0,
+                    right_border_cap: if i == end_chunk {
+                        Some(i == end_tape)
+                    } else {
+                        None
+                    },
+                    is_highlighted: i == self.cursor,
+                    ascii,
                 })
                 .collect::<Vec<_>>(),
         )
@@ -97,18 +95,18 @@ impl Tape {
                     let end_chunk = chunk.len() - 1;
                     chunk.into_iter().enumerate().map(
                         move |(chunk_i, (tape_i, cell))| {
-                            let right = if chunk_i == end_chunk {
+                            let right_border_cap = if chunk_i == end_chunk {
                                 Some(tape_i == end_tape)
                             } else {
                                 None
                             };
-                            CellDisplay::new(
+                            CellDisplay {
                                 cell,
-                                tape_i == 0,
-                                right,
-                                tape_i == self.cursor,
+                                left_cap: tape_i == 0,
+                                right_border_cap,
+                                is_highlighted: tape_i == self.cursor,
                                 ascii,
-                            )
+                            }
                         },
                     )
                 })
@@ -120,7 +118,7 @@ impl Tape {
 
 pub struct ChunkedTapeDisplay<'a>(Vec<WindowDisplay<'a>>);
 
-impl<'a> ChunkedTapeDisplay<'a> {
+impl ChunkedTapeDisplay<'_> {
     pub fn display(&mut self, prefix: &str) -> String {
         self.0.iter().map(|chunk| chunk.display(prefix)).collect()
     }
@@ -128,7 +126,7 @@ impl<'a> ChunkedTapeDisplay<'a> {
 
 pub struct WindowDisplay<'a>(Vec<CellDisplay<'a>>);
 
-impl<'a> WindowDisplay<'a> {
+impl WindowDisplay<'_> {
     fn display_top(&self) -> String {
         self.0
             .iter()
@@ -175,14 +173,14 @@ impl<'a> WindowDisplay<'a> {
     }
 }
 
-impl<'a> Widget for WindowDisplay<'a> {
+impl Widget for WindowDisplay<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let len = self.0.len();
         if len == 0 {
             return;
         }
 
-        let cell_areas = Layout::default()
+        let layout = Layout::default()
             .direction(Direction::Horizontal)
             .constraints(
                 iter::repeat(Constraint::Length(4))
@@ -192,7 +190,7 @@ impl<'a> Widget for WindowDisplay<'a> {
             )
             .split(area);
 
-        for (cell, cell_area) in self.0.into_iter().zip(cell_areas) {
+        for (cell, cell_area) in self.0.into_iter().zip(layout) {
             cell.render(cell_area, buf);
         }
     }

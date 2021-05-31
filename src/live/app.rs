@@ -2,10 +2,6 @@ use std::{
     fs::File,
     io::{stdout, Write},
     path::PathBuf,
-    sync::{
-        atomic::{AtomicBool, Ordering},
-        Arc,
-    },
     thread,
     time::Duration,
 };
@@ -27,10 +23,11 @@ use tui::{
 };
 
 use crate::util::{
-    common::{sha1_digest, Sha1Digest, StrExt},
+    common::{sha1_digest, Sha1Digest},
     err::BfResult,
     read::read_script_file,
-    tui::{BfEvent, EventQueue, Frame, KeyEventExt, Terminal},
+    sync::SharedBool,
+    tui::{sublayouts, BfEvent, EventQueue, Frame, KeyEventExt, Terminal},
 };
 
 use super::{
@@ -43,7 +40,7 @@ use super::{
 pub struct App {
     ascii_values: bool,
     file_path: Option<PathBuf>,
-    should_quit: Arc<AtomicBool>,
+    should_quit: SharedBool,
     code: TextArea,
     clean_hash: Sha1Digest,
     event_queue: EventQueue,
@@ -73,7 +70,7 @@ impl App {
         Ok(Self {
             ascii_values: cli.ascii_values,
             file_path: cli.infile,
-            should_quit: Arc::new(AtomicBool::new(false)),
+            should_quit: SharedBool::new(false),
             code: TextArea::from(&file_contents),
             clean_hash: sha1_digest(&file_contents),
             event_queue: EventQueue::new(),
@@ -100,7 +97,7 @@ impl App {
         let mut terminal = Terminal::new(CrosstermBackend::new(stdout()))?;
         let mut restart_interpreter: bool;
 
-        while !self.should_quit.load(Ordering::Relaxed) {
+        while !self.should_quit.load() {
             restart_interpreter = false;
 
             terminal.draw(|f| self.draw(f))?;
@@ -169,7 +166,7 @@ impl App {
     fn draw(&self, frame: &mut Frame) {
         let area = frame.size();
 
-        let sections = Layout::default()
+        let layout = Layout::default()
             .direction(Direction::Vertical)
             .constraints(vec![
                 Constraint::Length(1),
@@ -177,9 +174,11 @@ impl App {
                 Constraint::Length(1),
             ])
             .split(area);
-        self.draw_header(frame, sections[0]);
-        self.draw_content(frame, sections[1]);
-        self.draw_footer(frame, sections[2]);
+        sublayouts!([header_area, content_area, footer_area] = layout);
+
+        self.draw_header(frame, header_area);
+        self.draw_content(frame, content_area);
+        self.draw_footer(frame, footer_area);
 
         if let Some(dialogue) = &self.dialogue {
             let dialogue_area = centered_rect(50, 50, area);
@@ -188,7 +187,7 @@ impl App {
     }
 
     fn draw_header(&self, frame: &mut Frame, area: Rect) {
-        let sections = Layout::default()
+        let layout = Layout::default()
             .direction(Direction::Horizontal)
             .constraints(vec![
                 Constraint::Length(2), // Dirty indicator
@@ -197,8 +196,7 @@ impl App {
                 Constraint::Length(9), // Status
             ])
             .split(area);
-        let (indicator_area, fn_area, status_area) =
-            (sections[0], sections[1], sections[3]);
+        sublayouts!([indicator_area, fn_area, _, status_area] = layout);
 
         // Draw dirty indicator
         if self.is_dirty() {
@@ -220,17 +218,17 @@ impl App {
         let status = match self.async_interpreter.state().status {
             Status::Done => Span::styled("Done", style),
             Status::Running => {
-                Span::styled("Running…", style.clone().fg(Color::Green))
+                Span::styled("Running…", style.fg(Color::Green))
             }
             Status::Error(_) | Status::FatalError(_) => {
-                Span::styled("ERROR", style.clone().fg(Color::Red))
+                Span::styled("ERROR", style.fg(Color::Red))
             }
         };
         frame.render_widget(Paragraph::new(status), status_area);
     }
 
     fn draw_content(&self, frame: &mut Frame, area: Rect) {
-        let sections = Layout::default()
+        let layout = Layout::default()
             .direction(Direction::Vertical)
             .constraints(vec![
                 Constraint::Length(4),
@@ -238,14 +236,10 @@ impl App {
                 Constraint::Min(2),
             ])
             .split(area);
-        match sections.as_slice() {
-            [tape_area, divider_area, editor_area] => {
-                self.draw_content_tape(frame, *tape_area);
-                self.draw_content_divider(frame, *divider_area);
-                self.draw_content_editor(frame, *editor_area);
-            }
-            _ => panic!("failed to split content area into tape and editor"),
-        }
+        sublayouts!([tape_area, divider_area, editor_area] = layout);
+        self.draw_content_tape(frame, tape_area);
+        self.draw_content_divider(frame, divider_area);
+        self.draw_content_editor(frame, editor_area);
     }
 
     fn draw_content_tape(&self, frame: &mut Frame, area: Rect) {
@@ -264,7 +258,7 @@ impl App {
         let inner_width = area.width as usize - 2;
         let symbols = BorderType::line_symbols(BorderType::Plain);
         let divider = symbols.vertical_right.to_owned()
-            + &symbols.horizontal.repeated(inner_width)
+            + &symbols.horizontal.repeat(inner_width)
             + symbols.vertical_left;
         frame.render_widget(Paragraph::new(divider), area);
     }
@@ -327,11 +321,11 @@ impl App {
                 to quit?"
             );
             dialogue.set_action(Box::new(move || {
-                should_quit.store(true, Ordering::Relaxed);
+                should_quit.store(true);
             }));
             self.dialogue = Some(Box::new(dialogue));
         } else {
-            self.should_quit.store(true, Ordering::Relaxed);
+            self.should_quit.store(true);
         }
     }
 

@@ -9,7 +9,7 @@ use tui::{
 
 use super::editable::{Editable, Field};
 
-use crate::util::tui::{Frame, KeyEventExt};
+use crate::util::tui::{sublayouts, Frame, KeyEventExt};
 
 pub fn centered_rect(percent_x: u16, percent_y: u16, area: Rect) -> Rect {
     let centered_vert_area = Layout::default()
@@ -173,7 +173,7 @@ impl Widget for ButtonDialogue {
     fn render(self, area: Rect, buf: &mut Buffer) {
         self.dialogue.render(area, buf);
 
-        let content_area = Layout::default()
+        let layout = Layout::default()
             .direction(Direction::Vertical)
             .constraints(vec![
                 Constraint::Min(0),
@@ -184,27 +184,28 @@ impl Widget for ButtonDialogue {
                 horizontal: 3,
                 vertical: 2,
             }));
+        sublayouts!([text_area, _, all_buttons_area] = layout);
 
         // Text
         Paragraph::new(self.msg)
             .wrap(Wrap { trim: false })
-            .render(content_area[0], buf);
+            .render(text_area, buf);
 
         // Button(s)
-        let w = content_area[2].width;
+        let w = all_buttons_area.width;
         let btn_style = Style::default().bg(Color::Blue).fg(Color::White);
         let text_style = Style::default();
-        let text_style_sel =
-            text_style.clone().add_modifier(Modifier::UNDERLINED);
-        let buttons_area = Layout::default().direction(Direction::Horizontal);
+        let text_style_sel = text_style.add_modifier(Modifier::UNDERLINED);
         if self.buttons.len() == 1 {
-            let buttons_area = buttons_area
+            let space_w = w.saturating_sub(Self::BUTTON_WIDTH) / 2;
+            let buttons_area = Layout::default()
+                .direction(Direction::Horizontal)
                 .constraints(vec![
-                    Constraint::Length((w - Self::BUTTON_WIDTH) / 2),
+                    Constraint::Length(space_w),
                     Constraint::Length(Self::BUTTON_WIDTH),
                     Constraint::Min(0),
                 ])
-                .split(content_area[2]);
+                .split(all_buttons_area);
             let text = Span::styled(self.buttons[0].text(), text_style_sel);
             Paragraph::new(text)
                 .block(Block::default().style(btn_style))
@@ -212,7 +213,8 @@ impl Widget for ButtonDialogue {
                 .render(buttons_area[1], buf);
         } else {
             let space_w = w.saturating_sub(Self::BUTTON_WIDTH * 2) / 3;
-            let buttons_area = buttons_area
+            let buttons_area = Layout::default()
+                .direction(Direction::Horizontal)
                 .constraints(vec![
                     Constraint::Length(space_w),
                     Constraint::Length(Self::BUTTON_WIDTH),
@@ -220,7 +222,7 @@ impl Widget for ButtonDialogue {
                     Constraint::Length(Self::BUTTON_WIDTH),
                     Constraint::Min(0),
                 ])
-                .split(content_area[2]);
+                .split(all_buttons_area);
             let [text_style0, text_style1] = if self.button_cursor == 0 {
                 [text_style_sel, text_style]
             } else {

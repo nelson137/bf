@@ -62,7 +62,7 @@ impl App {
             for bf_event in event_queue.pop_all() {
                 match bf_event {
                     BfEvent::Tick => {
-                        self.state.spinner_inc();
+                        self.state.spinner_tick();
                     }
                     BfEvent::Input(event) => match event {
                         Event::Key(key_event) => {
@@ -105,16 +105,18 @@ impl App {
         let layout = Layout::default()
             .direction(Direction::Horizontal)
             .horizontal_margin(1)
-            //                Title               Spinner
-            .constraints(vec![Constraint::Min(0), Constraint::Length(2)])
+            .constraints(vec![
+                Constraint::Min(0),    // Title
+                Constraint::Length(1), // Spacer (skip)
+                Constraint::Length(1), // Spinner
+            ])
             .split(area);
-        sublayouts!([title_area, spinner_area] = layout);
+        sublayouts!([title_area, _, spinner_area] = layout);
 
         let title = Paragraph::new("Input Debugger (Press Esc to quit)");
         frame.render_widget(title, title_area);
 
-        let spinner = Paragraph::new(format!(" {}", self.state.get_spinner()));
-        frame.render_widget(spinner, spinner_area);
+        frame.render_widget(self.state.get_spinner(), spinner_area);
     }
 
     fn draw_content(&self, frame: &mut Frame, area: Rect) {

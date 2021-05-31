@@ -3,7 +3,7 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
-use crate::util::tui::BfEvent;
+use crate::util::tui::{BfEvent, Spinner};
 
 pub struct InputHistoryEntry {
     pub event: BfEvent,
@@ -22,10 +22,8 @@ impl InputHistoryEntry {
     }
 }
 
-const SPINNER: &str = "|/-\\";
-
 pub struct State {
-    spinner_i: usize,
+    spinner: Spinner,
     input_history_size: usize,
     input_history: VecDeque<InputHistoryEntry>,
 }
@@ -33,25 +31,22 @@ pub struct State {
 impl State {
     pub fn new(input_history_size: usize) -> Self {
         Self {
-            spinner_i: 0,
+            spinner: Spinner::default(),
             input_history_size,
             input_history: VecDeque::with_capacity(input_history_size),
         }
-    }
-
-    pub fn get_spinner(&self) -> char {
-        SPINNER
-            .chars()
-            .nth(self.spinner_i)
-            .expect("Invalid spinner char index")
     }
 
     pub fn get_input_history(&self) -> vec_deque::Iter<InputHistoryEntry> {
         self.input_history.iter()
     }
 
-    pub fn spinner_inc(&mut self) {
-        self.spinner_i = (self.spinner_i + 1) % 4;
+    pub fn get_spinner(&self) -> Spinner {
+        self.spinner
+    }
+
+    pub fn spinner_tick(&mut self) {
+        self.spinner.tick();
     }
 
     pub fn input_history_resize(&mut self, size: usize) {

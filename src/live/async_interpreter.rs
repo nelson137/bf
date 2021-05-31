@@ -11,7 +11,7 @@ use crate::{
     },
 };
 
-#[derive(Clone)]
+#[derive(Clone, Eq, PartialEq)]
 pub enum Status {
     Running,
     Done,

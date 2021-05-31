@@ -27,7 +27,9 @@ use crate::util::{
     err::BfResult,
     read::read_script_file,
     sync::SharedBool,
-    tui::{sublayouts, BfEvent, EventQueue, Frame, KeyEventExt, Terminal},
+    tui::{
+        sublayouts, BfEvent, EventQueue, Frame, KeyEventExt, Spinner, Terminal,
+    },
 };
 
 use super::{
@@ -41,6 +43,7 @@ pub struct App {
     ascii_values: bool,
     file_path: Option<PathBuf>,
     should_quit: SharedBool,
+    spinner: Spinner,
     code: TextArea,
     clean_hash: Sha1Digest,
     event_queue: EventQueue,
@@ -71,9 +74,10 @@ impl App {
             ascii_values: cli.ascii_values,
             file_path: cli.infile,
             should_quit: SharedBool::new(false),
+            spinner: Spinner::default(),
             code: TextArea::from(&file_contents),
             clean_hash: sha1_digest(&file_contents),
-            event_queue: EventQueue::new(),
+            event_queue: EventQueue::new().with_tick_delay(100),
             delay: Duration::from_millis(20),
             dialogue: None,
             async_interpreter: AsyncInterpreter::new(
@@ -103,10 +107,13 @@ impl App {
             terminal.draw(|f| self.draw(f))?;
 
             for event in self.event_queue.pop_all() {
-                let event = if let BfEvent::Input(Event::Key(e)) = event {
-                    e
-                } else {
-                    continue;
+                let event = match event {
+                    BfEvent::Tick => {
+                        self.spinner.tick();
+                        continue;
+                    }
+                    BfEvent::Input(Event::Key(e)) => e,
+                    _ => continue,
                 };
 
                 if let Some(dialogue) = &mut self.dialogue {
@@ -190,13 +197,18 @@ impl App {
         let layout = Layout::default()
             .direction(Direction::Horizontal)
             .constraints(vec![
-                Constraint::Length(2), // Dirty indicator
+                Constraint::Length(1), // Dirty indicator
+                Constraint::Length(1), // Spacer (skip)
                 Constraint::Min(0),    // Filename
                 Constraint::Length(1), // Spacer (skip)
-                Constraint::Length(9), // Status
+                Constraint::Length(8), // Status (max status length)
+                Constraint::Length(1), // Spacer (skip)
+                Constraint::Length(1), // Spinner
             ])
             .split(area);
-        sublayouts!([indicator_area, fn_area, _, status_area] = layout);
+        sublayouts!([
+            indicator_area, _, fn_area, _, status_area, _, spinner_area
+        ] = layout);
 
         // Draw dirty indicator
         if self.is_dirty() {
@@ -213,9 +225,12 @@ impl App {
         });
         frame.render_widget(p, fn_area);
 
+        // Interpreter status
+        let status = self.async_interpreter.state().status;
+
         // Draw status
         let style = Style::default().add_modifier(Modifier::BOLD);
-        let status = match self.async_interpreter.state().status {
+        let status_view = match status {
             Status::Done => Span::styled("Done", style),
             Status::Running => {
                 Span::styled("Running…", style.fg(Color::Green))
@@ -224,7 +239,12 @@ impl App {
                 Span::styled("ERROR", style.fg(Color::Red))
             }
         };
-        frame.render_widget(Paragraph::new(status), status_area);
+        frame.render_widget(Paragraph::new(status_view), status_area);
+
+        // Draw spinner
+        if status == Status::Running {
+            frame.render_widget(self.spinner, spinner_area);
+        }
     }
 
     fn draw_content(&self, frame: &mut Frame, area: Rect) {

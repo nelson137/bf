@@ -5,8 +5,6 @@ mod(interpreter)
         execute code in another thread
         support execution timeout
 subcmd(live)
-    support program output
-        another sub-box below/above code
     support program input
         key-bind for PromptStrDialogue
         allow defining default byte to use if no input available

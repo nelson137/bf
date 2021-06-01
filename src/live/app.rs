@@ -33,7 +33,7 @@ use crate::util::{
 };
 
 use super::{
-    async_interpreter::{AsyncInterpreter, Status},
+    async_interpreter::{AsyncInterpreter, State, Status},
     cli::LiveCli,
     dialogue::*,
     editable::{Editable, TextArea},
@@ -172,6 +172,7 @@ impl App {
 
     fn draw(&self, frame: &mut Frame) {
         let area = frame.size();
+        let state = self.async_interpreter.state();
 
         let layout = Layout::default()
             .direction(Direction::Vertical)
@@ -183,8 +184,8 @@ impl App {
             .split(area);
         sublayouts!([header_area, content_area, footer_area] = layout);
 
-        self.draw_header(frame, header_area);
-        self.draw_content(frame, content_area);
+        self.draw_header(frame, header_area, state.clone());
+        self.draw_content(frame, content_area, state);
         self.draw_footer(frame, footer_area);
 
         if let Some(dialogue) = &self.dialogue {
@@ -193,7 +194,7 @@ impl App {
         }
     }
 
-    fn draw_header(&self, frame: &mut Frame, area: Rect) {
+    fn draw_header(&self, frame: &mut Frame, area: Rect, int_state: State) {
         let layout = Layout::default()
             .direction(Direction::Horizontal)
             .constraints(vec![
@@ -225,12 +226,9 @@ impl App {
         });
         frame.render_widget(p, fn_area);
 
-        // Interpreter status
-        let status = self.async_interpreter.state().status;
-
         // Draw status
         let style = Style::default().add_modifier(Modifier::BOLD);
-        let status_view = match status {
+        let status_view = match int_state.status {
             Status::Done => Span::styled("Done", style),
             Status::Running => {
                 Span::styled("Running…", style.fg(Color::Green))
@@ -242,29 +240,55 @@ impl App {
         frame.render_widget(Paragraph::new(status_view), status_area);
 
         // Draw spinner
-        if status == Status::Running {
+        if int_state.status == Status::Running {
             frame.render_widget(self.spinner, spinner_area);
         }
     }
 
-    fn draw_content(&self, frame: &mut Frame, area: Rect) {
+    fn draw_content(&self, frame: &mut Frame, area: Rect, int_state: State) {
+        let output_lines =
+            int_state.output.split_terminator('\n').count() as u16;
         let layout = Layout::default()
             .direction(Direction::Vertical)
             .constraints(vec![
-                Constraint::Length(4),
-                Constraint::Length(1),
-                Constraint::Min(2),
+                Constraint::Length(4),            // Tape
+                Constraint::Length(1),            // Divider
+                Constraint::Min(2),               // Editor
+                Constraint::Length(1),            // Divider
+                Constraint::Length(output_lines), // Output
+                Constraint::Length(1),            // Bottom
             ])
             .split(area);
-        sublayouts!([tape_area, divider_area, editor_area] = layout);
+
+        sublayouts!(
+            [
+                tape_area,
+                divider_area1,
+                editor_area,
+                divider_area2,
+                output_area,
+                bottom_area
+            ] = layout
+        );
+
+        let output_title = if int_state.output.ends_with('\n') {
+            " Output "
+        } else {
+            " Output (no EOL) "
+        };
+
         self.draw_content_tape(frame, tape_area);
-        self.draw_content_divider(frame, divider_area);
+        self.draw_content_divider(frame, divider_area1, " Code ");
         self.draw_content_editor(frame, editor_area);
+        self.draw_content_divider(frame, divider_area2, output_title);
+        self.draw_content_output(frame, output_area, int_state.output);
+        self.draw_content_bottom(frame, bottom_area);
     }
 
     fn draw_content_tape(&self, frame: &mut Frame, area: Rect) {
         let block = Block::default()
-            .borders(Borders::TOP | Borders::LEFT | Borders::RIGHT);
+            .borders(Borders::TOP | Borders::LEFT | Borders::RIGHT)
+            .title(" Tape ");
         let tape_area = block.inner(area);
         frame.render_widget(block, area);
 
@@ -274,18 +298,24 @@ impl App {
         frame.render_widget(window, tape_area);
     }
 
-    fn draw_content_divider(&self, frame: &mut Frame, area: Rect) {
-        let inner_width = area.width as usize - 2;
+    fn draw_content_divider(
+        &self,
+        frame: &mut Frame,
+        area: Rect,
+        title: &str,
+    ) {
+        let inner_width =
+            (area.width as usize).saturating_sub(2 + title.len());
         let symbols = BorderType::line_symbols(BorderType::Plain);
         let divider = symbols.vertical_right.to_owned()
+            + title
             + &symbols.horizontal.repeat(inner_width)
             + symbols.vertical_left;
         frame.render_widget(Paragraph::new(divider), area);
     }
 
     fn draw_content_editor(&self, frame: &mut Frame, area: Rect) {
-        let block = Block::default()
-            .borders(Borders::LEFT | Borders::RIGHT | Borders::BOTTOM);
+        let block = Block::default().borders(Borders::LEFT | Borders::RIGHT);
         let content_area = block.inner(area);
         frame.render_widget(block, area);
 
@@ -303,6 +333,29 @@ impl App {
             content_area.x + cur_y as u16,
             content_area.y + cur_x as u16,
         );
+    }
+
+    fn draw_content_output(
+        &self,
+        frame: &mut Frame,
+        area: Rect,
+        output: String,
+    ) {
+        if output.len() > 0 {
+            let block =
+                Block::default().borders(Borders::LEFT | Borders::RIGHT);
+            let p = Paragraph::new(output).block(block);
+            frame.render_widget(p, area);
+        }
+    }
+
+    fn draw_content_bottom(&self, frame: &mut Frame, area: Rect) {
+        let inner_width = (area.width as usize).saturating_sub(2);
+        let symbols = BorderType::line_symbols(BorderType::Plain);
+        let bottom = symbols.bottom_left.to_owned()
+            + &symbols.horizontal.repeat(inner_width)
+            + symbols.bottom_right;
+        frame.render_widget(Paragraph::new(bottom), area);
     }
 
     fn draw_footer(&self, frame: &mut Frame, area: Rect) {

@@ -29,6 +29,7 @@ impl Default for Status {
 pub struct State {
     pub status: Status,
     pub tape: Tape,
+    pub output: String,
 }
 
 #[derive(Clone)]
@@ -68,6 +69,7 @@ impl AsyncInterpreter {
                     .store(State {
                         status,
                         tape: int.tape.clone(),
+                        output: int.output.clone(),
                     })
                     .ok()
             };
@@ -113,6 +115,7 @@ impl AsyncInterpreter {
             Err(()) => State {
                 status: Status::FatalError(ERROR_POISONED.into()),
                 tape: Tape::default(),
+                output: String::new(),
             },
         }
     }

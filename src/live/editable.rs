@@ -3,7 +3,7 @@ use std::cmp::min;
 use crossterm::event::{KeyCode, KeyEvent};
 
 use crate::util::{
-    common::{sha1_digest, Sha1Digest, EOL},
+    common::{sha1_digest, Sha1Digest, StringExt, EOL},
     tui::KeyEventExt,
 };
 
@@ -133,6 +133,15 @@ impl TextArea {
 
     pub fn lines(&self) -> impl Iterator<Item = &String> {
         self.lines.iter()
+    }
+
+    pub fn wrapped_num_lines(
+        &self,
+        width: usize,
+    ) -> Vec<(usize, Vec<String>)> {
+        (1usize..)
+            .zip(self.lines().map(|l| l.wrapped(width)))
+            .collect()
     }
 
     pub fn text(&self) -> String {

@@ -1,6 +1,7 @@
 use std::{
     fs::File,
     io::{stdout, Write},
+    iter,
     path::PathBuf,
     thread,
     time::Duration,
@@ -19,11 +20,11 @@ use tui::{
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Span, Spans},
-    widgets::{Block, BorderType, Borders, Paragraph, Wrap},
+    widgets::{Block, BorderType, Borders, Paragraph, Row, Table},
 };
 
 use crate::util::{
-    common::{sha1_digest, Sha1Digest},
+    common::{sha1_digest, Sha1Digest, USizeExt},
     err::BfResult,
     read::read_script_file,
     sync::SharedBool,
@@ -207,9 +208,10 @@ impl App {
                 Constraint::Length(1), // Spinner
             ])
             .split(area);
-        sublayouts!([
-            indicator_area, _, fn_area, _, status_area, _, spinner_area
-        ] = layout);
+        sublayouts!(
+            [indicator_area, _, fn_area, _, status_area, _, spinner_area] =
+                layout
+        );
 
         // Draw dirty indicator
         if self.is_dirty() {
@@ -319,19 +321,36 @@ impl App {
         let content_area = block.inner(area);
         frame.render_widget(block, area);
 
-        let lines = self
-            .code
-            .lines()
-            .map(|line| Spans::from(line.as_ref()))
-            .collect::<Vec<_>>();
+        let num_width = self.code.lines().count().count_digits().max(3) as u16;
+        let line_width = content_area.width.saturating_sub(1 + num_width);
+        let wrapped_lines = self.code.wrapped_num_lines(line_width as usize);
 
-        let p = Paragraph::new(lines).wrap(Wrap { trim: false });
-        frame.render_widget(p, content_area);
+        let num_str = |i| format!("{:>w$}", i, w = num_width as usize);
+        let num_style = Style::default().fg(Color::Yellow);
+        let rows: Vec<Row> = wrapped_lines
+            .iter()
+            .flat_map(|(i, line_chunks)| {
+                iter::once(Span::styled(num_str(i), num_style))
+                    .chain(iter::repeat(Span::raw("")))
+                    .zip(line_chunks)
+                    .map(|(num, chunk)| Row::new(vec![num, Span::raw(chunk)]))
+            })
+            .collect();
+        let widths = [Constraint::Length(num_width), Constraint::Min(0)];
+        let table = Table::new(rows).widths(&widths);
+        frame.render_widget(table, content_area);
 
-        let (cur_x, cur_y) = self.code.cursor();
+        let cursor = self.code.cursor();
+        let cur_x = cursor.1 % line_width as usize;
+        let cur_y = wrapped_lines
+            .iter()
+            .take(cursor.0)
+            .map(|(_, line_chunks)| line_chunks.len())
+            .sum::<usize>()
+            + (cursor.1 / line_width as usize);
         frame.set_cursor(
-            content_area.x + cur_y as u16,
-            content_area.y + cur_x as u16,
+            content_area.x + num_width + 1 + cur_x as u16,
+            content_area.y + cur_y as u16,
         );
     }
 

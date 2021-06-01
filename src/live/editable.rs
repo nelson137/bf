@@ -136,14 +136,7 @@ impl TextArea {
     }
 
     pub fn text(&self) -> String {
-        self.lines
-            .iter()
-            .cloned()
-            .map(|mut l| {
-                l.push_str(EOL);
-                l
-            })
-            .collect::<String>()
+        self.lines.join(EOL)
     }
 
     pub fn hash(&self) -> Sha1Digest {

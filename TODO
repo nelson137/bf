@@ -10,7 +10,6 @@ subcmd(live)
     support program input
         key-bind for PromptStrDialogue
         allow defining default byte to use if no input available
-    fix : a new blank file is dirty
     support resizing code & output by dragging border
     support scrolling in editor and output
     re-bind keys ??

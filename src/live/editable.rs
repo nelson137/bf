@@ -111,7 +111,7 @@ impl TextArea {
         let lines = if data.as_ref().is_empty() {
             vec![String::new()]
         } else {
-            data.as_ref().lines().map(|s| s.to_string()).collect()
+            data.as_ref().split('\n').map(|s| s.to_string()).collect()
         };
         Self {
             lines,

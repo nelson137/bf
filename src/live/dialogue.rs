@@ -32,14 +32,25 @@ pub fn centered_rect(percent_x: u16, percent_y: u16, area: Rect) -> Rect {
 }
 
 pub trait Dialogue: Widget {
+    fn get_reason(&self) -> Reason;
+    fn set_reason(&mut self, reason: Reason);
     fn set_action(&mut self, f: Box<dyn FnOnce()>);
     fn run_action(&mut self);
     fn draw(&self, frame: &mut Frame, area: Rect);
-    fn on_event(&mut self, event: KeyEvent) -> DialogueDecision;
+    fn on_event(&mut self, event: KeyEvent) -> Decision;
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum Reason {
+    None,
+    Info,
+    Confirm,
+    Filename,
+    Input,
 }
 
 #[derive(Clone, PartialEq)]
-pub enum DialogueDecision {
+pub enum Decision {
     Waiting,
     No,
     Yes,
@@ -50,10 +61,19 @@ struct DialogueBox {
     bg: Color,
     fg: Color,
     title: String,
+    reason: Reason,
     action: Option<Box<dyn FnOnce()>>,
 }
 
 impl DialogueBox {
+    fn get_reason(&self) -> Reason {
+        self.reason
+    }
+
+    fn set_reason(&mut self, reason: Reason) {
+        self.reason = reason;
+    }
+
     fn set_action(&mut self, f: Box<dyn FnOnce()>) {
         self.action = Some(f);
     }
@@ -131,6 +151,7 @@ impl ButtonDialogue {
                 bg: Color::Black,
                 fg: Color::Red,
                 title: " Error ".to_string(),
+                reason: Reason::None,
                 action: None,
             },
             msg: msg.into(),
@@ -145,6 +166,7 @@ impl ButtonDialogue {
                 bg: Color::Black,
                 fg: Color::Yellow,
                 title: " Confirm ".to_string(),
+                reason: Reason::None,
                 action: None,
             },
             msg: msg.into(),
@@ -241,6 +263,14 @@ impl Widget for ButtonDialogue {
 }
 
 impl Dialogue for ButtonDialogue {
+    fn get_reason(&self) -> Reason {
+        self.dialogue.get_reason()
+    }
+
+    fn set_reason(&mut self, reason: Reason) {
+        self.dialogue.set_reason(reason);
+    }
+
     fn set_action(&mut self, f: Box<dyn FnOnce()>) {
         self.dialogue.set_action(f);
     }
@@ -253,17 +283,15 @@ impl Dialogue for ButtonDialogue {
         frame.render_widget(self.clone_data(), area);
     }
 
-    fn on_event(&mut self, event: KeyEvent) -> DialogueDecision {
+    fn on_event(&mut self, event: KeyEvent) -> Decision {
         match event.code {
-            KeyCode::Esc => return DialogueDecision::No,
-            KeyCode::Char('c') if event.is_ctrl() => {
-                return DialogueDecision::No
-            }
+            KeyCode::Esc => return Decision::No,
+            KeyCode::Char('c') if event.is_ctrl() => return Decision::No,
             KeyCode::Enter => {
                 return if self.button_cursor == 0 {
-                    DialogueDecision::No
+                    Decision::No
                 } else {
-                    DialogueDecision::Yes
+                    Decision::Yes
                 };
             }
 
@@ -272,10 +300,10 @@ impl Dialogue for ButtonDialogue {
             | KeyCode::BackTab
             | KeyCode::Left => {
                 self.button_select_toggle();
-                DialogueDecision::Waiting
+                Decision::Waiting
             }
 
-            _ => DialogueDecision::Waiting,
+            _ => Decision::Waiting,
         }
     }
 }
@@ -301,6 +329,7 @@ impl PromptStrDialogue {
                     bg: Color::Black,
                     fg: Color::Green,
                     title: title.into(),
+                    reason: Reason::None,
                     action: None,
                 },
                 msg: prompt.into(),
@@ -320,6 +349,14 @@ impl PromptStrDialogue {
 }
 
 impl Dialogue for PromptStrDialogue {
+    fn get_reason(&self) -> Reason {
+        self.button_dialogue.get_reason()
+    }
+
+    fn set_reason(&mut self, reason: Reason) {
+        self.button_dialogue.set_reason(reason);
+    }
+
     fn set_action(&mut self, f: Box<dyn FnOnce()>) {
         self.button_dialogue.set_action(f);
     }
@@ -333,15 +370,13 @@ impl Dialogue for PromptStrDialogue {
         frame.set_cursor(area.x + 4 + self.input.cursor() as u16, area.y + 5);
     }
 
-    fn on_event(&mut self, event: KeyEvent) -> DialogueDecision {
+    fn on_event(&mut self, event: KeyEvent) -> Decision {
         match self.button_dialogue.on_event(event) {
-            DialogueDecision::Waiting => {
+            Decision::Waiting => {
                 self.input.on_event(event);
-                DialogueDecision::Waiting
+                Decision::Waiting
             }
-            DialogueDecision::Yes => {
-                DialogueDecision::Input(self.input.text().into())
-            }
+            Decision::Yes => Decision::Input(self.input.text().into()),
             d => d,
         }
     }

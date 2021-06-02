@@ -36,8 +36,8 @@ impl Cell {
         self.value() as char
     }
 
-    pub fn set(&mut self, value: char) {
-        self.0 = Wrapping(value as u8);
+    pub fn set(&mut self, value: u8) {
+        self.0 = Wrapping(value);
     }
 }
 

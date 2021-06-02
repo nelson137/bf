@@ -1,4 +1,5 @@
 use std::{
+    fmt::{self, Display, Formatter},
     sync::{Arc, Barrier},
     thread,
 };
@@ -14,6 +15,7 @@ use crate::{
 #[derive(Clone, Eq, PartialEq)]
 pub enum Status {
     Running,
+    WaitingForInput,
     Done,
     Error(String),
     FatalError(String),
@@ -25,11 +27,22 @@ impl Default for Status {
     }
 }
 
+impl Display for Status {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        match self {
+            Self::Running => write!(f, "Running…"),
+            Self::WaitingForInput => write!(f, "Waiting for Input…"),
+            Self::Done => write!(f, "Done"),
+            Self::Error(_) | Self::FatalError(_) => write!(f, "ERROR"),
+        }
+    }
+}
+
 #[derive(Clone, Default)]
 pub struct State {
     pub status: Status,
     pub tape: Tape,
-    pub output: String,
+    pub output: Vec<u8>,
 }
 
 #[derive(Clone)]
@@ -86,8 +99,12 @@ impl AsyncInterpreter {
                         set_state(Status::Error(err.to_string()), &int);
                         break;
                     }
-                    Some(Ok(_)) => {
-                        set_state(Status::Running, &int);
+                    Some(Ok(instruction)) => {
+                        if instruction == ',' {
+                            set_state(Status::WaitingForInput, &int);
+                        } else {
+                            set_state(Status::Running, &int);
+                        }
                     }
                 }
             }
@@ -115,7 +132,7 @@ impl AsyncInterpreter {
             Err(()) => State {
                 status: Status::FatalError(ERROR_POISONED.into()),
                 tape: Tape::default(),
-                output: String::new(),
+                output: Vec::new(),
             },
         }
     }

@@ -20,7 +20,7 @@ fn run_subcmd(args: RunCli) -> BfResult<()> {
 
     let width = get_width(args.width);
 
-    let mut interpreter = Interpreter::new(script, &args.input);
+    let mut interpreter = Interpreter::new(script, args.input.into_bytes());
 
     let mut printer = Printer::new();
 
@@ -51,13 +51,13 @@ fn run_subcmd(args: RunCli) -> BfResult<()> {
                     .display(""),
             )?;
         }
-        printer.print(&interpreter.output)?;
+        printer.print(&interpreter.output())?;
     }
 
     if let Some(path) = args.outfile {
         File::create(&path)
             .map_err(|e| err!(FileOpen, e, path.clone()))?
-            .write_all(interpreter.output.as_bytes())
+            .write_all(interpreter.output().as_bytes())
             .map_err(|e| err!(FileWrite, e, path))?;
     }
 

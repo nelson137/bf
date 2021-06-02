@@ -13,12 +13,12 @@ pub struct Interpreter {
     bracemap: HashMap<usize, usize>,
     ip: usize,
     pub tape: Tape,
-    input: VecDeque<char>,
-    pub output: String,
+    input: VecDeque<u8>,
+    pub output: Vec<u8>,
 }
 
 impl Interpreter {
-    pub fn new<C: AsRef<[u8]>, S: AsRef<str>>(code: C, input: S) -> Self {
+    pub fn new<I: AsRef<[u8]>>(code: I, input: I) -> Self {
         let instructions = Self::sanitize(code.as_ref());
         let bracemap = Self::build_bracemap(&instructions);
         Self {
@@ -26,8 +26,8 @@ impl Interpreter {
             bracemap,
             ip: 0,
             tape: Tape::default(),
-            input: input.as_ref().chars().collect(),
-            output: String::new(),
+            input: input.as_ref().iter().cloned().collect(),
+            output: Vec::new(),
         }
     }
 
@@ -67,14 +67,14 @@ impl Interpreter {
         }
     }
 
-    fn read_char(&mut self) -> BfResult<char> {
+    fn read_char(&mut self) -> BfResult<u8> {
         Ok(match self.input.pop_front() {
             Some(c) => Ok(c),
             None => {
                 // Read one character from stdin
                 let mut buf = [0u8; 1];
                 match io::stdin().read_exact(&mut buf) {
-                    Ok(_) => Ok(buf[0] as char),
+                    Ok(_) => Ok(buf[0]),
                     Err(e) => Err(format!(
                         "failed to read character from stdin: {}",
                         e
@@ -82,6 +82,10 @@ impl Interpreter {
                 }
             }
         }?)
+    }
+
+    pub fn output(&self) -> String {
+        String::from_utf8_lossy(&self.output).into_owned()
     }
 }
 
@@ -121,7 +125,7 @@ impl Iterator for Interpreter {
                     next_ip = ni;
                 }
             }
-            '.' => self.output.push(self.tape.current().ascii()),
+            '.' => self.output.push(self.tape.current().value()),
             ',' => match self.read_char() {
                 Ok(c) => self.tape.current().set(c),
                 Err(e) => return Some(Err(e)),

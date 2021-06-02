@@ -36,7 +36,10 @@ use crate::util::{
 use super::{
     async_interpreter::{AsyncInterpreter, State, Status},
     cli::LiveCli,
-    dialogue::*,
+    dialogue::{
+        centered_rect, ButtonDialogue, Decision, Dialogue, PromptStrDialogue,
+        Reason,
+    },
     editable::{Editable, TextArea},
 };
 
@@ -46,6 +49,7 @@ pub struct App {
     should_quit: SharedBool,
     spinner: Spinner,
     code: TextArea,
+    input: String,
     clean_hash: Sha1Digest,
     event_queue: EventQueue,
     delay: Duration,
@@ -77,6 +81,7 @@ impl App {
             should_quit: SharedBool::new(false),
             spinner: Spinner::default(),
             code: TextArea::from(&file_contents),
+            input: String::new(),
             clean_hash: sha1_digest(&file_contents),
             event_queue: EventQueue::new().with_tick_delay(100),
             delay: Duration::from_millis(20),
@@ -119,16 +124,27 @@ impl App {
 
                 if let Some(dialogue) = &mut self.dialogue {
                     match dialogue.on_event(event) {
-                        DialogueDecision::Waiting => (),
-                        DialogueDecision::No => self.dialogue = None,
-                        DialogueDecision::Yes => {
+                        Decision::Waiting => (),
+                        Decision::No => self.dialogue = None,
+                        Decision::Yes => {
                             dialogue.run_action();
                             self.dialogue = None;
                         }
-                        DialogueDecision::Input(input) => {
-                            self.file_path = Some(PathBuf::from(input));
-                            self.dialogue = None;
-                            self.on_save();
+                        Decision::Input(input) => {
+                            match dialogue.get_reason() {
+                                Reason::Filename => {
+                                    self.file_path =
+                                        Some(PathBuf::from(input));
+                                    self.dialogue = None;
+                                    self.on_save();
+                                }
+                                Reason::Input => {
+                                    self.input = input.into();
+                                    self.dialogue = None;
+                                    restart_interpreter = true;
+                                }
+                                _ => (),
+                            }
                         }
                     }
                 } else {
@@ -141,6 +157,7 @@ impl App {
                             'c' => self.on_exit(),
                             _ => (),
                         },
+                        KeyCode::F(1) => self.on_set_input(),
                         KeyCode::Backspace
                         | KeyCode::Delete
                         | KeyCode::Enter
@@ -158,10 +175,12 @@ impl App {
             if restart_interpreter {
                 let status = self.async_interpreter.state().status;
                 if let Status::FatalError(fe) = status {
-                    self.dialogue = Some(Box::new(ButtonDialogue::error(fe)));
+                    let mut dialogue = ButtonDialogue::error(fe);
+                    dialogue.set_reason(Reason::Info);
+                    self.dialogue = Some(Box::new(dialogue));
                 }
                 self.async_interpreter
-                    .restart(self.code.text(), String::new())?;
+                    .restart(self.code.text(), self.input.clone())?;
             }
 
             thread::yield_now();
@@ -199,13 +218,13 @@ impl App {
         let layout = Layout::default()
             .direction(Direction::Horizontal)
             .constraints(vec![
-                Constraint::Length(1), // Dirty indicator
-                Constraint::Length(1), // Spacer (skip)
-                Constraint::Min(0),    // Filename
-                Constraint::Length(1), // Spacer (skip)
-                Constraint::Length(8), // Status (max status length)
-                Constraint::Length(1), // Spacer (skip)
-                Constraint::Length(1), // Spinner
+                Constraint::Length(1),  // Dirty indicator
+                Constraint::Length(1),  // Spacer (skip)
+                Constraint::Min(0),     // Filename
+                Constraint::Length(1),  // Spacer (skip)
+                Constraint::Length(18), // Status (max status length)
+                Constraint::Length(1),  // Spacer (skip)
+                Constraint::Length(1),  // Spinner
             ])
             .split(area);
         sublayouts!(
@@ -229,27 +248,30 @@ impl App {
         frame.render_widget(p, fn_area);
 
         // Draw status
+        let status = int_state.status;
         let style = Style::default().add_modifier(Modifier::BOLD);
-        let status_view = match int_state.status {
-            Status::Done => Span::styled("Done", style),
-            Status::Running => {
-                Span::styled("Running…", style.fg(Color::Green))
-            }
-            Status::Error(_) | Status::FatalError(_) => {
-                Span::styled("ERROR", style.fg(Color::Red))
-            }
+        let style = match status {
+            Status::Done => style,
+            Status::Running => style.fg(Color::Green),
+            Status::WaitingForInput => style.fg(Color::Yellow),
+            Status::Error(_) => style.fg(Color::Red),
+            Status::FatalError(_) => style.fg(Color::Red),
         };
-        frame.render_widget(Paragraph::new(status_view), status_area);
+        frame.render_widget(
+            Paragraph::new(Span::styled(status.to_string(), style)),
+            status_area,
+        );
 
         // Draw spinner
-        if int_state.status == Status::Running {
+        if status == Status::Running {
             frame.render_widget(self.spinner, spinner_area);
         }
     }
 
     fn draw_content(&self, frame: &mut Frame, area: Rect, int_state: State) {
-        let output_lines =
-            int_state.output.split_terminator('\n').count() as u16;
+        let output = String::from_utf8_lossy(&int_state.output).into_owned();
+        let output_lines = output.split_terminator('\n').count() as u16;
+
         let layout = Layout::default()
             .direction(Direction::Vertical)
             .constraints(vec![
@@ -273,7 +295,7 @@ impl App {
             ] = layout
         );
 
-        let output_title = if int_state.output.ends_with('\n') {
+        let output_title = if output.ends_with('\n') {
             " Output "
         } else {
             " Output (no EOL) "
@@ -283,7 +305,7 @@ impl App {
         self.draw_content_divider(frame, divider_area1, " Code ");
         self.draw_content_editor(frame, editor_area);
         self.draw_content_divider(frame, divider_area2, output_title);
-        self.draw_content_output(frame, output_area, int_state.output);
+        self.draw_content_output(frame, output_area, output);
         self.draw_content_bottom(frame, bottom_area);
     }
 
@@ -378,31 +400,29 @@ impl App {
     }
 
     fn draw_footer(&self, frame: &mut Frame, area: Rect) {
-        const CONTROLS: [[&str; 2]; 4] = [
+        const CONTROLS: [[&str; 2]; 5] = [
             ["^S", "Save"],
             ["^X", "Save As"],
             ["^C", "Quit"],
             ["^A", "Toggle ASCII"],
+            ["F1", "Set Input"],
         ];
-        let desc_style = Style::default().fg(Color::Black).bg(Color::Cyan);
+        let keys_style = Style::default().fg(Color::Black).bg(Color::Cyan);
 
         let text = Spans::from(
             CONTROLS
                 .iter()
-                .map(|[keys, desc]| {
+                .flat_map(|[keys, desc]| {
                     vec![
-                        Span::styled(*keys, desc_style),
+                        Span::styled(*keys, keys_style),
                         Span::from(":"),
                         Span::from(*desc),
                         Span::from("  "),
                     ]
-                    .into_iter()
                 })
-                .flatten()
                 .collect::<Vec<_>>(),
         );
-        let p = Paragraph::new(text).block(Block::default());
-        frame.render_widget(p, area);
+        frame.render_widget(Paragraph::new(text), area);
     }
 
     fn on_exit(&mut self) {
@@ -410,11 +430,10 @@ impl App {
             let should_quit = self.should_quit.clone();
             let mut dialogue = ButtonDialogue::confirm(
                 "Warning:\n\nThere are unsaved changes, are you sure you want \
-                to quit?"
+                    to quit?",
             );
-            dialogue.set_action(Box::new(move || {
-                should_quit.store(true);
-            }));
+            dialogue.set_reason(Reason::Confirm);
+            dialogue.set_action(Box::new(move || should_quit.store(true)));
             self.dialogue = Some(Box::new(dialogue));
         } else {
             self.should_quit.store(true);
@@ -429,11 +448,12 @@ impl App {
                     file.write_all(self.code.text().as_bytes())
                 });
                 if let Err(err) = res {
-                    self.dialogue =
-                        Some(Box::new(ButtonDialogue::error(format!(
-                            "Error while saving file: {}\n\n{}",
-                            &path, err
-                        ))));
+                    let mut dialogue = ButtonDialogue::error(format!(
+                        "Error while saving file: {}\n\n{}",
+                        &path, err
+                    ));
+                    dialogue.set_reason(Reason::Info);
+                    self.dialogue = Some(Box::new(dialogue));
                 } else {
                     self.clean_hash = self.code.hash();
                 }
@@ -442,10 +462,18 @@ impl App {
     }
 
     fn on_save_as(&mut self) {
-        self.dialogue = Some(Box::new(PromptStrDialogue::new(
+        let mut dialogue = PromptStrDialogue::new(
             " Save As ",
             "Filename: ",
             self.get_file_path().as_deref(),
-        )));
+        );
+        dialogue.set_reason(Reason::Filename);
+        self.dialogue = Some(Box::new(dialogue));
+    }
+
+    fn on_set_input(&mut self) {
+        let mut dialogue = PromptStrDialogue::new(" Input ", "Input: ", None);
+        dialogue.set_reason(Reason::Input);
+        self.dialogue = Some(Box::new(dialogue));
     }
 }

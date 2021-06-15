@@ -90,6 +90,12 @@ impl AsyncInterpreter {
             shared.stop.store(false);
 
             while !shared.stop.load() {
+                match int.peek_instruction() {
+                    Some(',') if int.input.is_empty() => {
+                        set_state(Status::WaitingForInput, &int);
+                    }
+                    _ => (),
+                }
                 match int.next() {
                     None => {
                         set_state(Status::Done, &int);
@@ -99,12 +105,8 @@ impl AsyncInterpreter {
                         set_state(Status::Error(err.to_string()), &int);
                         break;
                     }
-                    Some(Ok(instruction)) => {
-                        if instruction == ',' {
-                            set_state(Status::WaitingForInput, &int);
-                        } else {
-                            set_state(Status::Running, &int);
-                        }
+                    Some(Ok(_)) => {
+                        set_state(Status::Running, &int);
                     }
                 }
             }

@@ -13,7 +13,7 @@ pub struct Interpreter {
     bracemap: HashMap<usize, usize>,
     ip: usize,
     pub tape: Tape,
-    input: VecDeque<u8>,
+    pub input: VecDeque<u8>,
     pub output: Vec<u8>,
 }
 
@@ -82,6 +82,16 @@ impl Interpreter {
                 }
             }
         }?)
+    }
+
+    pub fn peek_instruction(&self) -> Option<char> {
+        if self.instructions.is_empty()
+            || self.ip > self.instructions.len() - 1
+        {
+            None
+        } else {
+            Some(self.instructions[self.ip] as char)
+        }
     }
 
     pub fn output(&self) -> String {

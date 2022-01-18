@@ -2,13 +2,13 @@
 name = "bf"
 version = "0.1.0"
 authors = ["Nelson Earle <nelson.earle137@gmail.com>"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 ansi_term = "0.12"
 crossterm = "0.17"
 itertools = "0.9"
-sha-1 = "0.9.6"
+sha-1 = "0.9"
 structopt = "0.3"
 term_size = "0.3"
-tui = { version = "0.15.0", features = ["crossterm"] }
+tui = { version = "0.15", features = ["crossterm"] }

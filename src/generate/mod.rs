@@ -24,7 +24,7 @@ pub fn subcmd_generate(args: GenerateCli) -> BfResult<()> {
         data.push_str(EOL);
     }
 
-    let mut writer: (Box<dyn Write>, PathBuf) = match args.outfile {
+    let (mut writer, path): (Box<dyn Write>, PathBuf) = match args.outfile {
         Some(path) => (
             Box::new(
                 File::create(&path)
@@ -43,9 +43,8 @@ pub fn subcmd_generate(args: GenerateCli) -> BfResult<()> {
     };
 
     writer
-        .0
         .write_all(&gen_func(data).as_bytes())
-        .map_err(|e| err!(FileWrite, e, writer.1))
+        .map_err(|e| err!(FileWrite, e, path))
 }
 
 fn generator_charwise(data: String) -> String {

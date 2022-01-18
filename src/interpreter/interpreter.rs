@@ -14,11 +14,16 @@ pub struct Interpreter {
     ip: usize,
     pub tape: Tape,
     pub input: VecDeque<u8>,
+    auto_input: Option<u8>,
     pub output: Vec<u8>,
 }
 
 impl Interpreter {
-    pub fn new<I: AsRef<[u8]>>(code: I, input: I) -> Self {
+    pub fn new<I: AsRef<[u8]>>(
+        code: I,
+        input: I,
+        auto_input: Option<u8>,
+    ) -> Self {
         let instructions = Self::sanitize(code.as_ref());
         let bracemap = Self::build_bracemap(&instructions);
         Self {
@@ -27,6 +32,7 @@ impl Interpreter {
             ip: 0,
             tape: Tape::default(),
             input: input.as_ref().iter().cloned().collect(),
+            auto_input,
             output: Vec::new(),
         }
     }
@@ -68,9 +74,9 @@ impl Interpreter {
     }
 
     fn read_char(&mut self) -> BfResult<u8> {
-        Ok(match self.input.pop_front() {
-            Some(c) => Ok(c),
-            None => {
+        match (self.input.pop_front(), self.auto_input) {
+            (Some(c), _) | (None, Some(c)) => Ok(c),
+            (None, None) => {
                 // Read one character from stdin
                 let mut buf = [0u8; 1];
                 match io::stdin().read_exact(&mut buf) {
@@ -78,13 +84,14 @@ impl Interpreter {
                     Err(e) => Err(format!(
                         "failed to read character from stdin: {}",
                         e
-                    )),
+                    )
+                    .into()),
                 }
             }
-        }?)
+        }
     }
 
-    pub fn peek_instruction(&self) -> Option<char> {
+    pub fn peek(&self) -> Option<char> {
         if self.instructions.is_empty()
             || self.ip > self.instructions.len() - 1
         {

@@ -5,9 +5,6 @@ mod(interpreter)
         execute code in another thread
         support execution timeout
 subcmd(live)
-    support program input
-        key-bind for PromptStrDialogue
-        allow defining default byte to use if no input available
     support resizing code & output by dragging border
     support scrolling in editor and output
     re-bind keys ??

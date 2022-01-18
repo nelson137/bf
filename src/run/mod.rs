@@ -20,7 +20,8 @@ fn run_subcmd(args: RunCli) -> BfResult<()> {
 
     let width = get_width(args.width);
 
-    let mut interpreter = Interpreter::new(script, args.input.into_bytes());
+    let mut interpreter =
+        Interpreter::new(script, args.input.into_bytes(), None);
 
     let mut printer = Printer::new();
 

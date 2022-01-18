@@ -8,7 +8,7 @@ use std::{
 };
 
 use crossterm::{
-    event::*,
+    event::{DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
     execute,
     terminal::{
         disable_raw_mode, enable_raw_mode, EnterAlternateScreen,
@@ -50,6 +50,7 @@ pub struct App {
     spinner: Spinner,
     code: TextArea,
     input: String,
+    auto_input: Option<u8>,
     clean_hash: Sha1Digest,
     event_queue: EventQueue,
     delay: Duration,
@@ -82,6 +83,7 @@ impl App {
             spinner: Spinner::default(),
             code: TextArea::from(&file_contents),
             input: String::new(),
+            auto_input: None,
             clean_hash: sha1_digest(&file_contents),
             event_queue: EventQueue::new().with_tick_delay(100),
             delay: Duration::from_millis(20),
@@ -89,6 +91,7 @@ impl App {
             async_interpreter: AsyncInterpreter::new(
                 file_contents.clone(),
                 String::new(),
+                None,
             ),
         })
     }
@@ -143,6 +146,12 @@ impl App {
                                     self.dialogue = None;
                                     restart_interpreter = true;
                                 }
+                                Reason::AutoInput => {
+                                    self.auto_input =
+                                        input.as_bytes().first().map(|b| *b);
+                                    self.dialogue = None;
+                                    restart_interpreter = true;
+                                }
                                 _ => (),
                             }
                         }
@@ -158,6 +167,7 @@ impl App {
                             _ => (),
                         },
                         KeyCode::F(1) => self.on_set_input(),
+                        KeyCode::F(2) => self.on_set_auto_input(),
                         KeyCode::Backspace
                         | KeyCode::Delete
                         | KeyCode::Enter
@@ -179,8 +189,11 @@ impl App {
                     dialogue.set_reason(Reason::Info);
                     self.dialogue = Some(Box::new(dialogue));
                 }
-                self.async_interpreter
-                    .restart(self.code.text(), self.input.clone())?;
+                self.async_interpreter.restart(
+                    self.code.text(),
+                    self.input.clone(),
+                    self.auto_input,
+                )?;
             }
 
             thread::yield_now();
@@ -400,12 +413,13 @@ impl App {
     }
 
     fn draw_footer(&self, frame: &mut Frame, area: Rect) {
-        const CONTROLS: [[&str; 2]; 5] = [
+        const CONTROLS: [[&str; 2]; 6] = [
             ["^S", "Save"],
             ["^X", "Save As"],
             ["^C", "Quit"],
             ["^A", "Toggle ASCII"],
             ["F1", "Set Input"],
+            ["F2", "Set Auto-Input"],
         ];
         let keys_style = Style::default().fg(Color::Black).bg(Color::Cyan);
 
@@ -474,6 +488,16 @@ impl App {
     fn on_set_input(&mut self) {
         let mut dialogue = PromptStrDialogue::new(" Input ", "Input: ", None);
         dialogue.set_reason(Reason::Input);
+        self.dialogue = Some(Box::new(dialogue));
+    }
+
+    fn on_set_auto_input(&mut self) {
+        let mut dialogue = PromptStrDialogue::new(
+            " Auto-Input ",
+            "Input (only the first byte will be used): ",
+            None,
+        );
+        dialogue.set_reason(Reason::AutoInput);
         self.dialogue = Some(Box::new(dialogue));
     }
 }

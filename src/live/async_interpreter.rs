@@ -49,7 +49,7 @@ pub struct State {
 pub struct AsyncInterpreter {
     stop: SharedBool,
     restart_barrier: Arc<Barrier>,
-    program: SharedCell<(String, String)>,
+    program: SharedCell<(String, String, Option<u8>)>,
     state: SharedCell<State>,
 }
 
@@ -57,18 +57,20 @@ const ERROR_POISONED: &'static str =
     "an interpreter thread mutex was poisoned";
 
 impl AsyncInterpreter {
-    pub fn new(code: String, input: String) -> Self {
+    pub fn new(code: String, input: String, auto_input: Option<u8>) -> Self {
         let this = Self {
             stop: SharedBool::new(false),
             restart_barrier: Arc::new(Barrier::new(2)),
-            program: SharedCell::new((code, input)),
+            program: SharedCell::new((code, input, auto_input)),
             state: SharedCell::default(),
         };
 
         let shared = this.clone();
         thread::spawn(move || loop {
             let mut int = match shared.program.load() {
-                Ok((code, input)) => Interpreter::new(code, input),
+                Ok((code, input, auto_input)) => {
+                    Interpreter::new(code, input, auto_input)
+                }
                 Err(_) => {
                     thread::yield_now();
                     shared.restart_barrier.wait();
@@ -90,7 +92,7 @@ impl AsyncInterpreter {
             shared.stop.store(false);
 
             while !shared.stop.load() {
-                match int.peek_instruction() {
+                match int.peek() {
                     Some(',') if int.input.is_empty() => {
                         set_state(Status::WaitingForInput, &int);
                     }
@@ -118,10 +120,15 @@ impl AsyncInterpreter {
         this
     }
 
-    pub fn restart(&self, code: String, input: String) -> BfResult<()> {
+    pub fn restart(
+        &self,
+        code: String,
+        input: String,
+        auto_input: Option<u8>,
+    ) -> BfResult<()> {
         self.stop.store(true);
         self.program
-            .store((code, input))
+            .store((code, input, auto_input))
             .or(Err(ERROR_POISONED.clone()))?;
         self.restart_barrier.wait();
         self.stop.store(false);

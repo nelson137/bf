@@ -47,6 +47,7 @@ pub enum Reason {
     Confirm,
     Filename,
     Input,
+    AutoInput,
 }
 
 #[derive(Clone, PartialEq)]

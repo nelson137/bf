@@ -1,3 +1,5 @@
+root
+    get rid of itertools ??
 mod(interpreter)
     rename -> runtime
         gets rid of #[allow(clippy::module_inception)]
@@ -8,3 +10,4 @@ subcmd(live)
     support resizing code & output by dragging border
     support scrolling in editor and output
     re-bind keys ??
+    reduce allocations in TextArea::wrapped_num_lines()

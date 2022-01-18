@@ -7,7 +7,9 @@ use std::{
 };
 
 use crossterm::{
-    event::{DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
+    event::{
+        DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEvent,
+    },
     execute,
     terminal::{
         disable_raw_mode, enable_raw_mode, EnterAlternateScreen,
@@ -43,6 +45,7 @@ use super::{
 };
 
 pub struct App {
+    term_height: usize,
     ascii_values: bool,
     file_path: Option<PathBuf>,
     should_quit: SharedBool,
@@ -76,11 +79,12 @@ impl App {
         };
 
         Ok(Self {
+            term_height: 0,
             ascii_values: cli.ascii_values,
             file_path: cli.infile,
             should_quit: SharedBool::new(false),
             spinner: Spinner::default(),
-            code: TextArea::from(&file_contents),
+            code: TextArea::from(&file_contents, 0),
             input: String::new(),
             auto_input: None,
             clean_hash: sha1_digest(&file_contents),
@@ -109,76 +113,26 @@ impl App {
         let mut terminal = Terminal::new(CrosstermBackend::new(stdout()))?;
         let mut restart_interpreter: bool;
 
+        self.term_height = terminal.size()?.height as usize;
+
         while !self.should_quit.load() {
             restart_interpreter = false;
 
             terminal.draw(|f| self.draw(f))?;
 
             for event in self.event_queue.pop_all() {
-                let event = match event {
-                    BfEvent::Tick => {
-                        self.spinner.tick();
-                        continue;
-                    }
-                    BfEvent::Input(Event::Key(e)) => e,
-                    _ => continue,
-                };
-
-                if let Some(dialogue) = &mut self.dialogue {
-                    match dialogue.on_event(event) {
-                        Decision::Waiting => (),
-                        Decision::No => self.dialogue = None,
-                        Decision::Yes => {
-                            dialogue.run_action();
-                            self.dialogue = None;
+                match event {
+                    BfEvent::Tick => self.spinner.tick(),
+                    BfEvent::Input(input_event) => match input_event {
+                        Event::Key(e) => {
+                            restart_interpreter = self.handle_key_event(e)
                         }
-                        Decision::Input(input) => {
-                            match dialogue.get_reason() {
-                                Reason::Filename => {
-                                    self.file_path =
-                                        Some(PathBuf::from(input));
-                                    self.dialogue = None;
-                                    self.on_save();
-                                }
-                                Reason::Input => {
-                                    self.input = input.into();
-                                    self.dialogue = None;
-                                    restart_interpreter = true;
-                                }
-                                Reason::AutoInput => {
-                                    self.auto_input =
-                                        input.as_bytes().first().map(|b| *b);
-                                    self.dialogue = None;
-                                    restart_interpreter = true;
-                                }
-                                _ => (),
-                            }
-                        }
-                    }
-                } else {
-                    self.code.on_event(event);
-                    match event.code {
-                        KeyCode::Char(c) if event.is_ctrl() => match c {
-                            's' => self.on_save(),
-                            'x' => self.on_save_as(),
-                            'a' => self.ascii_values ^= true,
-                            'c' => self.on_exit(),
-                            _ => (),
-                        },
-                        KeyCode::F(1) => self.on_set_input(),
-                        KeyCode::F(2) => self.on_set_auto_input(),
-                        KeyCode::Backspace
-                        | KeyCode::Delete
-                        | KeyCode::Enter
-                        | KeyCode::Tab
-                        | KeyCode::Char(_)
-                            if !event.is_ctrl() && !event.is_alt() =>
-                        {
-                            restart_interpreter = true
+                        Event::Resize(_, height) => {
+                            self.term_height = height as usize
                         }
                         _ => (),
-                    }
-                }
+                    },
+                };
             }
 
             if restart_interpreter {
@@ -202,7 +156,65 @@ impl App {
         Ok(())
     }
 
-    fn draw(&self, frame: &mut Frame) {
+    fn handle_key_event(&mut self, event: KeyEvent) -> bool {
+        let mut restart_interpreter = false;
+
+        if let Some(dialogue) = &mut self.dialogue {
+            match dialogue.on_event(event) {
+                Decision::Waiting => (),
+                Decision::No => self.dialogue = None,
+                Decision::Yes => {
+                    dialogue.run_action();
+                    self.dialogue = None;
+                }
+                Decision::Input(input) => match dialogue.get_reason() {
+                    Reason::Filename => {
+                        self.file_path = Some(PathBuf::from(input));
+                        self.dialogue = None;
+                        self.on_save();
+                    }
+                    Reason::Input => {
+                        self.input = input.into();
+                        self.dialogue = None;
+                        restart_interpreter = true;
+                    }
+                    Reason::AutoInput => {
+                        self.auto_input = input.as_bytes().first().map(|b| *b);
+                        self.dialogue = None;
+                        restart_interpreter = true;
+                    }
+                    _ => (),
+                },
+            }
+        } else {
+            self.code.on_event(event);
+            match event.code {
+                KeyCode::Char(c) if event.is_ctrl() => match c {
+                    's' => self.on_save(),
+                    'x' => self.on_save_as(),
+                    'a' => self.ascii_values ^= true,
+                    'c' => self.on_exit(),
+                    _ => (),
+                },
+                KeyCode::F(1) => self.on_set_input(),
+                KeyCode::F(2) => self.on_set_auto_input(),
+                KeyCode::Backspace
+                | KeyCode::Delete
+                | KeyCode::Enter
+                | KeyCode::Tab
+                | KeyCode::Char(_)
+                    if !event.is_ctrl() && !event.is_alt() =>
+                {
+                    restart_interpreter = true
+                }
+                _ => (),
+            }
+        }
+
+        restart_interpreter
+    }
+
+    fn draw(&mut self, frame: &mut Frame) {
         let area = frame.size();
         let state = self.async_interpreter.state();
 
@@ -280,9 +292,18 @@ impl App {
         }
     }
 
-    fn draw_content(&self, frame: &mut Frame, area: Rect, int_state: State) {
+    fn draw_content(
+        &mut self,
+        frame: &mut Frame,
+        area: Rect,
+        int_state: State,
+    ) {
         let output = String::from_utf8_lossy(&int_state.output).into_owned();
         let output_lines = output.split_terminator('\n').count() as u16;
+
+        self.code.resize_viewport(
+            self.term_height.saturating_sub(output_lines as usize + 9),
+        );
 
         let layout = Layout::default()
             .direction(Direction::Vertical)
@@ -355,7 +376,8 @@ impl App {
         let content_area = block.inner(area);
         frame.render_widget(block, area);
 
-        let num_width = self.code.lines().count().count_digits().max(3) as u16;
+        let num_width =
+            self.code.viewport().len().count_digits().max(3) as u16;
         let line_width = content_area.width.saturating_sub(1 + num_width);
         let editor_lines =
             self.code.wrapped_numbered_lines(line_width as usize);
@@ -378,14 +400,7 @@ impl App {
 
         let cursor = self.code.cursor();
         let cur_x = cursor.1 % line_width as usize;
-        let cur_y = editor_lines
-            .iter()
-            .map_while(|(maybe_n, _)| match maybe_n {
-                &Some(n) if n - 1 >= cursor.0 => None,
-                _ => Some(()),
-            })
-            .count()
-            + (cursor.1 / line_width as usize);
+        let cur_y = self.code.cursor().0 + (cursor.1 / line_width as usize);
         frame.set_cursor(
             content_area.x + num_width + 1 + cur_x as u16,
             content_area.y + cur_y as u16,

@@ -103,11 +103,12 @@ impl Editable for Field {
 
 pub struct TextArea {
     lines: Vec<String>,
+    viewport: (usize, usize),
     cursor: (usize, usize),
 }
 
 impl TextArea {
-    pub fn from(data: impl AsRef<str>) -> Self {
+    pub fn from(data: impl AsRef<str>, height: usize) -> Self {
         let lines = if data.as_ref().is_empty() {
             vec![String::new()]
         } else {
@@ -115,7 +116,43 @@ impl TextArea {
         };
         Self {
             lines,
+            viewport: (0, height),
             cursor: (0, 0),
+        }
+    }
+
+    pub fn viewport_bounds(&self) -> (usize, usize) {
+        let (begin, nlines) = self.viewport;
+        let end = self.lines.len().min(begin + nlines);
+        (begin, end)
+    }
+
+    pub fn viewport(&self) -> &[String] {
+        let (begin, end) = self.viewport_bounds();
+        &self.lines[begin..end]
+    }
+
+    pub fn viewport_mut(&mut self) -> &mut [String] {
+        let (begin, end) = self.viewport_bounds();
+        &mut self.lines[begin..end]
+    }
+
+    pub fn resize_viewport(&mut self, height: usize) {
+        if self.viewport.1 == height || height == 0 {
+            return;
+        }
+        self.viewport.1 = height;
+        if self.viewport.0 > 0
+            && self.lines.len() < self.viewport.0 + self.viewport.1
+        {
+            // Viewport goes past bottom & is not at top
+            let new_vp0 = self.lines.len().saturating_sub(self.viewport.1);
+            self.cursor.0 += self.viewport.0 - new_vp0;
+            self.viewport.0 = new_vp0;
+        } else if self.cursor.0 >= self.viewport.1 {
+            // Cursor is past the end of the viewport
+            self.viewport.0 += 1;
+            self.cursor.0 = self.viewport.1.saturating_sub(1);
         }
     }
 
@@ -124,23 +161,20 @@ impl TextArea {
     }
 
     pub fn cursor_line(&self) -> &String {
-        &self.lines[self.cursor.0]
+        &self.viewport()[self.cursor.0]
     }
 
     pub fn cursor_line_mut(&mut self) -> &mut String {
-        &mut self.lines[self.cursor.0]
-    }
-
-    pub fn lines(&self) -> impl Iterator<Item = &String> {
-        self.lines.iter()
+        let y = self.cursor.0;
+        &mut self.viewport_mut()[y]
     }
 
     pub fn wrapped_numbered_lines(
         &self,
         width: usize,
     ) -> Vec<(Option<usize>, &str)> {
-        (1_usize..)
-            .zip(self.lines())
+        (self.viewport.0 + 1..)
+            .zip(self.viewport())
             .flat_map(|(n, line)| {
                 iter::once(Some(n))
                     .chain(iter::repeat(None))
@@ -168,36 +202,52 @@ impl TextArea {
     pub fn enter(&mut self) {
         let x = self.cursor.1;
         let rest = self.cursor_line_mut().drain(x..).collect::<String>();
-        self.cursor.0 += 1;
+        if self.cursor.0 < self.viewport.1 - 1 {
+            // Cursor is not at last row of viewport
+            self.cursor.0 += 1;
+        } else {
+            // Cursor is at last row of viewport
+            self.viewport.0 += 1;
+        }
         self.cursor.1 = 0;
-        self.lines.insert(self.cursor.0, rest);
+        self.lines.insert(self.viewport.0 + self.cursor.0, rest);
     }
 
     fn cursor_x_clamped(&self) -> usize {
-        let cursor_line_len = self.cursor_line().len();
-        if cursor_line_len == 0 {
-            0
-        } else {
-            cursor_line_len.min(self.cursor.1)
-        }
+        self.cursor_line().len().min(self.cursor.1)
     }
 
     pub fn cursor_right(&mut self) {
-        let line_len = self.cursor_line().len();
-        if self.cursor.1 == line_len && self.cursor.0 < self.lines.len() - 1 {
-            self.cursor.0 += 1;
-            self.cursor.1 = 0;
-        } else if self.cursor.1 < line_len {
+        if self.cursor.1 < self.cursor_line().len() {
+            // Cursor is not at last col
             self.cursor.1 += 1;
+        } else if self.cursor.0 < self.viewport.1 - 1 {
+            // Cursor is at last col & not at last row of viewport
+            if self.viewport.0 + self.cursor.0 < self.lines.len() - 1 {
+                self.cursor.0 += 1;
+                self.cursor.1 = 0;
+            }
+        } else if self.viewport.0 + self.viewport.1 < self.lines.len() {
+            // Cursor is at last col & last row of viewport & viewport
+            // is not at bottom
+            self.viewport.0 += 1;
+            self.cursor.1 = 0;
         }
     }
 
     pub fn cursor_left(&mut self) {
-        if self.cursor.1 == 0 && self.cursor.0 > 0 {
+        if self.cursor.1 > 0 {
+            // Cursor is not at col 0
+            self.cursor.1 -= 1;
+        } else if self.cursor.0 > 0 {
+            // Cursor is at col 0 & not at first row of viewport
             self.cursor.0 -= 1;
             self.cursor_end();
-        } else if self.cursor.1 > 0 {
-            self.cursor.1 -= 1;
+        } else if self.viewport.0 > 0 {
+            // Cursor is at col 0 & at first row of viewport &
+            // viewport is not at top
+            self.viewport.0 -= 1;
+            self.cursor_end();
         }
     }
 
@@ -211,25 +261,45 @@ impl TextArea {
 
     pub fn cursor_up(&mut self) {
         if self.cursor.0 > 0 {
+            // Cursor is not at col 0
             self.cursor.0 -= 1;
             self.cursor.1 = self.cursor_x_clamped();
+        } else if self.viewport.0 > 0 {
+            // Cursor is at col 0 & viewport is not at top
+            self.viewport.0 -= 1;
+            self.cursor.1 = self.cursor_x_clamped();
+        } else {
+            // Cursor is at col 0 & viewport is at top
+            self.cursor_home();
         }
     }
 
     pub fn cursor_down(&mut self) {
-        if self.cursor.0 < self.lines.len() - 1 {
+        if self.cursor.0 < (self.viewport.1 - 1).min(self.lines.len() - 1) {
+            // Cursor is not at last line of viewport
             self.cursor.0 += 1;
             self.cursor.1 = self.cursor_x_clamped();
+        } else if self.viewport.0 + self.viewport.1 < self.lines.len() {
+            // Cursor is at last line of viewport & viewport is not at
+            // bottom
+            self.viewport.0 += 1;
+            self.cursor.1 = self.cursor_x_clamped();
+        } else {
+            // Cursor is at last line of viewport & viewport is at
+            // bottom
+            self.cursor_end();
         }
     }
 
     pub fn cursor_top(&mut self) {
+        self.viewport.0 = 0;
         self.cursor.0 = 0;
         self.cursor.1 = self.cursor_x_clamped();
     }
 
     pub fn cursor_bottom(&mut self) {
-        self.cursor.0 = self.lines.len() - 1;
+        self.viewport.0 = self.lines.len().saturating_sub(self.viewport.1);
+        self.cursor.0 = self.viewport().len().saturating_sub(1);
         self.cursor.1 = self.cursor_x_clamped();
     }
 
@@ -237,15 +307,21 @@ impl TextArea {
         if self.cursor.1 > 0 {
             // Cursor is not at col 0
             self.cursor.1 -= 1;
-            let cursor_x = self.cursor.1;
-            self.cursor_line_mut().remove(cursor_x);
-        } else if self.cursor.0 > 0 {
-            // Cursor is not at row 0
-            let orig_line = self.cursor_line().clone();
-            self.lines.remove(self.cursor.0);
-            self.cursor.0 -= 1;
+            let x = self.cursor.1;
+            self.cursor_line_mut().remove(x);
+        } else if self.viewport.0 + self.cursor.0 > 0 {
+            // Cursor is at col 0 & at not at top
+            let original_line =
+                self.lines.remove(self.viewport.0 + self.cursor.0);
+            if self.viewport.0 + self.viewport.1 >= self.lines.len()
+                && self.viewport.0 > 0
+            {
+                self.viewport.0 -= 1;
+            } else {
+                self.cursor.0 -= 1;
+            }
             self.cursor_end();
-            self.cursor_line_mut().push_str(&orig_line);
+            self.cursor_line_mut().push_str(&original_line)
         }
     }
 
@@ -254,11 +330,16 @@ impl TextArea {
         if x < self.cursor_line().len() {
             // Cursor is not at last col
             self.cursor_line_mut().remove(x);
-        } else if y < self.lines.len() - 1 {
-            // Cursor is not at last row
-            let next_line = self.lines.get(y + 1).unwrap().clone();
+        } else if self.viewport.0 + y < self.lines.len() - 1 {
+            // Cursor is at last col & not at bottom
+            let next_line = self.lines.remove(self.viewport.0 + y + 1);
             self.cursor_line_mut().push_str(&next_line);
-            self.lines.remove(y + 1);
+            if self.viewport.0 + self.viewport.1 >= self.lines.len()
+                && self.viewport.0 > 0
+            {
+                self.viewport.0 -= 1;
+                self.cursor.0 += 1;
+            }
         }
     }
 }

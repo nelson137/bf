@@ -31,7 +31,7 @@ impl Tape {
         while index > self.cells.len() - 1 {
             self.cells.push(Cell::new());
         }
-        unsafe { self.cells.get_unchecked_mut(index) }
+        &mut self.cells[index]
     }
 
     pub fn current(&mut self) -> &mut Cell {
@@ -39,9 +39,7 @@ impl Tape {
     }
 
     pub fn left(&mut self) {
-        if self.cursor > 0 {
-            self.cursor -= 1;
-        }
+        self.cursor = self.cursor.saturating_sub(1);
     }
 
     pub fn right(&mut self) {

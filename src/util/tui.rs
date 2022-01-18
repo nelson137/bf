@@ -23,7 +23,7 @@ pub type Terminal = terminal::Terminal<Backend>;
 pub type Frame<'a> = terminal::Frame<'a, Backend>;
 
 #[macro_export]
-macro_rules! __sublayouts__ {
+macro_rules! sublayouts {
     ([$($binding:tt),*] = $layout:tt) => {
         let mut _index = 0usize..;
         $(
@@ -31,7 +31,7 @@ macro_rules! __sublayouts__ {
         )*
     };
 }
-pub use __sublayouts__ as sublayouts;
+pub use sublayouts;
 
 pub const TAPE_BORDER_SET: symbols::line::Set = symbols::line::NORMAL;
 
@@ -178,15 +178,18 @@ impl EventQueue {
         Self { data }
     }
 
-    pub fn with_tick_delay(self, tick_delay: u64) -> Self {
+    pub fn with_ticks(delay_ms: u64) -> Self {
+        let this = Self::new();
+
         let _tick_thread = {
-            let data = self.data.clone();
+            let data = this.data.clone();
             thread::spawn(move || loop {
                 mutex_safe_do(&*data, |mut q| q.push_back(BfEvent::Tick));
-                thread::sleep(Duration::from_millis(tick_delay));
+                thread::sleep(Duration::from_millis(delay_ms));
             })
         };
-        self
+
+        this
     }
 
     pub fn pop_all(&self) -> Vec<BfEvent> {

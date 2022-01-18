@@ -53,7 +53,7 @@ impl App {
     pub fn run(&mut self) -> BfResult<()> {
         let mut terminal = Terminal::new(CrosstermBackend::new(stdout()))?;
 
-        let event_queue = EventQueue::new().with_tick_delay(100);
+        let event_queue = EventQueue::with_ticks(100);
         let delay = Duration::from_millis(5);
 
         'main: loop {

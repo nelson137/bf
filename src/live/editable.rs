@@ -1,5 +1,3 @@
-use std::cmp::min;
-
 use crossterm::event::{KeyCode, KeyEvent};
 
 use crate::util::{
@@ -107,7 +105,7 @@ pub struct TextArea {
 }
 
 impl TextArea {
-    pub fn from<S: AsRef<str>>(data: S) -> Self {
+    pub fn from(data: impl AsRef<str>) -> Self {
         let lines = if data.as_ref().is_empty() {
             vec![String::new()]
         } else {
@@ -173,7 +171,7 @@ impl TextArea {
         if cursor_line_len == 0 {
             0
         } else {
-            min(self.cursor.1, cursor_line_len)
+            cursor_line_len.min(self.cursor.1)
         }
     }
 
@@ -229,38 +227,31 @@ impl TextArea {
     }
 
     pub fn backspace(&mut self) {
-        if self.cursor.1 == 0 {
-            // Cursor is at col 0
-            if self.cursor.0 != 0 {
-                // Cursor is not at row 0
-                let orig_line = self.cursor_line().clone();
-                self.lines.remove(self.cursor.0);
-                self.cursor.0 -= 1;
-                self.cursor_end();
-                self.cursor_line_mut().push_str(&orig_line);
-            }
-        } else {
+        if self.cursor.1 > 0 {
             // Cursor is not at col 0
             self.cursor.1 -= 1;
             let cursor_x = self.cursor.1;
             self.cursor_line_mut().remove(cursor_x);
+        } else if self.cursor.0 > 0 {
+            // Cursor is not at row 0
+            let orig_line = self.cursor_line().clone();
+            self.lines.remove(self.cursor.0);
+            self.cursor.0 -= 1;
+            self.cursor_end();
+            self.cursor_line_mut().push_str(&orig_line);
         }
     }
 
     pub fn delete(&mut self) {
         let (y, x) = self.cursor;
-        let n_lines = self.lines.len();
-        if x == self.cursor_line().len() {
-            // Cursor is at last col
-            if y != n_lines - 1 {
-                // Cursor is not at last row
-                let next_line = self.lines.get_mut(y + 1).unwrap().clone();
-                self.cursor_line_mut().push_str(&next_line);
-                self.lines.remove(y + 1);
-            }
-        } else {
+        if x < self.cursor_line().len() {
             // Cursor is not at last col
             self.cursor_line_mut().remove(x);
+        } else if y < self.lines.len() - 1 {
+            // Cursor is not at last row
+            let next_line = self.lines.get(y + 1).unwrap().clone();
+            self.cursor_line_mut().push_str(&next_line);
+            self.lines.remove(y + 1);
         }
     }
 }

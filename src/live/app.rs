@@ -85,7 +85,7 @@ impl App {
             input: String::new(),
             auto_input: None,
             clean_hash: sha1_digest(&file_contents),
-            event_queue: EventQueue::new().with_tick_delay(100),
+            event_queue: EventQueue::with_ticks(100),
             delay: Duration::from_millis(20),
             dialogue: None,
             async_interpreter: AsyncInterpreter::new(
@@ -421,7 +421,7 @@ impl App {
             ["F1", "Set Input"],
             ["F2", "Set Auto-Input"],
         ];
-        let keys_style = Style::default().fg(Color::Black).bg(Color::Cyan);
+        let keys_style = Style::default().bg(Color::Cyan).fg(Color::Black);
 
         let text = Spans::from(
             CONTROLS

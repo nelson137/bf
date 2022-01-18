@@ -31,21 +31,20 @@ impl Interpreter {
             bracemap,
             ip: 0,
             tape: Tape::default(),
-            input: input.as_ref().iter().cloned().collect(),
+            input: input.as_ref().iter().copied().collect(),
             auto_input,
             output: Vec::new(),
         }
     }
 
-    fn is_instruction(c: &u8) -> bool {
-        match *c as char {
-            '+' | '-' | '>' | '<' | '[' | ']' | '.' | ',' => true,
-            _ => false,
-        }
-    }
-
     fn sanitize(code: &[u8]) -> Vec<u8> {
-        code.iter().cloned().filter(Self::is_instruction).collect()
+        code.iter()
+            .copied()
+            .filter(|c| match *c as char {
+                '+' | '-' | '>' | '<' | '[' | ']' | '.' | ',' => true,
+                _ => false,
+            })
+            .collect()
     }
 
     fn build_bracemap(instructions: &[u8]) -> HashMap<usize, usize> {

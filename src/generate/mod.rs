@@ -112,16 +112,16 @@ fn generator_unique_chars(data: String) -> String {
     script
 }
 
-fn gen_loop<I: Iterator<Item = u8>>(
+fn gen_loop(
     script: &mut String,
-    data: I,
+    data: impl Iterator<Item = u8>,
     print_cells: bool,
 ) {
     let values = data.collect::<Vec<_>>();
     let approx_values = values
         .iter()
-        .cloned()
-        .map(|b| 10 * (b as f32 / 10_f32).round() as u8)
+        .copied()
+        .map(|b| 10 * (b as f32 / 10.0).round() as u8)
         .collect::<Vec<_>>();
     let len = values.len();
 

@@ -78,8 +78,8 @@ impl StringExt for String {
             self.chars()
                 .chunks(width)
                 .into_iter()
-                .map(|chunk| chunk.collect::<String>())
-                .collect_vec()
+                .map(Iterator::collect)
+                .collect()
         } else {
             vec![String::new()]
         }

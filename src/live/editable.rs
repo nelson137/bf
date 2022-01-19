@@ -133,11 +133,8 @@ impl TextArea {
         self.lines.iter()
     }
 
-    pub fn wrapped_num_lines(
-        &self,
-        width: usize,
-    ) -> Vec<(usize, Vec<String>)> {
-        (1usize..)
+    pub fn wrapped_num_lines(&self, width: usize) -> Vec<(usize, Vec<&str>)> {
+        (1_usize..)
             .zip(self.lines().map(|l| l.wrapped(width)))
             .collect()
     }

@@ -368,7 +368,7 @@ impl App {
                 iter::once(Span::styled(num_str(i), num_style))
                     .chain(iter::repeat(Span::raw("")))
                     .zip(line_chunks)
-                    .map(|(num, chunk)| Row::new(vec![num, Span::raw(chunk)]))
+                    .map(|(num, &chunk)| Row::new(vec![num, Span::raw(chunk)]))
             })
             .collect();
         let widths = [Constraint::Length(num_width), Constraint::Min(0)];

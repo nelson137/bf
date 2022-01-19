@@ -3,7 +3,6 @@ use std::{
     sync::{Mutex, MutexGuard},
 };
 
-use itertools::Itertools;
 use sha1::{Digest, Sha1};
 
 #[cfg(windows)]
@@ -69,20 +68,25 @@ pub fn sha1_digest<D: AsRef<[u8]>>(data: D) -> Sha1Digest {
 }
 
 pub trait StringExt {
-    fn wrapped(&self, width: usize) -> Vec<String>;
+    fn wrapped(&self, width: usize) -> Vec<&str>;
 }
 
 impl StringExt for String {
-    fn wrapped(&self, width: usize) -> Vec<String> {
-        if self.len() > 0 {
-            self.chars()
-                .chunks(width)
-                .into_iter()
-                .map(Iterator::collect)
-                .collect()
-        } else {
-            vec![String::new()]
+    fn wrapped(&self, width: usize) -> Vec<&str> {
+        let mut chunks = Vec::with_capacity(
+            (self.len() as f32 / width as f32).ceil() as usize,
+        );
+        let mut chunk_begin = 0;
+        let mut chunk_end;
+        loop {
+            chunk_end = self.len().min(chunk_begin + width);
+            chunks.push(&self[chunk_begin..chunk_end]);
+            if chunk_end >= self.len() {
+                break;
+            }
+            chunk_begin = chunk_end;
         }
+        chunks
     }
 }
 

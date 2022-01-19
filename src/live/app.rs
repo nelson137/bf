@@ -1,7 +1,6 @@
 use std::{
     fs::File,
     io::{stdout, Write},
-    iter,
     path::PathBuf,
     thread,
     time::Duration,
@@ -358,17 +357,19 @@ impl App {
 
         let num_width = self.code.lines().count().count_digits().max(3) as u16;
         let line_width = content_area.width.saturating_sub(1 + num_width);
-        let wrapped_lines = self.code.wrapped_num_lines(line_width as usize);
+        let editor_lines =
+            self.code.wrapped_numbered_lines(line_width as usize);
 
-        let num_str = |i| format!("{:>w$}", i, w = num_width as usize);
+        let fmt_num = |n| format!("{:>1$}", n, num_width as usize);
         let num_style = Style::default().fg(Color::Yellow);
-        let rows: Vec<Row> = wrapped_lines
+        let rows: Vec<Row> = editor_lines
             .iter()
-            .flat_map(|(i, line_chunks)| {
-                iter::once(Span::styled(num_str(i), num_style))
-                    .chain(iter::repeat(Span::raw("")))
-                    .zip(line_chunks)
-                    .map(|(num, &chunk)| Row::new(vec![num, Span::raw(chunk)]))
+            .map(|&(maybe_n, line_chunk)| {
+                let n_span = match maybe_n {
+                    Some(n) => Span::styled(fmt_num(n), num_style),
+                    _ => Span::raw(""),
+                };
+                Row::new(vec![n_span, Span::raw(line_chunk)])
             })
             .collect();
         let widths = [Constraint::Length(num_width), Constraint::Min(0)];
@@ -377,11 +378,13 @@ impl App {
 
         let cursor = self.code.cursor();
         let cur_x = cursor.1 % line_width as usize;
-        let cur_y = wrapped_lines
+        let cur_y = editor_lines
             .iter()
-            .take(cursor.0)
-            .map(|(_, line_chunks)| line_chunks.len())
-            .sum::<usize>()
+            .map_while(|(maybe_n, _)| match maybe_n {
+                &Some(n) if n - 1 >= cursor.0 => None,
+                _ => Some(()),
+            })
+            .count()
             + (cursor.1 / line_width as usize);
         frame.set_cursor(
             content_area.x + num_width + 1 + cur_x as u16,

@@ -1,3 +1,5 @@
+use std::iter;
+
 use crossterm::event::{KeyCode, KeyEvent};
 
 use crate::util::{
@@ -133,9 +135,17 @@ impl TextArea {
         self.lines.iter()
     }
 
-    pub fn wrapped_num_lines(&self, width: usize) -> Vec<(usize, Vec<&str>)> {
+    pub fn wrapped_numbered_lines(
+        &self,
+        width: usize,
+    ) -> Vec<(Option<usize>, &str)> {
         (1_usize..)
-            .zip(self.lines().map(|l| l.wrapped(width)))
+            .zip(self.lines())
+            .flat_map(|(n, line)| {
+                iter::once(Some(n))
+                    .chain(iter::repeat(None))
+                    .zip(line.wrapped(width))
+            })
             .collect()
     }
 

@@ -384,16 +384,13 @@ impl App {
 
         let fmt_num = |n| format!("{:>1$}", n, num_width as usize);
         let num_style = Style::default().fg(Color::Yellow);
-        let rows: Vec<Row> = editor_lines
-            .iter()
-            .map(|&(maybe_n, line_chunk)| {
-                let n_span = match maybe_n {
-                    Some(n) => Span::styled(fmt_num(n), num_style),
-                    _ => Span::raw(""),
-                };
-                Row::new(vec![n_span, Span::raw(line_chunk)])
-            })
-            .collect();
+        let rows = editor_lines.map(|(maybe_n, line_chunk)| {
+            let n_span = match maybe_n {
+                Some(n) => Span::styled(fmt_num(n), num_style),
+                _ => Span::raw(""),
+            };
+            Row::new(vec![n_span, Span::raw(line_chunk)])
+        });
         let widths = [Constraint::Length(num_width), Constraint::Min(0)];
         let table = Table::new(rows).widths(&widths);
         frame.render_widget(table, content_area);

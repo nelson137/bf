@@ -68,25 +68,57 @@ pub fn sha1_digest<D: AsRef<[u8]>>(data: D) -> Sha1Digest {
 }
 
 pub trait StringExt {
-    fn wrapped(&self, width: usize) -> Vec<&str>;
+    fn wrapped(&self, width: usize) -> WrappedString;
 }
 
 impl StringExt for String {
-    fn wrapped(&self, width: usize) -> Vec<&str> {
-        let mut chunks = Vec::with_capacity(
-            (self.len() as f32 / width as f32).ceil() as usize,
-        );
-        let mut chunk_begin = 0;
-        let mut chunk_end;
-        loop {
-            chunk_end = self.len().min(chunk_begin + width);
-            chunks.push(&self[chunk_begin..chunk_end]);
-            if chunk_end >= self.len() {
-                break;
-            }
-            chunk_begin = chunk_end;
+    fn wrapped(&self, width: usize) -> WrappedString {
+        WrappedString::new(self, width)
+    }
+}
+
+pub struct WrappedString<'s> {
+    string: &'s str,
+    width: usize,
+    chunk_begin: usize,
+    chunk_end: usize,
+}
+
+impl<'s> WrappedString<'s> {
+    fn new(string: &'s str, width: usize) -> Self {
+        let chunk_end = width.min(string.len());
+        Self {
+            string,
+            width,
+            chunk_begin: 0,
+            chunk_end,
         }
-        chunks
+    }
+}
+
+impl<'s> Iterator for WrappedString<'s> {
+    type Item = &'s str;
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let unchunked_len = self.string.len().saturating_sub(self.chunk_begin);
+        let remaining_chunks =
+            (unchunked_len as f32 / self.width as f32).ceil() as usize;
+        (0, Some(remaining_chunks))
+    }
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.chunk_begin >= self.string.len() {
+            if self.chunk_begin == 0 {
+                self.chunk_begin = usize::MAX;
+                return Some("");
+            } else {
+                return None;
+            }
+        }
+        let chunk = &self.string[self.chunk_begin..self.chunk_end];
+        self.chunk_begin = self.chunk_end;
+        self.chunk_end = self.string.len().min(self.chunk_begin + self.width);
+        Some(chunk)
     }
 }
 

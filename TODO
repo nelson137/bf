@@ -10,4 +10,3 @@ subcmd(live)
     support resizing code & output by dragging border
     support scrolling in editor and output
     re-bind keys ??
-    reduce allocations in TextArea::wrapped_num_lines()

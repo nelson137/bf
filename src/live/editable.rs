@@ -172,15 +172,14 @@ impl TextArea {
     pub fn wrapped_numbered_lines(
         &self,
         width: usize,
-    ) -> Vec<(Option<usize>, &str)> {
-        (self.viewport.0 + 1..)
-            .zip(self.viewport())
-            .flat_map(|(n, line)| {
+    ) -> impl Iterator<Item = (Option<usize>, &str)> {
+        (self.viewport.0 + 1..).zip(self.viewport()).flat_map(
+            move |(n, line)| {
                 iter::once(Some(n))
                     .chain(iter::repeat(None))
                     .zip(line.wrapped(width))
-            })
-            .collect()
+            },
+        )
     }
 
     pub fn text(&self) -> String {

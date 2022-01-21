@@ -52,14 +52,14 @@ impl State {
     pub fn input_history_resize(&mut self, size: usize) {
         self.input_history_size = size;
         while self.input_history.len() > self.input_history_size {
-            self.input_history.pop_back();
+            self.input_history.pop_front();
         }
     }
 
     pub fn input_history_add(&mut self, event: BfEvent) {
         if self.input_history.len() >= self.input_history_size {
-            self.input_history.pop_back();
+            self.input_history.pop_front();
         }
-        self.input_history.push_front(InputHistoryEntry::new(event));
+        self.input_history.push_back(InputHistoryEntry::new(event));
     }
 }

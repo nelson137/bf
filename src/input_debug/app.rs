@@ -4,6 +4,7 @@ use std::{
     time::Duration,
 };
 
+use anyhow::Result;
 use crossterm::{
     event::{DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
     execute,
@@ -18,10 +19,7 @@ use tui::{
     widgets::{Block, Borders, Paragraph, Row, Table},
 };
 
-use crate::util::{
-    err::BfResult,
-    tui::{sublayouts, BfEvent, EventQueue, Frame, Terminal},
-};
+use crate::util::tui::{sublayouts, BfEvent, EventQueue, Frame, Terminal};
 
 use super::{cli::InputDebugCli, state::State};
 
@@ -38,7 +36,7 @@ impl Drop for App {
 }
 
 impl App {
-    pub fn new(cli: InputDebugCli) -> BfResult<Self> {
+    pub fn new(cli: InputDebugCli) -> Result<Self> {
         let (_w, h) = terminal::size()?;
 
         enable_raw_mode()?;
@@ -50,7 +48,7 @@ impl App {
         })
     }
 
-    pub fn run(&mut self) -> BfResult<()> {
+    pub fn run(&mut self) -> Result<()> {
         let mut terminal = Terminal::new(CrosstermBackend::new(stdout()))?;
 
         let event_queue = EventQueue::with_ticks(100);

@@ -4,12 +4,11 @@ use std::{
     thread,
 };
 
+use anyhow::{anyhow, Result};
+
 use crate::{
     interpreter::{Interpreter, Tape},
-    util::{
-        err::BfResult,
-        sync::{SharedBool, SharedCell},
-    },
+    util::sync::{SharedBool, SharedCell},
 };
 
 #[derive(Clone, Eq, PartialEq)]
@@ -125,11 +124,11 @@ impl AsyncInterpreter {
         code: String,
         input: String,
         auto_input: Option<u8>,
-    ) -> BfResult<()> {
+    ) -> Result<()> {
         self.stop.store(true);
         self.program
             .store((code, input, auto_input))
-            .or(Err(ERROR_POISONED.clone()))?;
+            .or_else(|_| Err(anyhow!(ERROR_POISONED)))?;
         self.restart_barrier.wait();
         self.stop.store(false);
         Ok(())

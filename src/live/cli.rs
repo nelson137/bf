@@ -1,8 +1,9 @@
 use std::path::PathBuf;
 
+use anyhow::Result;
 use structopt::StructOpt;
 
-use crate::util::{common::is_valid_infile, err::BfResult, subcmd::SubCmd};
+use crate::util::{common::is_valid_infile, subcmd::SubCmd};
 
 use super::app::App;
 
@@ -22,7 +23,7 @@ pub struct LiveCli {
 }
 
 impl SubCmd for LiveCli {
-    fn run(self) -> BfResult<()> {
+    fn run(self) -> Result<()> {
         App::new(self).and_then(|mut app| app.run())
     }
 }

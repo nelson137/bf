@@ -6,9 +6,11 @@ use std::{
     path::PathBuf,
 };
 
-use crate::util::{
-    common::EOL,
-    err::{err, BfResult},
+use anyhow::{bail, Context, Result};
+
+use crate::{
+    err_file_open,
+    util::{common::EOL, err::err_file_write},
 };
 
 mod cli;
@@ -17,7 +19,7 @@ pub use cli::GenerateCli;
 mod read;
 use read::read_data;
 
-pub fn subcmd_generate(args: GenerateCli) -> BfResult<()> {
+pub fn subcmd_generate(args: GenerateCli) -> Result<()> {
     let mut data = read_data(args.infile)?;
 
     if args.newline && !data.ends_with(EOL) {
@@ -27,8 +29,7 @@ pub fn subcmd_generate(args: GenerateCli) -> BfResult<()> {
     let (mut writer, path): (Box<dyn Write>, PathBuf) = match args.outfile {
         Some(path) => (
             Box::new(
-                File::create(&path)
-                    .map_err(|e| err!(FileOpen, e, path.clone()))?,
+                File::create(&path).with_context(|| err_file_open!(path))?,
             ),
             path,
         ),
@@ -39,12 +40,12 @@ pub fn subcmd_generate(args: GenerateCli) -> BfResult<()> {
         "charwise" => generator_charwise,
         "linewise" => generator_linewise,
         "unique-chars" => generator_unique_chars,
-        _ => Err(format!("invalid mode (impossible): {}", args.mode))?,
+        _ => bail!("invalid mode (impossible): {}", args.mode),
     };
 
     writer
         .write_all(&gen_func(data).as_bytes())
-        .map_err(|e| err!(FileWrite, e, path))
+        .with_context(|| err_file_write!(path))
 }
 
 fn generator_charwise(data: String) -> String {

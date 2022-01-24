@@ -1,8 +1,9 @@
 use std::path::PathBuf;
 
+use anyhow::Result;
 use structopt::StructOpt;
 
-use crate::util::{err::BfResult, subcmd::SubCmd};
+use crate::util::subcmd::SubCmd;
 
 use super::subcmd_generate;
 
@@ -50,7 +51,7 @@ pub struct GenerateCli {
 }
 
 impl SubCmd for GenerateCli {
-    fn run(self) -> BfResult<()> {
+    fn run(self) -> Result<()> {
         subcmd_generate(self)
     }
 }

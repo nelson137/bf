@@ -1,5 +1,5 @@
-use super::err::BfResult;
+use anyhow::Result;
 
 pub trait SubCmd {
-    fn run(self) -> BfResult<()>;
+    fn run(self) -> Result<()>;
 }

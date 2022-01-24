@@ -1,5 +1,4 @@
-use std::process::exit;
-
+use anyhow::Result;
 use structopt::StructOpt;
 
 mod generate;
@@ -18,7 +17,7 @@ use run::RunCli;
 
 #[macro_use]
 mod util;
-use util::{err::BfResult, subcmd::SubCmd};
+use util::subcmd::SubCmd;
 
 #[derive(Debug, StructOpt)]
 enum Cli {
@@ -33,7 +32,7 @@ enum Cli {
 }
 
 impl Cli {
-    fn run_subcmd(self) -> BfResult<()> {
+    fn run_subcmd(self) -> Result<()> {
         match Self::from_args() {
             Self::Run(cli) => cli.run(),
             Self::Generate(cli) => cli.run(),
@@ -43,20 +42,11 @@ impl Cli {
     }
 }
 
-fn bf_main() -> BfResult<()> {
+fn main() -> Result<()> {
     #[cfg(windows)]
     if ansi_term::enable_ansi_support().is_err() {
-        return Err(err!("failed to enable ANSI support"));
+        bail!("failed to enable ANSI support");
     }
 
     Cli::from_args().run_subcmd()
-}
-
-fn main() {
-    if let Err(err) = bf_main() {
-        eprintln!("error: {}", err);
-        exit(1);
-    } else {
-        exit(0);
-    }
 }

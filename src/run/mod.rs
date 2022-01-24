@@ -1,12 +1,11 @@
 use std::{fs::File, io::Write, thread::sleep, time::Duration};
 
+use anyhow::{Context, Result};
+
 use crate::{
+    err_file_open, err_file_write,
     interpreter::Interpreter,
-    util::{
-        common::get_width,
-        err::{err, BfResult},
-        read::read_script,
-    },
+    util::{common::get_width, read::read_script},
 };
 
 mod cli;
@@ -15,7 +14,7 @@ pub use cli::RunCli;
 mod print;
 use print::Printer;
 
-fn run_subcmd(args: RunCli) -> BfResult<()> {
+fn run_subcmd(args: RunCli) -> Result<()> {
     let script = read_script(&args.infile)?;
 
     let width = get_width(args.width);
@@ -57,9 +56,9 @@ fn run_subcmd(args: RunCli) -> BfResult<()> {
 
     if let Some(path) = args.outfile {
         File::create(&path)
-            .map_err(|e| err!(FileOpen, e, path.clone()))?
+            .with_context(|| err_file_open!(path))?
             .write_all(interpreter.output().as_bytes())
-            .map_err(|e| err!(FileWrite, e, path))?;
+            .with_context(|| err_file_write!(path))?;
     }
 
     Ok(())

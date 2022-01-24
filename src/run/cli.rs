@@ -1,10 +1,10 @@
 use std::path::PathBuf;
 
+use anyhow::Result;
 use structopt::StructOpt;
 
 use crate::util::{
     common::{is_valid_infile, is_valid_width},
-    err::BfResult,
     subcmd::SubCmd,
 };
 
@@ -79,7 +79,7 @@ pub struct RunCli {
 }
 
 impl SubCmd for RunCli {
-    fn run(self) -> BfResult<()> {
+    fn run(self) -> Result<()> {
         run_subcmd(self)
     }
 }

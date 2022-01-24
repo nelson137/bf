@@ -4,29 +4,32 @@ use std::{
     path::PathBuf,
 };
 
-use crate::util::err::{err, BfResult};
+use anyhow::{Context, Result};
 
-pub fn read_data(infile: Option<PathBuf>) -> BfResult<String> {
+use crate::{err_file_open, err_file_read};
+
+pub fn read_data(infile: Option<PathBuf>) -> Result<String> {
     match infile {
         Some(path) => read_data_file(&path),
         None => read_data_stdin(),
     }
 }
 
-fn read_data_stdin() -> BfResult<String> {
+fn read_data_stdin() -> Result<String> {
     let mut data = String::new();
     match io::stdin().read_to_string(&mut data) {
         Ok(_) => Ok(data),
-        Err(e) => Err(err!(FileRead, e, PathBuf::from("STDIN"))),
+        Err(e) => {
+            Err(e).with_context(|| err_file_read!(PathBuf::from("STDIN")))
+        }
     }
 }
 
-fn read_data_file(path: &PathBuf) -> BfResult<String> {
-    let mut file =
-        File::open(path).map_err(|e| err!(FileOpen, e, path.clone()))?;
+fn read_data_file(path: &PathBuf) -> Result<String> {
+    let mut file = File::open(path).with_context(|| err_file_open!(path))?;
     let mut data = String::new();
     match file.read_to_string(&mut data) {
         Ok(_) => Ok(data),
-        Err(e) => Err(err!(FileRead, e, path.clone())),
+        Err(e) => Err(e).with_context(|| err_file_read!(path)),
     }
 }

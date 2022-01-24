@@ -6,6 +6,7 @@ use std::{
     time::Duration,
 };
 
+use anyhow::Result;
 use crossterm::{
     event::{
         DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEvent,
@@ -26,7 +27,6 @@ use tui::{
 
 use crate::util::{
     common::{sha1_digest, Sha1Digest, USizeExt},
-    err::BfResult,
     read::read_script_file,
     sync::SharedBool,
     tui::{
@@ -68,7 +68,7 @@ impl Drop for App {
 }
 
 impl App {
-    pub fn new(cli: LiveCli) -> BfResult<Self> {
+    pub fn new(cli: LiveCli) -> Result<Self> {
         enable_raw_mode()?;
         execute!(stdout(), EnableMouseCapture, EnterAlternateScreen)?;
 
@@ -109,7 +109,7 @@ impl App {
         self.code.hash() != self.clean_hash
     }
 
-    pub fn run(&mut self) -> BfResult<()> {
+    pub fn run(&mut self) -> Result<()> {
         let mut terminal = Terminal::new(CrosstermBackend::new(stdout()))?;
         let mut restart_interpreter: bool;
 

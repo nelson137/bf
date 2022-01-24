@@ -6,6 +6,7 @@ edition = "2021"
 
 [dependencies]
 ansi_term = "0.12"
+anyhow = "1.0"
 crossterm = "0.17"
 itertools = "0.9"
 sha-1 = "0.9"

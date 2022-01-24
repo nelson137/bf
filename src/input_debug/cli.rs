@@ -1,6 +1,7 @@
+use anyhow::Result;
 use structopt::StructOpt;
 
-use crate::util::{err::BfResult, subcmd::SubCmd};
+use crate::util::subcmd::SubCmd;
 
 use super::app::App;
 
@@ -15,7 +16,7 @@ pub struct InputDebugCli {
 }
 
 impl SubCmd for InputDebugCli {
-    fn run(self) -> BfResult<()> {
+    fn run(self) -> Result<()> {
         App::new(self).and_then(|mut app| app.run())
     }
 }

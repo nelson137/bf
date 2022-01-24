@@ -3,7 +3,7 @@ use std::{
     io::{self, Read},
 };
 
-use crate::util::err::BfResult;
+use anyhow::{anyhow, Context, Result};
 
 use super::tape::Tape;
 
@@ -65,14 +65,14 @@ impl Interpreter {
         bracemap
     }
 
-    fn jump_bracket(&self) -> BfResult<usize> {
+    fn jump_bracket(&self) -> Result<usize> {
         match self.bracemap.get(&self.ip) {
             Some(next) => Ok(next + 1),
-            None => Err("mismatched brackets".into()),
+            None => Err(anyhow!("mismatched brackets")),
         }
     }
 
-    fn read_char(&mut self) -> BfResult<u8> {
+    fn read_char(&mut self) -> Result<u8> {
         match (self.input.pop_front(), self.auto_input) {
             (Some(c), _) | (None, Some(c)) => Ok(c),
             (None, None) => {
@@ -80,11 +80,9 @@ impl Interpreter {
                 let mut buf = [0u8; 1];
                 match io::stdin().read_exact(&mut buf) {
                     Ok(_) => Ok(buf[0]),
-                    Err(e) => Err(format!(
-                        "failed to read character from stdin: {}",
-                        e
-                    )
-                    .into()),
+                    Err(e) => {
+                        Err(e).context("failed to read character from stdin")
+                    }
                 }
             }
         }
@@ -106,7 +104,7 @@ impl Interpreter {
 }
 
 impl Iterator for Interpreter {
-    type Item = BfResult<char>;
+    type Item = Result<char>;
     fn next(&mut self) -> Option<Self::Item> {
         if self.instructions.is_empty()
             || self.ip > self.instructions.len() - 1

@@ -192,8 +192,52 @@ impl EventQueue {
         this
     }
 
-    pub fn pop_all(&self) -> Vec<BfEvent> {
-        mutex_safe_do(&*self.data, |mut q| q.drain(..).collect())
+    pub fn pop_all(&self) -> VecDeque<BfEvent> {
+        let mut events: Vec<BfEvent> =
+            mutex_safe_do(&*self.data, |mut q| q.drain(..).collect());
+        if events.is_empty() {
+            return events.into();
+        }
+
+        macro_rules! bfevent_char_matcher {
+            ($c:expr) => {
+                BfEvent::Input(Event::Key(KeyEvent {
+                    code: KeyCode::Char($c),
+                    modifiers: KeyModifiers::NONE,
+                }))
+            };
+        }
+
+        macro_rules! insert_keycode {
+            ($code:ident, $i:ident) => {
+                events[$i - 2] =
+                    BfEvent::Input(Event::Key(KeyCode::$code.into()));
+                events.remove($i);
+                events.remove($i - 1);
+                $i -= 2;
+            };
+        }
+
+        let mut i = events.len();
+        while i >= 3 {
+            i -= 1;
+            match (&events[i], &events[i - 1], &events[i - 2]) {
+                (
+                    bfevent_char_matcher!('~'),
+                    BfEvent::Input(Event::Key(k_evt)),
+                    bfevent_char_matcher!('['),
+                ) => {
+                    if k_evt.code == KeyCode::Char('5') {
+                        insert_keycode!(PageUp, i);
+                    } else if k_evt.code == KeyCode::Char('6') {
+                        insert_keycode!(PageDown, i);
+                    }
+                }
+                _ => (),
+            }
+        }
+
+        events.into()
     }
 }
 

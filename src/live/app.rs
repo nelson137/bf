@@ -310,7 +310,7 @@ impl App {
             .constraints(vec![
                 Constraint::Length(4),            // Tape
                 Constraint::Length(1),            // Divider
-                Constraint::Min(2),               // Editor
+                Constraint::Min(1),               // Editor
                 Constraint::Length(1),            // Divider
                 Constraint::Length(output_lines), // Output
                 Constraint::Length(1),            // Bottom

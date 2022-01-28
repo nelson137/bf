@@ -1,12 +1,12 @@
-root
-    get rid of itertools ??
 mod(interpreter)
     rename -> runtime
         gets rid of #[allow(clippy::module_inception)]
     prevent complex logical infinite loops
         execute code in another thread
         support execution timeout
-subcmd(live)
+mod(live)
     support resizing code & output by dragging border
-    support scrolling in editor and output
+    support scrolling in output
     re-bind keys ??
+    PromptStrDialogue support scrolling
+    fix: no underline on warp term

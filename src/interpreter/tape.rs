@@ -38,6 +38,10 @@ impl Tape {
         self.get(self.cursor)
     }
 
+    pub fn cursor(&self) -> usize {
+        self.cursor
+    }
+
     pub fn left(&mut self) {
         self.cursor = self.cursor.saturating_sub(1);
     }

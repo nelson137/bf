@@ -51,6 +51,7 @@ pub struct App {
     should_quit: SharedBool,
     spinner: Spinner,
     code: TextArea,
+    tape_viewport_start: usize,
     input: String,
     auto_input: Option<u8>,
     clean_hash: Sha1Digest,
@@ -85,6 +86,7 @@ impl App {
             should_quit: SharedBool::new(false),
             spinner: Spinner::default(),
             code: TextArea::from(&file_contents, 0),
+            tape_viewport_start: 0,
             input: String::new(),
             auto_input: None,
             clean_hash: sha1_digest(&file_contents),
@@ -342,7 +344,7 @@ impl App {
         self.draw_content_bottom(frame, bottom_area);
     }
 
-    fn draw_content_tape(&self, frame: &mut Frame, area: Rect) {
+    fn draw_content_tape(&mut self, frame: &mut Frame, area: Rect) {
         let block = Block::default()
             .borders(Borders::TOP | Borders::LEFT | Borders::RIGHT)
             .title(" Tape ");
@@ -350,8 +352,24 @@ impl App {
         frame.render_widget(block, area);
 
         let tape = self.async_interpreter.state().tape;
-        let max_cells = (tape_area.width as f32 / 4f32).ceil() as usize;
-        let window = tape.window(0, max_cells, self.ascii_values);
+        let max_cells = (tape_area.width as f32 / 4.0).ceil() as usize;
+        let cursor_min = self.tape_viewport_start + 3;
+        let cursor_max =
+            self.tape_viewport_start + max_cells.saturating_sub(3);
+
+        if tape.cursor() < cursor_min && self.tape_viewport_start > 0 {
+            self.tape_viewport_start = self
+                .tape_viewport_start
+                .saturating_sub(cursor_min - tape.cursor());
+        } else if tape.cursor() > cursor_max {
+            self.tape_viewport_start += tape.cursor() - cursor_max;
+        }
+
+        let window = tape.window(
+            self.tape_viewport_start,
+            max_cells,
+            self.ascii_values,
+        );
         frame.render_widget(window, tape_area);
     }
 

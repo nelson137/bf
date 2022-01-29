@@ -397,18 +397,39 @@ impl App {
         let num_width =
             self.code.viewport().len().count_digits().max(3) as u16;
         let line_width = content_area.width.saturating_sub(1 + num_width);
-        let editor_lines =
-            self.code.wrapped_numbered_lines(line_width as usize);
+        let mut editor_lines = self
+            .code
+            .wrapped_numbered_lines(line_width as usize)
+            .collect::<Vec<_>>();
+        let overflow_lines = editor_lines
+            .drain(self.code.viewport_height()..)
+            .collect::<Vec<_>>();
+        let last_row_i = self.code.viewport_height() - 1;
 
         let fmt_num = |n| format!("{:>1$}", n, num_width as usize);
         let num_style = Style::default().fg(Color::Yellow);
-        let rows = editor_lines.map(|(maybe_n, line_chunk)| {
-            let n_span = match maybe_n {
-                Some(n) => Span::styled(fmt_num(n), num_style),
-                _ => Span::raw(""),
-            };
-            Row::new(vec![n_span, Span::raw(line_chunk)])
-        });
+        let trunc_line_span =
+            Span::styled("@@@", Style::default().fg(Color::Magenta));
+        let rows =
+            editor_lines
+                .iter()
+                .enumerate()
+                .map(|(row_i, (maybe_n, row))| {
+                    let n_span = Span::styled(
+                        maybe_n.map(fmt_num).unwrap_or_default(),
+                        num_style,
+                    );
+                    let row_span = match overflow_lines.first() {
+                        Some((None, _)) if row_i >= last_row_i => {
+                            Spans::from(vec![
+                                Span::raw(&row[..row.len() - 3]),
+                                trunc_line_span.clone(),
+                            ])
+                        }
+                        _ => Spans::from(*row),
+                    };
+                    Row::new(vec![n_span.into(), row_span])
+                });
         let widths = [Constraint::Length(num_width), Constraint::Min(0)];
         let table = Table::new(rows).widths(&widths);
         frame.render_widget(table, content_area);

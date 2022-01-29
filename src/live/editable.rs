@@ -121,6 +121,10 @@ impl TextArea {
         }
     }
 
+    pub fn viewport_height(&self) -> usize {
+        self.viewport.1
+    }
+
     pub fn viewport_bounds(&self) -> (usize, usize) {
         let (begin, nlines) = self.viewport;
         let end = self.lines.len().min(begin + nlines);

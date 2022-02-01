@@ -133,8 +133,8 @@ impl TextArea {
         }
     }
 
-    pub fn viewport_height(&self) -> usize {
-        self.viewport.height
+    pub fn viewport(&self) -> TextAreaViewport {
+        self.viewport
     }
 
     pub fn viewport_bounds(&self) -> (usize, usize) {
@@ -143,7 +143,7 @@ impl TextArea {
         (start, end)
     }
 
-    pub fn viewport(&self) -> &[String] {
+    pub fn viewport_lines(&self) -> &[String] {
         let (begin, end) = self.viewport_bounds();
         &self.lines[begin..end]
     }
@@ -178,7 +178,7 @@ impl TextArea {
     }
 
     pub fn cursor_line(&self) -> &String {
-        &self.viewport()[self.cursor.y]
+        &self.viewport_lines()[self.cursor.y]
     }
 
     pub fn cursor_line_mut(&mut self) -> &mut String {
@@ -190,13 +190,13 @@ impl TextArea {
         &self,
         width: usize,
     ) -> impl Iterator<Item = (Option<usize>, &str)> {
-        (self.viewport.start + 1..).zip(self.viewport()).flat_map(
-            move |(n, line)| {
+        (self.viewport.start + 1..)
+            .zip(self.viewport_lines())
+            .flat_map(move |(n, line)| {
                 iter::once(Some(n))
                     .chain(iter::repeat(None))
                     .zip(line.wrapped(width))
-            },
-        )
+            })
     }
 
     pub fn text(&self) -> String {
@@ -319,7 +319,7 @@ impl TextArea {
     pub fn cursor_bottom(&mut self) {
         self.viewport.start =
             self.lines.len().saturating_sub(self.viewport.height);
-        self.cursor.y = self.viewport().len().saturating_sub(1);
+        self.cursor.y = self.viewport_lines().len().saturating_sub(1);
         self.cursor.x = self.cursor_x_clamped();
     }
 

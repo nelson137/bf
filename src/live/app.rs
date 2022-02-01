@@ -395,21 +395,19 @@ impl App {
         frame.render_widget(block, area);
 
         let num_width =
-            self.code.viewport().len().count_digits().max(3) as u16;
+            self.code.viewport_lines().len().count_digits().max(3) as u16;
         let line_width = content_area.width.saturating_sub(1 + num_width);
         let mut editor_lines = self
             .code
             .wrapped_numbered_lines(line_width as usize)
             .collect::<Vec<_>>();
-        let overflow_lines =
-            if editor_lines.len() > self.code.viewport_height() {
-                editor_lines
-                    .drain(self.code.viewport_height()..)
-                    .collect::<Vec<_>>()
-            } else {
-                Vec::new()
-            };
-        let last_row_i = self.code.viewport_height() - 1;
+        let viewport = self.code.viewport();
+        let overflow_lines = if editor_lines.len() > viewport.height {
+            editor_lines.drain(viewport.height..).collect::<Vec<_>>()
+        } else {
+            Vec::new()
+        };
+        let last_row_i = viewport.height - 1;
 
         let fmt_num = |n| format!("{:>1$}", n, num_width as usize);
         let num_style = Style::default().fg(Color::Yellow);

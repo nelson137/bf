@@ -440,17 +440,17 @@ impl App {
         frame.render_widget(table, content_area);
 
         let cursor = self.code.cursor();
-        let cur_x = cursor.1 % line_width as usize;
+        let cur_x = cursor.x % line_width as usize;
         let cur_y = {
             let mut y = 0;
             for row in &editor_lines {
                 match row.0 {
-                    Some(n) if n > cursor.0 => break,
+                    Some(n) if n > cursor.y => break,
                     _ => (),
                 }
                 y += 1;
             }
-            y + (cursor.1 / line_width as usize)
+            y + (cursor.x / line_width as usize)
         };
         frame.set_cursor(
             content_area.x + num_width + 1 + cur_x as u16,

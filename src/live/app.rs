@@ -441,10 +441,13 @@ impl App {
         let cur_x = cursor.x % line_width as usize;
         let cur_y = {
             let mut y = 0;
+            let mut line_count = 0;
             for row in &editor_lines {
-                match row.0 {
-                    Some(n) if n > cursor.y => break,
-                    _ => (),
+                if row.0.is_some() {
+                    line_count += 1;
+                }
+                if line_count > cursor.y {
+                    break;
                 }
                 y += 1;
             }

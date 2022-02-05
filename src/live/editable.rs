@@ -1,11 +1,19 @@
-use std::iter;
+use std::{borrow::Cow, iter};
 
 use crossterm::event::{KeyCode, KeyEvent};
+use textwrap::{wrap, wrap_algorithms, Options};
 
 use crate::util::{
-    common::{sha1_digest, Sha1Digest, StringExt, EOL},
+    common::{sha1_digest, Sha1Digest, EOL},
     tui::KeyEventExt,
 };
+
+fn wrap_ragged(line: &str, width: usize) -> Vec<Cow<'_, str>> {
+    wrap(
+        line,
+        Options::new(width).wrap_algorithm(wrap_algorithms::FirstFit),
+    )
+}
 
 pub trait Editable {
     fn on_event(&mut self, event: KeyEvent);
@@ -189,13 +197,13 @@ impl TextArea {
     pub fn wrapped_numbered_lines(
         &self,
         width: usize,
-    ) -> impl Iterator<Item = (Option<usize>, &str)> {
+    ) -> impl Iterator<Item = (Option<usize>, Cow<'_, str>)> {
         (self.viewport.start + 1..)
             .zip(self.viewport_lines())
             .flat_map(move |(n, line)| {
                 iter::once(Some(n))
                     .chain(iter::repeat(None))
-                    .zip(line.wrapped(width))
+                    .zip(wrap_ragged(line, width))
             })
     }
 

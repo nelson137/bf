@@ -1,4 +1,5 @@
 use std::{
+    borrow::Cow,
     fs::File,
     io::{stdout, Write},
     path::PathBuf,
@@ -429,7 +430,13 @@ impl App {
                                 trunc_line_span.clone(),
                             ])
                         }
-                        _ => Spans::from(*row),
+                        // row is a Cow that comes from line wrapping
+                        // which is done with the FirstFit algorithm,
+                        // so it should always be a Cow::Borrowed.
+                        _ => match *row {
+                            Cow::Borrowed(b) => Spans::from(b),
+                            Cow::Owned(_) => unreachable!(),
+                        },
                     };
                     Row::new(vec![n_span.into(), row_span])
                 });

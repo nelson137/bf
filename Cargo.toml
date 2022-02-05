@@ -12,4 +12,5 @@ itertools = "0.9"
 sha-1 = "0.9"
 structopt = "0.3"
 term_size = "0.3"
+textwrap = "0.14"
 tui = { version = "0.15", features = ["crossterm"] }

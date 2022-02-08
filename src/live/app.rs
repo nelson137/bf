@@ -46,6 +46,7 @@ use super::{
 };
 
 pub struct App {
+    term_width: usize,
     term_height: usize,
     ascii_values: bool,
     file_path: Option<PathBuf>,
@@ -81,12 +82,13 @@ impl App {
         };
 
         Ok(Self {
+            term_width: 0,
             term_height: 0,
             ascii_values: cli.ascii_values,
             file_path: cli.infile,
             should_quit: SharedBool::new(false),
             spinner: Spinner::default(),
-            code: TextArea::from(&file_contents, 0),
+            code: TextArea::from(&file_contents, 0, 0),
             tape_viewport_start: 0,
             input: String::new(),
             auto_input: None,
@@ -116,7 +118,9 @@ impl App {
         let mut terminal = Terminal::new(CrosstermBackend::new(stdout()))?;
         let mut restart_interpreter: bool;
 
-        self.term_height = terminal.size()?.height as usize;
+        let term_size = terminal.size()?;
+        self.term_width = term_size.width as usize;
+        self.term_height = term_size.height as usize;
 
         while !self.should_quit.load() {
             restart_interpreter = false;
@@ -130,8 +134,9 @@ impl App {
                         Event::Key(e) => {
                             restart_interpreter = self.handle_key_event(e)
                         }
-                        Event::Resize(_, height) => {
-                            self.term_height = height as usize
+                        Event::Resize(width, height) => {
+                            self.term_width = width as usize;
+                            self.term_height = height as usize;
                         }
                         _ => (),
                     },
@@ -304,7 +309,10 @@ impl App {
         let output = String::from_utf8_lossy(&int_state.output).into_owned();
         let output_lines = output.split_terminator('\n').count() as u16;
 
+        let num_width = self.code.len().count_digits().max(3);
+
         self.code.resize_viewport(
+            self.term_width.saturating_sub(3 + num_width),
             self.term_height.saturating_sub(output_lines as usize + 9),
         );
 
@@ -397,11 +405,8 @@ impl App {
 
         let num_width =
             self.code.viewport_lines().len().count_digits().max(3) as u16;
-        let line_width = content_area.width.saturating_sub(1 + num_width);
-        let mut editor_lines = self
-            .code
-            .wrapped_numbered_lines(line_width as usize)
-            .collect::<Vec<_>>();
+        let mut editor_lines =
+            self.code.wrapped_numbered_rows().collect::<Vec<_>>();
         let viewport = self.code.viewport();
         let overflow_lines = if editor_lines.len() > viewport.height {
             editor_lines.drain(viewport.height..).collect::<Vec<_>>()
@@ -444,25 +449,10 @@ impl App {
         let table = Table::new(rows).widths(&widths);
         frame.render_widget(table, content_area);
 
-        let cursor = self.code.cursor();
-        let cur_x = cursor.x % line_width as usize;
-        let cur_y = {
-            let mut y = 0;
-            let mut line_count = 0;
-            for row in &editor_lines {
-                if row.0.is_some() {
-                    line_count += 1;
-                }
-                if line_count > cursor.y {
-                    break;
-                }
-                y += 1;
-            }
-            y + (cursor.x / line_width as usize)
-        };
+        let cursor = self.code.viewport_cursor();
         frame.set_cursor(
-            content_area.x + num_width + 1 + cur_x as u16,
-            content_area.y + cur_y as u16,
+            content_area.x + num_width + 1 + cursor.x as u16,
+            content_area.y + cursor.y as u16,
         );
     }
 

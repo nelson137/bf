@@ -117,7 +117,27 @@ pub struct TextAreaCursor {
 
 #[derive(Debug, Default, Copy, Clone)]
 pub struct TextAreaViewport {
+    /// The index of the first line of the viewport.
     pub start: usize,
+
+    /// The number of columns of the viewport.
+    ///
+    /// This directly affects the line wrapping.
+    ///
+    /// For example, if the width decreases then lines
+    /// may wrap more and take up more rows in the viewport.
+    /// Of course, the opposite may occur as well.
+    pub width: usize,
+
+    /// The number of rows of the viewport.
+    ///
+    /// Note that this is the number of rows, which doesn't
+    /// necessarily correlate directly to lines in the file.
+    ///
+    /// For example, if each line in the viewport is long
+    /// enough to wrap and take up exactly two rows, then
+    /// the number of lines displayed will be half of the
+    /// height.
     pub height: usize,
 }
 
@@ -128,7 +148,7 @@ pub struct TextArea {
 }
 
 impl TextArea {
-    pub fn from(data: impl AsRef<str>, height: usize) -> Self {
+    pub fn from(data: impl AsRef<str>, width: usize, height: usize) -> Self {
         let lines = if data.as_ref().is_empty() {
             vec![String::new()]
         } else {
@@ -136,53 +156,129 @@ impl TextArea {
         };
         Self {
             lines,
-            viewport: TextAreaViewport { start: 0, height },
+            viewport: TextAreaViewport {
+                start: 0,
+                width,
+                height,
+            },
             cursor: TextAreaCursor::default(),
         }
     }
 
+    /// Return the number of (un-wrapped) lines.
+    pub fn len(&self) -> usize {
+        self.lines.len()
+    }
+
+    /// TODO: deleteme ??
     pub fn viewport(&self) -> TextAreaViewport {
         self.viewport
     }
 
-    pub fn viewport_bounds(&self) -> (usize, usize) {
-        let TextAreaViewport { start, height } = self.viewport;
-        let end = self.lines.len().min(start + height);
+    /// Return a tuple describing the range of the viewport.
+    ///
+    /// The tuple is `(viewport begin, viewport end)` where both
+    /// values are indexes with the end value being one past the last
+    /// in the range.
+    fn viewport_bounds(&self) -> (usize, usize) {
+        let start = self.viewport.start;
+        let end = self.len().min(start + self.viewport.height);
         (start, end)
     }
 
+    /// Return a slice of the (un-wrapped) lines that are visible in
+    /// the viewport.
     pub fn viewport_lines(&self) -> &[String] {
         let (begin, end) = self.viewport_bounds();
         &self.lines[begin..end]
     }
 
-    pub fn viewport_mut(&mut self) -> &mut [String] {
+    /// Return a mutable slice of the (un-wrapped) lines that are
+    /// visible in the viewport.
+    pub fn viewport_lines_mut(&mut self) -> &mut [String] {
         let (begin, end) = self.viewport_bounds();
         &mut self.lines[begin..end]
     }
 
-    pub fn resize_viewport(&mut self, height: usize) {
-        if self.viewport.height == height || height == 0 {
-            return;
-        }
-        self.viewport.height = height;
-        if self.viewport.start > 0
-            && self.lines.len() < self.viewport.start + self.viewport.height
-        {
-            // Viewport goes past bottom & is not at top
-            let new_vp0 =
-                self.lines.len().saturating_sub(self.viewport.height);
-            self.cursor.y += self.viewport.start - new_vp0;
-            self.viewport.start = new_vp0;
-        } else if self.cursor.y >= self.viewport.height {
-            // Cursor is past the end of the viewport
-            self.viewport.start += 1;
-            self.cursor.y = self.viewport.height.saturating_sub(1);
+    // TODO: this instead of Self::viewport() ??
+    pub fn viewport_cursor(&self) -> TextAreaCursor {
+        // TODO: figure out how to cache the wrapped rows
+        //         - hash the text ??
+        //         - keep a dirty bool ??
+        let rows = self.wrapped_numbered_rows();
+        let y = {
+            let mut y = 0;
+            let mut line_count = 0;
+            for row in rows {
+                if row.0.is_some() {
+                    line_count += 1;
+                }
+                if line_count > self.cursor.y {
+                    break;
+                }
+                y += 1;
+            }
+            y + (self.cursor.x / self.viewport.width)
+        };
+        TextAreaCursor {
+            y,
+            x: self.cursor.x % self.viewport.width,
         }
     }
 
-    pub fn cursor(&self) -> TextAreaCursor {
-        self.cursor
+    /// Update the width and height of the viewport, adjusting its
+    /// starting position and height as necessary.
+    ///
+    /// If the height grows and the viewport is not at he bottom,
+    /// then more lines will be added.
+    ///
+    /// If the height grows and the viewport is at the bottom, then
+    /// the starting position will decrease and the height will
+    /// increase to include more lines from above the viewport, until
+    /// the viewport grows large enough to fit the entire buffer.
+    ///
+    /// If the width changes, then the line wrapping will be
+    /// recalculated so that the number of line rows is known to
+    /// correctly update the starting position if necessary.
+    pub fn resize_viewport(&mut self, width: usize, height: usize) {
+        if self.viewport.height == height && self.viewport.width == width {
+            return;
+        } else if height == 0 || width == 0 {
+            return;
+        }
+
+        self.viewport.width = width;
+        self.viewport.height = height;
+
+        let viewport_lines = self.viewport_lines();
+
+        let line_row_counts = viewport_lines
+            .iter()
+            .map(|l| wrap_ragged(l, width).len())
+            .collect::<Vec<_>>();
+
+        // let mut line_count = 0;
+        let mut row_count = 0;
+        for rc in line_row_counts {
+            if row_count >= height {
+                break;
+            }
+            // line_count += 1;
+            row_count += rc;
+        }
+
+        if self.viewport.start > 0 && row_count < height {
+            // Viewport is not at top & goes past bottom
+            // (all of the lines from viewport_lines(), wrapped or
+            // not, don't fill up the `height`)
+            let new_vp_start = self.len().saturating_sub(height);
+            self.cursor.y += self.viewport.start - new_vp_start;
+            self.viewport.start = new_vp_start;
+        } else if self.cursor.y >= height {
+            // Cursor is past the end of the viewport
+            self.viewport.start += 1;
+            self.cursor.y = height.saturating_sub(1);
+        }
     }
 
     pub fn cursor_line(&self) -> &String {
@@ -191,19 +287,18 @@ impl TextArea {
 
     pub fn cursor_line_mut(&mut self) -> &mut String {
         let y = self.cursor.y;
-        &mut self.viewport_mut()[y]
+        &mut self.viewport_lines_mut()[y]
     }
 
-    pub fn wrapped_numbered_lines(
+    pub fn wrapped_numbered_rows(
         &self,
-        width: usize,
     ) -> impl Iterator<Item = (Option<usize>, Cow<'_, str>)> {
         (self.viewport.start + 1..)
             .zip(self.viewport_lines())
             .flat_map(move |(n, line)| {
                 iter::once(Some(n))
                     .chain(iter::repeat(None))
-                    .zip(wrap_ragged(line, width))
+                    .zip(wrap_ragged(line, self.viewport.width))
             })
     }
 
@@ -247,12 +342,11 @@ impl TextArea {
             self.cursor.x += 1;
         } else if self.cursor.y < self.viewport.height - 1 {
             // Cursor is at last col & not at last row of viewport
-            if self.viewport.start + self.cursor.y < self.lines.len() - 1 {
+            if self.viewport.start + self.cursor.y < self.len() - 1 {
                 self.cursor.y += 1;
                 self.cursor.x = 0;
             }
-        } else if self.viewport.start + self.viewport.height < self.lines.len()
-        {
+        } else if self.viewport.start + self.viewport.height < self.len() {
             // Cursor is at last col & last row of viewport & viewport
             // is not at bottom
             self.viewport.start += 1;
@@ -300,13 +394,11 @@ impl TextArea {
     }
 
     pub fn cursor_down(&mut self) {
-        if self.cursor.y < (self.viewport.height - 1).min(self.lines.len() - 1)
-        {
+        if self.cursor.y < (self.viewport.height - 1).min(self.len() - 1) {
             // Cursor is not at last line of viewport
             self.cursor.y += 1;
             self.cursor.x = self.cursor_x_clamped();
-        } else if self.viewport.start + self.viewport.height < self.lines.len()
-        {
+        } else if self.viewport.start + self.viewport.height < self.len() {
             // Cursor is at last line of viewport & viewport is not at
             // bottom
             self.viewport.start += 1;
@@ -325,8 +417,7 @@ impl TextArea {
     }
 
     pub fn cursor_bottom(&mut self) {
-        self.viewport.start =
-            self.lines.len().saturating_sub(self.viewport.height);
+        self.viewport.start = self.len().saturating_sub(self.viewport.height);
         self.cursor.y = self.viewport_lines().len().saturating_sub(1);
         self.cursor.x = self.cursor_x_clamped();
     }
@@ -341,7 +432,7 @@ impl TextArea {
             // Cursor is at col 0 & at not at top
             let original_line =
                 self.lines.remove(self.viewport.start + self.cursor.y);
-            if self.viewport.start + self.viewport.height >= self.lines.len()
+            if self.viewport.start + self.viewport.height >= self.len()
                 && self.viewport.start > 0
             {
                 self.viewport.start -= 1;
@@ -358,11 +449,11 @@ impl TextArea {
         if x < self.cursor_line().len() {
             // Cursor is not at last col
             self.cursor_line_mut().remove(x);
-        } else if self.viewport.start + y < self.lines.len() - 1 {
+        } else if self.viewport.start + y < self.len() - 1 {
             // Cursor is at last col & not at bottom
             let next_line = self.lines.remove(self.viewport.start + y + 1);
             self.cursor_line_mut().push_str(&next_line);
-            if self.viewport.start + self.viewport.height >= self.lines.len()
+            if self.viewport.start + self.viewport.height >= self.len()
                 && self.viewport.start > 0
             {
                 self.viewport.start -= 1;

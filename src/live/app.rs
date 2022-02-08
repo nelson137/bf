@@ -408,11 +408,9 @@ impl App {
         let mut editor_lines =
             self.code.wrapped_numbered_rows().collect::<Vec<_>>();
         let viewport = self.code.viewport();
-        let overflow_lines = if editor_lines.len() > viewport.height {
-            editor_lines.drain(viewport.height..).collect::<Vec<_>>()
-        } else {
-            Vec::new()
-        };
+        let overflow_lines = editor_lines
+            .drain(viewport.height.min(editor_lines.len())..)
+            .collect::<Vec<_>>();
         let last_row_i = viewport.height - 1;
 
         let fmt_num = |n| format!("{:>1$}", n, num_width as usize);

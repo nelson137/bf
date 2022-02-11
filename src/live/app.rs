@@ -417,32 +417,28 @@ impl App {
         let num_style = Style::default().fg(Color::Yellow);
         let trunc_line_span =
             Span::styled("@@@", Style::default().fg(Color::Magenta));
-        let rows =
-            editor_lines
-                .iter()
-                .enumerate()
-                .map(|(row_i, (maybe_n, row))| {
-                    let n_span = Span::styled(
-                        maybe_n.map(fmt_num).unwrap_or_default(),
-                        num_style,
-                    );
-                    let row_span = match overflow_lines.first() {
-                        Some((None, _)) if row_i >= last_row_i => {
-                            Spans::from(vec![
-                                Span::raw(&row[..row.len() - 3]),
-                                trunc_line_span.clone(),
-                            ])
-                        }
-                        // row is a Cow that comes from line wrapping
-                        // which is done with the FirstFit algorithm,
-                        // so it should always be a Cow::Borrowed.
-                        _ => match *row {
-                            Cow::Borrowed(b) => Spans::from(b),
-                            Cow::Owned(_) => unreachable!(),
-                        },
-                    };
-                    Row::new(vec![n_span.into(), row_span])
-                });
+        let rows = editor_lines.iter().map(|(row_i, (maybe_n, row))| {
+            let n_span = Span::styled(
+                maybe_n.map(fmt_num).unwrap_or_default(),
+                num_style,
+            );
+            let row_span = match overflow_lines.first() {
+                Some((_, (None, _))) if *row_i >= last_row_i => {
+                    Spans::from(vec![
+                        Span::raw(&row[..row.len() - 3]),
+                        trunc_line_span.clone(),
+                    ])
+                }
+                // row is a Cow that comes from line wrapping
+                // which is done with the FirstFit algorithm,
+                // so it should always be a Cow::Borrowed.
+                _ => match *row {
+                    Cow::Borrowed(b) => Spans::from(b),
+                    Cow::Owned(_) => unreachable!(),
+                },
+            };
+            Row::new(vec![n_span.into(), row_span])
+        });
         let widths = [Constraint::Length(num_width), Constraint::Min(0)];
         let table = Table::new(rows).widths(&widths);
         frame.render_widget(table, content_area);
@@ -505,7 +501,7 @@ impl App {
     }
 
     fn on_exit(&mut self) {
-        if self.is_dirty() {
+        if false {
             let should_quit = self.should_quit.clone();
             let mut dialogue = ButtonDialogue::confirm(
                 "Warning:\n\nThere are unsaved changes, are you sure you want \

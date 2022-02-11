@@ -210,7 +210,7 @@ impl TextArea {
             let mut y = 0;
             let mut line_count = 0;
             for row in rows {
-                if row.0.is_some() {
+                if (row.1).0.is_some() {
                     line_count += 1;
                 }
                 if line_count > self.cursor.y {
@@ -257,13 +257,11 @@ impl TextArea {
             .map(|l| wrap_ragged(l, width).len())
             .collect::<Vec<_>>();
 
-        // let mut line_count = 0;
         let mut row_count = 0;
         for rc in line_row_counts {
             if row_count >= height {
                 break;
             }
-            // line_count += 1;
             row_count += rc;
         }
 
@@ -292,13 +290,17 @@ impl TextArea {
 
     pub fn wrapped_numbered_rows(
         &self,
-    ) -> impl Iterator<Item = (Option<usize>, Cow<'_, str>)> {
+    ) -> impl Iterator<Item = (usize, (Option<usize>, Cow<'_, str>))> {
         (self.viewport.start + 1..)
             .zip(self.viewport_lines())
-            .flat_map(move |(n, line)| {
+            .flat_map(|(n, line)| {
                 iter::once(Some(n))
                     .chain(iter::repeat(None))
                     .zip(wrap_ragged(line, self.viewport.width))
+            })
+            .enumerate()
+            .take_while(|(i, (maybe_n, _))| {
+                *i < self.viewport.height || maybe_n.is_none()
             })
     }
 
@@ -308,6 +310,30 @@ impl TextArea {
 
     pub fn hash(&self) -> Sha1Digest {
         sha1_digest(self.text())
+    }
+
+    fn seek_eol_down(&mut self) {
+        let row_counts = self
+            .viewport_lines()
+            .iter()
+            .take(self.cursor.y)
+            .map(|line| wrap_ragged(line, self.viewport.width).len())
+            .collect::<Vec<_>>();
+
+        let mut count: usize = row_counts.iter().sum();
+
+        let current_line_count =
+            wrap_ragged(self.cursor_line(), self.viewport.width).len();
+        let h = self.viewport.height.saturating_sub(current_line_count);
+
+        let mut i = 0;
+        while i < row_counts.len() && count > h {
+            count = count.saturating_sub(row_counts[i]);
+            i += 1;
+        }
+
+        self.viewport.start += i;
+        self.cursor.y = self.cursor.y.saturating_sub(i);
     }
 
     pub fn insert(&mut self, ch: char) {
@@ -330,6 +356,7 @@ impl TextArea {
         }
         self.cursor.x = 0;
         self.lines.insert(self.viewport.start + self.cursor.y, rest);
+        self.seek_eol_down();
     }
 
     fn cursor_x_clamped(&self) -> usize {
@@ -346,11 +373,13 @@ impl TextArea {
                 self.cursor.y += 1;
                 self.cursor.x = 0;
             }
+            self.seek_eol_down();
         } else if self.viewport.start + self.viewport.height < self.len() {
             // Cursor is at last col & last row of viewport & viewport
             // is not at bottom
             self.viewport.start += 1;
             self.cursor.x = 0;
+            self.seek_eol_down();
         }
     }
 
@@ -398,11 +427,13 @@ impl TextArea {
             // Cursor is not at last line of viewport
             self.cursor.y += 1;
             self.cursor.x = self.cursor_x_clamped();
+            self.seek_eol_down();
         } else if self.viewport.start + self.viewport.height < self.len() {
             // Cursor is at last line of viewport & viewport is not at
             // bottom
             self.viewport.start += 1;
             self.cursor.x = self.cursor_x_clamped();
+            self.seek_eol_down();
         } else {
             // Cursor is at last line of viewport & viewport is at
             // bottom

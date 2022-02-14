@@ -454,24 +454,92 @@ impl TextArea {
     }
 
     pub fn backspace(&mut self) {
+        let TextAreaViewport {
+            width,
+            height,
+            start,
+        } = self.viewport;
+
         if self.cursor.x > 0 {
             // Cursor is not at col 0
             self.cursor.x -= 1;
             let x = self.cursor.x;
             self.cursor_line_mut().remove(x);
-        } else if self.viewport.start + self.cursor.y > 0 {
-            // Cursor is at col 0 & at not at top
-            let original_line =
-                self.lines.remove(self.viewport.start + self.cursor.y);
-            if self.viewport.start + self.viewport.height >= self.len()
-                && self.viewport.start > 0
-            {
-                self.viewport.start -= 1;
-            } else {
+        } else if start == 0 {
+            // Cursor is at col 0 & viewport at top
+            if self.cursor.y > 0 {
+                let original_line = self.lines.remove(start + self.cursor.y);
                 self.cursor.y -= 1;
+                self.cursor_end();
+                self.cursor_line_mut().push_str(&original_line);
             }
+        } else if self.cursor.y == 0 {
+            // Cursor is at col 0 & viewport not at top & cursor at
+            // row 0
+            let original_line = self.lines.remove(start);
+            self.viewport.start -= 1;
             self.cursor_end();
-            self.cursor_line_mut().push_str(&original_line)
+            self.cursor_line_mut().push_str(&original_line);
+        } else if self.viewport.start + self.cursor.y > 0 {
+            // Cursor is at col 0 & not on first line
+
+            let original_line = self.lines.remove(start + self.cursor.y);
+
+            let mut line_count = 0;
+            let mut row_count = 0;
+            for line in self.viewport_lines() {
+                let rc = wrap_ragged(line, width).len();
+                if row_count >= height {
+                    break;
+                }
+                line_count += 1;
+                row_count += rc;
+            }
+
+            if start + line_count < self.len() {
+                // Viewport is not at bottom
+                if self.cursor.y == 0 {
+                    self.viewport.start -= 1;
+                } else {
+                    self.cursor.y -= 1;
+                }
+                self.cursor_end();
+                self.cursor_line_mut().push_str(&original_line);
+            } else {
+                // Viewport is at bottom
+                self.cursor.y -= 1;
+                self.cursor_end();
+                let orig_line_rc = {
+                    let chunks = wrap_ragged(&original_line, width);
+                    if chunks.len() == 1 && chunks[0].is_empty() {
+                        0
+                    } else {
+                        chunks.len()
+                    }
+                };
+                let old_line_rc = {
+                    let chunks = wrap_ragged(self.cursor_line(), width);
+                    if chunks.len() == 1 && chunks[0].is_empty() {
+                        0
+                    } else {
+                        chunks.len()
+                    }
+                };
+                self.cursor_line_mut().push_str(&original_line);
+                let new_line_rc = wrap_ragged(self.cursor_line(), width).len();
+                let above_rc =
+                    wrap_ragged(&self.lines[start - 1], width).len();
+                if row_count - orig_line_rc - old_line_rc
+                    + new_line_rc
+                    + above_rc
+                    <= height
+                {
+                    // The line above the viewport can be added without
+                    // pushing the new current line too far down
+                    self.viewport.start -= 1;
+                    self.cursor.y += 1;
+                }
+            }
         }
     }
 

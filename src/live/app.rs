@@ -439,7 +439,10 @@ impl App {
             };
             Row::new(vec![n_span.into(), row_span])
         });
-        let widths = [Constraint::Length(num_width), Constraint::Min(0)];
+        let widths = [
+            Constraint::Length(num_width),
+            Constraint::Max(viewport.width as u16),
+        ];
         let table = Table::new(rows).widths(&widths);
         frame.render_widget(table, content_area);
 

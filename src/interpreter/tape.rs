@@ -1,7 +1,7 @@
 use std::{iter, vec::Vec};
 
 use itertools::Itertools;
-use tui::{
+use ratatui::{
     buffer::Buffer,
     layout::{Constraint, Direction, Layout, Rect},
     widgets::Widget,
@@ -192,8 +192,8 @@ impl Widget for WindowDisplay<'_> {
             )
             .split(area);
 
-        for (cell, cell_area) in self.0.into_iter().zip(layout) {
-            cell.render(cell_area, buf);
+        for (cell, cell_area) in self.0.into_iter().zip(layout.iter()) {
+            cell.render(*cell_area, buf);
         }
     }
 }

@@ -18,11 +18,11 @@ use crossterm::{
         LeaveAlternateScreen,
     },
 };
-use tui::{
+use ratatui::{
     backend::CrosstermBackend,
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
-    text::{Span, Spans},
+    text::{Line, Span},
     widgets::{Block, BorderType, Borders, Paragraph, Row, Table},
 };
 
@@ -424,7 +424,7 @@ impl App {
             );
             let row_span = match overflow_lines.first() {
                 Some((_, (None, _))) if *row_i >= last_row_i => {
-                    Spans::from(vec![
+                    Line::from(vec![
                         Span::raw(&row[..row.len() - 3]),
                         trunc_line_span.clone(),
                     ])
@@ -433,7 +433,7 @@ impl App {
                 // which is done with the FirstFit algorithm,
                 // so it should always be a Cow::Borrowed.
                 _ => match *row {
-                    Cow::Borrowed(b) => Spans::from(b),
+                    Cow::Borrowed(b) => Line::from(b),
                     Cow::Owned(_) => unreachable!(),
                 },
             };
@@ -484,7 +484,7 @@ impl App {
         ];
         let keys_style = Style::default().bg(Color::Cyan).fg(Color::Black);
 
-        let text = Spans::from(
+        let text = Line::from(
             CONTROLS
                 .iter()
                 .flat_map(|[keys, desc]| {

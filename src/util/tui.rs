@@ -8,7 +8,7 @@ use std::{
 };
 
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
-use tui::{
+use ratatui::{
     backend::CrosstermBackend,
     buffer::Buffer,
     layout::Rect,

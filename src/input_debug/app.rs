@@ -9,7 +9,7 @@ use crossterm::{
         LeaveAlternateScreen,
     },
 };
-use tui::{
+use ratatui::{
     backend::CrosstermBackend,
     layout::{Constraint, Direction, Layout, Rect},
     widgets::{Block, Borders, Paragraph, Row, Table},

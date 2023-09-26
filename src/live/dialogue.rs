@@ -1,5 +1,5 @@
 use crossterm::event::{KeyCode, KeyEvent};
-use tui::{
+use ratatui::{
     buffer::Buffer,
     layout::{Alignment, Constraint, Direction, Layout, Margin, Rect},
     style::{Color, Modifier, Style},
@@ -112,7 +112,7 @@ impl Widget for DialogueBox {
         Block::default()
             .title(self.title)
             .borders(Borders::ALL)
-            .border_type(tui::widgets::BorderType::Thick)
+            .border_type(ratatui::widgets::BorderType::Thick)
             .border_style(Style::default().fg(self.fg).bg(self.bg))
             .style(Style::default().bg(self.bg))
             .render(box_area, buf);

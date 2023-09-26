@@ -1,10 +1,10 @@
 use std::num::Wrapping;
 
-use tui::{
+use ratatui::{
     buffer::Buffer,
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Style},
-    text::{Span, Spans},
+    text::{Line, Span},
     widgets::{Paragraph, Widget},
 };
 
@@ -111,7 +111,7 @@ impl Widget for CellDisplay<'_> {
             false => Style::default(),
         };
         let value = Span::styled(self.display_value(), style);
-        Paragraph::new(Spans::from(vec![
+        Paragraph::new(Line::from(vec![
             border.clone(),
             value,
             border.clone(),

@@ -114,10 +114,7 @@ impl KeyEventExt for KeyEvent {
 
     fn is_shift(&self) -> bool {
         self.modifiers.intersects(KeyModifiers::SHIFT)
-            || match self.code {
-                KeyCode::Char(c) if 'A' <= c && c <= 'Z' => true,
-                _ => false,
-            }
+            || matches!(self.code, KeyCode::Char('A'..='Z'))
     }
 }
 
@@ -221,19 +218,17 @@ impl EventQueue {
         let mut i = events.len();
         while i >= 3 {
             i -= 1;
-            match (&events[i], &events[i - 1], &events[i - 2]) {
-                (
-                    bfevent_char_matcher!('~'),
-                    BfEvent::Input(Event::Key(k_evt)),
-                    bfevent_char_matcher!('['),
-                ) => {
-                    if k_evt.code == KeyCode::Char('5') {
-                        insert_keycode!(PageUp, i);
-                    } else if k_evt.code == KeyCode::Char('6') {
-                        insert_keycode!(PageDown, i);
-                    }
+            if let (
+                bfevent_char_matcher!('~'),
+                BfEvent::Input(Event::Key(k_evt)),
+                bfevent_char_matcher!('['),
+            ) = (&events[i], &events[i - 1], &events[i - 2])
+            {
+                if k_evt.code == KeyCode::Char('5') {
+                    insert_keycode!(PageUp, i);
+                } else if k_evt.code == KeyCode::Char('6') {
+                    insert_keycode!(PageDown, i);
                 }
-                _ => (),
             }
         }
 
@@ -241,7 +236,7 @@ impl EventQueue {
     }
 }
 
-const SPINNER: &'static str = "│╱─╲";
+const SPINNER: &str = "│╱─╲";
 
 #[derive(Clone, Copy, Default)]
 pub struct Spinner(usize);

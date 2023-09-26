@@ -52,8 +52,7 @@ pub struct AsyncInterpreter {
     state: SharedCell<State>,
 }
 
-const ERROR_POISONED: &'static str =
-    "an interpreter thread mutex was poisoned";
+const ERROR_POISONED: &str = "an interpreter thread mutex was poisoned";
 
 impl AsyncInterpreter {
     pub fn new(code: String, input: String, auto_input: Option<u8>) -> Self {
@@ -128,7 +127,7 @@ impl AsyncInterpreter {
         self.stop.store(true);
         self.program
             .store((code, input, auto_input))
-            .or_else(|_| Err(anyhow!(ERROR_POISONED)))?;
+            .map_err(|_| anyhow!(ERROR_POISONED))?;
         self.restart_barrier.wait();
         self.stop.store(false);
         Ok(())

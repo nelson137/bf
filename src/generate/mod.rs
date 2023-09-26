@@ -44,7 +44,7 @@ pub fn subcmd_generate(args: GenerateCli) -> Result<()> {
     };
 
     writer
-        .write_all(&gen_func(data).as_bytes())
+        .write_all(gen_func(data).as_bytes())
         .with_context(|| err_file_write!(path))
 }
 

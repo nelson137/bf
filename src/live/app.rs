@@ -76,7 +76,7 @@ impl App {
         execute!(stdout(), EnableMouseCapture, EnterAlternateScreen)?;
 
         let file_contents = if let Some(path) = &cli.infile {
-            String::from_utf8_lossy(&read_script_file(&path)?).into_owned()
+            String::from_utf8_lossy(&read_script_file(path)?).into_owned()
         } else {
             String::new()
         };
@@ -182,12 +182,12 @@ impl App {
                         self.on_save();
                     }
                     Reason::Input => {
-                        self.input = input.into();
+                        self.input = input;
                         self.dialogue = None;
                         restart_interpreter = true;
                     }
                     Reason::AutoInput => {
-                        self.auto_input = input.as_bytes().first().map(|b| *b);
+                        self.auto_input = input.as_bytes().first().copied();
                         self.dialogue = None;
                         restart_interpreter = true;
                     }
@@ -456,7 +456,7 @@ impl App {
         area: Rect,
         output: String,
     ) {
-        if output.len() > 0 {
+        if !output.is_empty() {
             let block =
                 Block::default().borders(Borders::LEFT | Borders::RIGHT);
             let p = Paragraph::new(output).block(block);

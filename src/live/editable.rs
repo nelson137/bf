@@ -243,7 +243,8 @@ impl TextArea {
     pub fn resize_viewport(&mut self, width: usize, height: usize) {
         if self.viewport.height == height && self.viewport.width == width {
             return;
-        } else if height == 0 || width == 0 {
+        }
+        if height == 0 || width == 0 {
             return;
         }
 

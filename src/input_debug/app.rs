@@ -1,8 +1,4 @@
-use std::{
-    io::{stdout, Write},
-    thread,
-    time::Duration,
-};
+use std::{io::stdout, thread, time::Duration};
 
 use anyhow::Result;
 use crossterm::{

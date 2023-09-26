@@ -186,7 +186,7 @@ impl ButtonDialogue {
     }
 
     fn button_select_toggle(&mut self) {
-        if self.buttons.len() > 0 {
+        if !self.buttons.is_empty() {
             self.button_cursor ^= 1;
         }
     }
@@ -286,14 +286,14 @@ impl Dialogue for ButtonDialogue {
 
     fn on_event(&mut self, event: KeyEvent) -> Decision {
         match event.code {
-            KeyCode::Esc => return Decision::No,
-            KeyCode::Char('c') if event.is_ctrl() => return Decision::No,
+            KeyCode::Esc => Decision::No,
+            KeyCode::Char('c') if event.is_ctrl() => Decision::No,
             KeyCode::Enter => {
-                return if self.button_cursor == 0 {
+                if self.button_cursor == 0 {
                     Decision::No
                 } else {
                     Decision::Yes
-                };
+                }
             }
 
             KeyCode::Tab

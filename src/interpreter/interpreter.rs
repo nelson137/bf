@@ -40,9 +40,11 @@ impl Interpreter {
     fn sanitize(code: &[u8]) -> Vec<u8> {
         code.iter()
             .copied()
-            .filter(|c| match *c as char {
-                '+' | '-' | '>' | '<' | '[' | ']' | '.' | ',' => true,
-                _ => false,
+            .filter(|c| {
+                matches!(
+                    *c as char,
+                    '+' | '-' | '>' | '<' | '[' | ']' | '.' | ','
+                )
             })
             .collect()
     }
@@ -125,7 +127,7 @@ impl Iterator for Interpreter {
                 // Always check for mismatched bracket error
                 let ni = self.jump_bracket();
                 if let Err(err) = ni {
-                    return Some(Err(err.into()));
+                    return Some(Err(err));
                 } else if self.tape.current().value() == 0 {
                     next_ip = ni;
                 }
@@ -134,7 +136,7 @@ impl Iterator for Interpreter {
                 // Always check for mismatched bracket error
                 let ni = self.jump_bracket();
                 if let Err(err) = ni {
-                    return Some(Err(err.into()));
+                    return Some(Err(err));
                 } else if self.tape.current().value() != 0 {
                     next_ip = ni;
                 }

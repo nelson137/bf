@@ -12,7 +12,7 @@ pub trait TextAreaExts {
 
     fn len(&self) -> usize;
 
-    fn on_event(&mut self, event: KeyEvent);
+    fn on_event_multi_line(&mut self, event: KeyEvent);
 
     fn to_string(&self) -> String;
 }
@@ -32,7 +32,7 @@ impl TextAreaExts for TextArea<'_> {
         self.lines().len()
     }
 
-    fn on_event(&mut self, event: KeyEvent) {
+    fn on_event_multi_line(&mut self, event: KeyEvent) {
         match event.code {
             // Cursor movement
             KeyCode::Left => self.move_cursor(CursorMove::Back),

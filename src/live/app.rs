@@ -207,7 +207,7 @@ impl App<'_> {
                 },
             }
         } else {
-            self.code.on_event(event);
+            self.code.on_event_multi_line(event);
             match event.code {
                 KeyCode::Char(c) if event.is_ctrl() => match c {
                     's' => self.on_save(),

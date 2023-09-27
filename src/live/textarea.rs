@@ -13,6 +13,7 @@ pub trait TextAreaExts {
     fn len(&self) -> usize;
 
     fn on_event_multi_line(&mut self, event: KeyEvent);
+    fn on_event_single_line(&mut self, event: KeyEvent);
 
     fn to_string(&self) -> String;
 }
@@ -49,6 +50,32 @@ impl TextAreaExts for TextArea<'_> {
             KeyCode::Tab => {
                 self.insert_tab();
             }
+            KeyCode::Char(c) if !event.is_ctrl() && !event.is_alt() => {
+                self.insert_char(c)
+            }
+
+            // Deletions
+            KeyCode::Backspace => {
+                self.delete_char();
+            }
+            KeyCode::Delete => {
+                self.delete_next_char();
+            }
+
+            // Others
+            _ => (),
+        }
+    }
+
+    fn on_event_single_line(&mut self, event: KeyEvent) {
+        match event.code {
+            // Cursor movement
+            KeyCode::Left => self.move_cursor(CursorMove::Back),
+            KeyCode::Right => self.move_cursor(CursorMove::Forward),
+            KeyCode::Home => self.move_cursor(CursorMove::Head),
+            KeyCode::End => self.move_cursor(CursorMove::End),
+
+            // Insertions
             KeyCode::Char(c) if !event.is_ctrl() && !event.is_alt() => {
                 self.insert_char(c)
             }

@@ -6,10 +6,11 @@ use ratatui::{
     text::Span,
     widgets::{Block, Borders, Clear, Paragraph, Widget, Wrap},
 };
-
-use super::editable::{Editable, Field};
+use ratatui_textarea::TextArea;
 
 use crate::util::tui::{sublayouts, Frame, KeyEventExt};
+
+use super::textarea::TextAreaExts;
 
 pub fn centered_rect(percent_x: u16, percent_y: u16, area: Rect) -> Rect {
     let centered_vert_area = Layout::default()
@@ -309,21 +310,22 @@ impl Dialogue for ButtonDialogue {
     }
 }
 
-pub struct PromptStrDialogue {
+pub struct PromptStrDialogue<'textarea> {
     button_dialogue: ButtonDialogue,
-    input: Field,
+    input: TextArea<'textarea>,
 }
 
-impl PromptStrDialogue {
+impl PromptStrDialogue<'_> {
     pub fn new<S>(title: S, prompt: S, default: Option<S>) -> Self
     where
         S: Into<String>,
     {
-        let input = if let Some(s) = default {
-            Field::from(s)
+        let mut input = if let Some(s) = default {
+            TextArea::new(vec![s.into()])
         } else {
-            Field::new()
+            TextArea::new(vec![])
         };
+        input.set_block(Block::default().borders(Borders::ALL));
         Self {
             button_dialogue: ButtonDialogue {
                 dialogue: DialogueBox {
@@ -349,7 +351,7 @@ impl PromptStrDialogue {
     }
 }
 
-impl Dialogue for PromptStrDialogue {
+impl Dialogue for PromptStrDialogue<'_> {
     fn get_reason(&self) -> Reason {
         self.button_dialogue.get_reason()
     }
@@ -368,22 +370,21 @@ impl Dialogue for PromptStrDialogue {
 
     fn draw(&self, frame: &mut Frame, area: Rect) {
         frame.render_widget(self.clone_data(), area);
-        frame.set_cursor(area.x + 4 + self.input.cursor() as u16, area.y + 5);
     }
 
     fn on_event(&mut self, event: KeyEvent) -> Decision {
         match self.button_dialogue.on_event(event) {
             Decision::Waiting => {
-                self.input.on_event(event);
+                self.input.on_event_single_line(event);
                 Decision::Waiting
             }
-            Decision::Yes => Decision::Input(self.input.text().into()),
+            Decision::Yes => Decision::Input(self.input.to_string()),
             d => d,
         }
     }
 }
 
-impl Widget for PromptStrDialogue {
+impl Widget for PromptStrDialogue<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
         self.button_dialogue.render(area, buf);
 
@@ -395,9 +396,6 @@ impl Widget for PromptStrDialogue {
                 vertical: 4,
             }))[0];
 
-        Paragraph::new(self.input.text())
-            .block(Block::default().borders(Borders::ALL))
-            // .scroll((0u16, 1u16))
-            .render(input_area, buf);
+        self.input.widget().render(input_area, buf);
     }
 }

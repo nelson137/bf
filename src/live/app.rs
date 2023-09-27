@@ -1,5 +1,4 @@
 use std::{
-    borrow::Cow,
     fs::File,
     io::{stdout, Write},
     path::PathBuf,
@@ -23,11 +22,12 @@ use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Line, Span},
-    widgets::{Block, BorderType, Borders, Paragraph, Row, Table},
+    widgets::{Block, BorderType, Borders, Paragraph},
 };
+use ratatui_textarea::TextArea;
 
 use crate::util::{
-    common::{sha1_digest, Sha1Digest, USizeExt},
+    common::{sha1_digest, Sha1Digest},
     read::read_script_file,
     sync::SharedBool,
     tui::{
@@ -42,17 +42,17 @@ use super::{
         centered_rect, ButtonDialogue, Decision, Dialogue, PromptStrDialogue,
         Reason,
     },
-    editable::{Editable, TextArea},
+    textarea::TextAreaExts,
 };
 
-pub struct App {
+pub struct App<'textarea> {
     term_width: usize,
     term_height: usize,
     ascii_values: bool,
     file_path: Option<PathBuf>,
     should_quit: SharedBool,
     spinner: Spinner,
-    code: TextArea,
+    code: TextArea<'textarea>,
     tape_viewport_start: usize,
     input: String,
     auto_input: Option<u8>,
@@ -63,23 +63,35 @@ pub struct App {
     async_interpreter: AsyncInterpreter,
 }
 
-impl Drop for App {
+impl Drop for App<'_> {
     fn drop(&mut self) {
         execute!(stdout(), DisableMouseCapture, LeaveAlternateScreen).ok();
         disable_raw_mode().ok();
     }
 }
 
-impl App {
+impl App<'_> {
     pub fn new(cli: LiveCli) -> Result<Self> {
         enable_raw_mode()?;
         execute!(stdout(), EnableMouseCapture, EnterAlternateScreen)?;
 
-        let file_contents = if let Some(path) = &cli.infile {
-            String::from_utf8_lossy(&read_script_file(path)?).into_owned()
+        let script = if let Some(path) = &cli.infile {
+            read_script_file(path)?
         } else {
-            String::new()
+            Vec::new()
         };
+
+        let script_raw = script
+            .iter()
+            .flat_map(|l| l.as_bytes())
+            .copied()
+            .collect::<Vec<_>>();
+
+        let mut code = TextArea::from(script);
+        code.set_line_number_style(Style::default().fg(Color::Yellow));
+        code.set_cursor_line_style(Style::default());
+
+        let interpreter_code = code.to_string();
 
         Ok(Self {
             term_width: 0,
@@ -88,16 +100,16 @@ impl App {
             file_path: cli.infile,
             should_quit: SharedBool::new(false),
             spinner: Spinner::default(),
-            code: TextArea::from(&file_contents, 0, 0),
+            code,
             tape_viewport_start: 0,
             input: String::new(),
             auto_input: None,
-            clean_hash: sha1_digest(&file_contents),
+            clean_hash: sha1_digest(script_raw),
             event_queue: EventQueue::with_ticks(100),
             delay: Duration::from_millis(20),
             dialogue: None,
             async_interpreter: AsyncInterpreter::new(
-                file_contents.clone(),
+                interpreter_code,
                 String::new(),
                 None,
             ),
@@ -151,7 +163,7 @@ impl App {
                     self.dialogue = Some(Box::new(dialogue));
                 }
                 self.async_interpreter.restart(
-                    self.code.text(),
+                    self.code.to_string(),
                     self.input.clone(),
                     self.auto_input,
                 )?;
@@ -309,13 +321,6 @@ impl App {
         let output = String::from_utf8_lossy(&int_state.output).into_owned();
         let output_lines = output.split_terminator('\n').count() as u16;
 
-        let num_width = self.code.len().count_digits().max(3);
-
-        self.code.resize_viewport(
-            self.term_width.saturating_sub(3 + num_width),
-            self.term_height.saturating_sub(output_lines as usize + 9),
-        );
-
         let layout = Layout::default()
             .direction(Direction::Vertical)
             .constraints(vec![
@@ -403,54 +408,7 @@ impl App {
         let content_area = block.inner(area);
         frame.render_widget(block, area);
 
-        let num_width =
-            self.code.viewport_lines().len().count_digits().max(3) as u16;
-        let mut editor_lines =
-            self.code.wrapped_numbered_rows().collect::<Vec<_>>();
-        let viewport = self.code.viewport();
-        let overflow_lines = editor_lines
-            .drain(viewport.height.min(editor_lines.len())..)
-            .collect::<Vec<_>>();
-        let last_row_i = viewport.height - 1;
-
-        let fmt_num = |n| format!("{:>1$}", n, num_width as usize);
-        let num_style = Style::default().fg(Color::Yellow);
-        let trunc_line_span =
-            Span::styled("@@@", Style::default().fg(Color::Magenta));
-        let rows = editor_lines.iter().map(|(row_i, (maybe_n, row))| {
-            let n_span = Span::styled(
-                maybe_n.map(fmt_num).unwrap_or_default(),
-                num_style,
-            );
-            let row_span = match overflow_lines.first() {
-                Some((_, (None, _))) if *row_i >= last_row_i => {
-                    Line::from(vec![
-                        Span::raw(&row[..row.len() - 3]),
-                        trunc_line_span.clone(),
-                    ])
-                }
-                // row is a Cow that comes from line wrapping
-                // which is done with the FirstFit algorithm,
-                // so it should always be a Cow::Borrowed.
-                _ => match *row {
-                    Cow::Borrowed(b) => Line::from(b),
-                    Cow::Owned(_) => unreachable!(),
-                },
-            };
-            Row::new(vec![n_span.into(), row_span])
-        });
-        let widths = [
-            Constraint::Length(num_width),
-            Constraint::Max(viewport.width as u16),
-        ];
-        let table = Table::new(rows).widths(&widths);
-        frame.render_widget(table, content_area);
-
-        let cursor = self.code.viewport_cursor();
-        frame.set_cursor(
-            content_area.x + num_width + 1 + cursor.x as u16,
-            content_area.y + cursor.y as u16,
-        );
+        frame.render_widget(self.code.widget(), content_area);
     }
 
     fn draw_content_output(
@@ -523,7 +481,11 @@ impl App {
             None => self.on_save_as(),
             Some(path) => {
                 let res = File::create(&path).and_then(|mut file| {
-                    file.write_all(self.code.text().as_bytes())
+                    for line in self.code.lines() {
+                        file.write_all(line.as_bytes())?;
+                        file.write_all(&[b'\n'])?;
+                    }
+                    Ok(())
                 });
                 if let Err(err) = res {
                     let mut dialogue = ButtonDialogue::error(format!(

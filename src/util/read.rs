@@ -8,7 +8,7 @@ use anyhow::{Context, Result};
 
 use crate::{err_file_open, err_file_read};
 
-pub fn read_script(infile: &Option<PathBuf>) -> Result<Vec<String>> {
+pub fn read_script(infile: Option<&PathBuf>) -> Result<Vec<String>> {
     match infile {
         Some(path) if *path != PathBuf::from("-") => read_script_file(path),
         _ => read_script_stdin(),

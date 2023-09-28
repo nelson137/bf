@@ -15,7 +15,7 @@ mod print;
 use print::Printer;
 
 fn run_subcmd(args: RunCli) -> Result<()> {
-    let script = read_script(&args.infile)?
+    let script = read_script(args.infile.as_ref())?
         .iter()
         .flat_map(|l| l.as_bytes())
         .copied()

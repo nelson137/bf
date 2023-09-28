@@ -22,7 +22,7 @@ use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Line, Span},
-    widgets::{Block, BorderType, Borders, Paragraph},
+    widgets::Paragraph,
 };
 use ratatui_textarea::TextArea;
 
@@ -43,6 +43,7 @@ use super::{
         Reason,
     },
     textarea::TextAreaExts,
+    widgets::VerticalStack,
 };
 
 pub struct App<'textarea> {
@@ -321,52 +322,33 @@ impl App<'_> {
         let output = String::from_utf8_lossy(&int_state.output).into_owned();
         let output_lines = output.split_terminator('\n').count() as u16;
 
-        let layout = Layout::default()
-            .direction(Direction::Vertical)
-            .constraints(vec![
-                Constraint::Length(4),            // Tape
-                Constraint::Length(1),            // Divider
-                Constraint::Min(1),               // Editor
-                Constraint::Length(1),            // Divider
-                Constraint::Length(output_lines), // Output
-                Constraint::Length(1),            // Bottom
-            ])
-            .split(area);
-
-        sublayouts!(
-            [
-                tape_area,
-                divider_area1,
-                editor_area,
-                divider_area2,
-                output_area,
-                bottom_area
-            ] = layout
-        );
-
         let output_title = if output.ends_with('\n') {
             " Output "
         } else {
             " Output (no EOL) "
         };
 
+        let stack = VerticalStack::<3>::new(
+            [
+                Constraint::Length(3),            // Tape
+                Constraint::Min(1),               // Editor
+                Constraint::Length(output_lines), // Output
+            ],
+            [" Tape ", " Code ", output_title],
+            area,
+        );
+
+        let [tape_area, editor_area, output_area] = stack.areas();
+
+        frame.render_widget(stack, area);
         self.draw_content_tape(frame, tape_area);
-        self.draw_content_divider(frame, divider_area1, " Code ");
         self.draw_content_editor(frame, editor_area);
-        self.draw_content_divider(frame, divider_area2, output_title);
         self.draw_content_output(frame, output_area, output);
-        self.draw_content_bottom(frame, bottom_area);
     }
 
     fn draw_content_tape(&mut self, frame: &mut Frame, area: Rect) {
-        let block = Block::default()
-            .borders(Borders::TOP | Borders::LEFT | Borders::RIGHT)
-            .title(" Tape ");
-        let tape_area = block.inner(area);
-        frame.render_widget(block, area);
-
         let tape = self.async_interpreter.state().tape;
-        let max_cells = (tape_area.width as f32 / 4.0).ceil() as usize;
+        let max_cells = (area.width as f32 / 4.0).ceil() as usize;
         let cursor_min = self.tape_viewport_start + 3;
         let cursor_max =
             self.tape_viewport_start + max_cells.saturating_sub(3);
@@ -384,31 +366,11 @@ impl App<'_> {
             max_cells,
             self.ascii_values,
         );
-        frame.render_widget(window, tape_area);
-    }
-
-    fn draw_content_divider(
-        &self,
-        frame: &mut Frame,
-        area: Rect,
-        title: &str,
-    ) {
-        let inner_width =
-            (area.width as usize).saturating_sub(2 + title.len());
-        let symbols = BorderType::line_symbols(BorderType::Plain);
-        let divider = symbols.vertical_right.to_owned()
-            + title
-            + &symbols.horizontal.repeat(inner_width)
-            + symbols.vertical_left;
-        frame.render_widget(Paragraph::new(divider), area);
+        frame.render_widget(window, area);
     }
 
     fn draw_content_editor(&self, frame: &mut Frame, area: Rect) {
-        let block = Block::default().borders(Borders::LEFT | Borders::RIGHT);
-        let content_area = block.inner(area);
-        frame.render_widget(block, area);
-
-        frame.render_widget(self.code.widget(), content_area);
+        frame.render_widget(self.code.widget(), area);
     }
 
     fn draw_content_output(
@@ -418,20 +380,9 @@ impl App<'_> {
         output: String,
     ) {
         if !output.is_empty() {
-            let block =
-                Block::default().borders(Borders::LEFT | Borders::RIGHT);
-            let p = Paragraph::new(output).block(block);
+            let p = Paragraph::new(output);
             frame.render_widget(p, area);
         }
-    }
-
-    fn draw_content_bottom(&self, frame: &mut Frame, area: Rect) {
-        let inner_width = (area.width as usize).saturating_sub(2);
-        let symbols = BorderType::line_symbols(BorderType::Plain);
-        let bottom = symbols.bottom_left.to_owned()
-            + &symbols.horizontal.repeat(inner_width)
-            + symbols.bottom_right;
-        frame.render_widget(Paragraph::new(bottom), area);
     }
 
     fn draw_footer(&self, frame: &mut Frame, area: Rect) {

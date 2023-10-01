@@ -27,6 +27,10 @@ impl Default for Tape {
 }
 
 impl Tape {
+    pub fn len(&self) -> usize {
+        self.cells.len()
+    }
+
     fn get(&mut self, index: usize) -> &mut Cell {
         while index > self.cells.len() - 1 {
             self.cells.push(Cell::new());

@@ -20,7 +20,7 @@ use crossterm::{
 use ratatui::{
     backend::CrosstermBackend,
     layout::{Constraint, Direction, Layout, Rect},
-    style::{Color, Modifier, Style},
+    style::{Color, Modifier, Style, Styled, Stylize},
     text::{Line, Span},
     widgets::Paragraph,
 };
@@ -285,10 +285,7 @@ impl App<'_> {
         // Draw filename
         let p = Paragraph::new(match self.get_file_path() {
             Some(path) => Span::raw(path),
-            None => Span::styled(
-                "New File",
-                Style::default().add_modifier(Modifier::ITALIC),
-            ),
+            None => "New File".add_modifier(Modifier::ITALIC),
         });
         frame.render_widget(p, fn_area);
 
@@ -296,14 +293,14 @@ impl App<'_> {
         let status = int_state.status;
         let style = Style::default().add_modifier(Modifier::BOLD);
         let style = match status {
-            Status::Done => style,
+            Status::Done => Style::default(),
             Status::Running => style.fg(Color::Green),
             Status::WaitingForInput => style.fg(Color::Yellow),
             Status::Error(_) => style.fg(Color::Red),
             Status::FatalError(_) => style.fg(Color::Red),
         };
         frame.render_widget(
-            Paragraph::new(Span::styled(status.to_string(), style)),
+            Paragraph::new(status.to_string().set_style(style)),
             status_area,
         );
 
@@ -401,7 +398,7 @@ impl App<'_> {
                 .iter()
                 .flat_map(|[keys, desc]| {
                     vec![
-                        Span::styled(*keys, keys_style),
+                        keys.set_style(keys_style),
                         Span::from(":"),
                         Span::from(*desc),
                         Span::from("  "),

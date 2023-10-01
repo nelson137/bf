@@ -2,7 +2,7 @@ use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{
     buffer::Buffer,
     layout::{Alignment, Constraint, Direction, Layout, Margin, Rect},
-    style::{Color, Modifier, Style},
+    style::{Color, Modifier, Style, Styled},
     text::Span,
     widgets::{Block, Borders, Clear, Paragraph, Widget, Wrap},
 };
@@ -252,11 +252,11 @@ impl Widget for ButtonDialogue {
             } else {
                 [text_style, text_style_sel]
             };
-            Paragraph::new(Span::styled(self.buttons[0].text(), text_style0))
+            Paragraph::new(self.buttons[0].text().set_style(text_style0))
                 .block(Block::default().style(btn_style))
                 .alignment(Alignment::Center)
                 .render(buttons_area[1], buf);
-            Paragraph::new(Span::styled(self.buttons[1].text(), text_style1))
+            Paragraph::new(self.buttons[1].text().set_style(text_style1))
                 .block(Block::default().style(btn_style))
                 .alignment(Alignment::Center)
                 .render(buttons_area[3], buf);

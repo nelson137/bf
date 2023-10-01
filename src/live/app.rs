@@ -1,6 +1,6 @@
 use std::{
     fs::File,
-    io::{stdout, Write},
+    io::{stderr, stdout, Write},
     path::PathBuf,
     thread,
     time::Duration,
@@ -46,6 +46,20 @@ use super::{
     widgets::VerticalStack,
 };
 
+fn reset_terminal() {
+    execute!(stderr(), LeaveAlternateScreen).ok();
+    execute!(stdout(), DisableMouseCapture, LeaveAlternateScreen).ok();
+    disable_raw_mode().ok();
+}
+
+fn set_panic_hook() {
+    let original_hook = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |panic_info| {
+        reset_terminal();
+        original_hook(panic_info);
+    }));
+}
+
 pub struct App<'textarea> {
     term_width: usize,
     term_height: usize,
@@ -66,13 +80,14 @@ pub struct App<'textarea> {
 
 impl Drop for App<'_> {
     fn drop(&mut self) {
-        execute!(stdout(), DisableMouseCapture, LeaveAlternateScreen).ok();
-        disable_raw_mode().ok();
+        reset_terminal();
     }
 }
 
 impl App<'_> {
     pub fn new(cli: LiveCli) -> Result<Self> {
+        set_panic_hook();
+
         enable_raw_mode()?;
         execute!(stdout(), EnableMouseCapture, EnterAlternateScreen)?;
 

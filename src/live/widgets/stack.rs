@@ -77,11 +77,11 @@ impl<const SECTIONS: usize> Widget for VerticalStack<'_, SECTIONS> {
         for i in 0..self.divider_areas.len() {
             let area = self.divider_areas[i];
             let divider = match i {
-                0 => line.top_divider(width),
-                x if x == self.divider_areas.len() - 1 => {
-                    line.bottom_divider(width)
+                0 => line.top_divider(width, self.titles[i]),
+                x if x < self.divider_areas.len() - 1 => {
+                    line.middle_divider(width, self.titles[i])
                 }
-                _ => line.middle_divider(width, self.titles[i]),
+                _ => line.bottom_divider(width),
             };
             Paragraph::new(divider).render(area, buf);
         }

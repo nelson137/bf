@@ -266,15 +266,18 @@ impl Widget for Spinner {
 }
 
 pub trait LineSetExts {
-    fn top_divider(&self, width: usize) -> String;
+    fn top_divider(&self, width: usize, label: &str) -> String;
     fn middle_divider(&self, width: usize, label: &str) -> String;
     fn bottom_divider(&self, width: usize) -> String;
 }
 
 impl LineSetExts for line::Set {
-    fn top_divider(&self, width: usize) -> String {
+    fn top_divider(&self, width: usize, label: &str) -> String {
         self.top_left.to_owned()
-            + &self.horizontal.repeat(width.saturating_sub(2))
+            + label
+            + &self
+                .horizontal
+                .repeat(width.saturating_sub(2 + label.len()))
             + self.top_right
     }
 

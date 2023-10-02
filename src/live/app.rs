@@ -43,7 +43,7 @@ use super::{
         Reason,
     },
     textarea::TextAreaExts,
-    widgets::VerticalStack,
+    widgets::{TapeViewport, TapeViewportState, VerticalStack},
 };
 
 fn reset_terminal() {
@@ -63,12 +63,11 @@ fn set_panic_hook() {
 pub struct App<'textarea> {
     term_width: usize,
     term_height: usize,
-    ascii_values: bool,
     file_path: Option<PathBuf>,
     should_quit: SharedBool,
     spinner: Spinner,
     code: TextArea<'textarea>,
-    tape_viewport_start: usize,
+    tape_viewport_state: TapeViewportState,
     input: String,
     auto_input: Option<u8>,
     clean_hash: Sha1Digest,
@@ -112,12 +111,11 @@ impl App<'_> {
         Ok(Self {
             term_width: 0,
             term_height: 0,
-            ascii_values: cli.ascii_values,
             file_path: cli.infile,
             should_quit: SharedBool::new(false),
             spinner: Spinner::default(),
             code,
-            tape_viewport_start: 0,
+            tape_viewport_state: TapeViewportState::new(cli.ascii_values),
             input: String::new(),
             auto_input: None,
             clean_hash: sha1_digest(script_raw),
@@ -228,7 +226,7 @@ impl App<'_> {
                 KeyCode::Char(c) if event.is_ctrl() => match c {
                     's' => self.on_save(),
                     'x' => self.on_save_as(),
-                    'a' => self.ascii_values ^= true,
+                    'a' => self.tape_viewport_state.ascii_values ^= true,
                     'c' => self.on_exit(),
                     _ => (),
                 },
@@ -359,26 +357,13 @@ impl App<'_> {
     }
 
     fn draw_content_tape(&mut self, frame: &mut Frame, area: Rect) {
-        let tape = self.async_interpreter.state().tape;
-        let max_cells = (area.width as f32 / 4.0).ceil() as usize;
-        let cursor_min = self.tape_viewport_start + 3;
-        let cursor_max =
-            self.tape_viewport_start + max_cells.saturating_sub(3);
-
-        if tape.cursor() < cursor_min && self.tape_viewport_start > 0 {
-            self.tape_viewport_start = self
-                .tape_viewport_start
-                .saturating_sub(cursor_min - tape.cursor());
-        } else if tape.cursor() > cursor_max {
-            self.tape_viewport_start += tape.cursor() - cursor_max;
-        }
-
-        let window = tape.window(
-            self.tape_viewport_start,
-            max_cells,
-            self.ascii_values,
+        let interpreter_state = self.async_interpreter.state();
+        let widget = TapeViewport::new(&interpreter_state.tape);
+        frame.render_stateful_widget(
+            widget,
+            area,
+            &mut self.tape_viewport_state,
         );
-        frame.render_widget(window, area);
     }
 
     fn draw_content_editor(&self, frame: &mut Frame, area: Rect) {

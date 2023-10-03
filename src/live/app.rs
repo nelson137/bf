@@ -20,8 +20,7 @@ use crossterm::{
 use ratatui::{
     backend::CrosstermBackend,
     layout::{Constraint, Direction, Layout, Rect},
-    style::{Color, Modifier, Style, Styled, Stylize},
-    text::Span,
+    style::{Color, Style},
     widgets::Paragraph,
 };
 use ratatui_textarea::TextArea;
@@ -43,7 +42,9 @@ use super::{
         Reason,
     },
     textarea::TextAreaExts,
-    widgets::{Footer, TapeViewport, TapeViewportState, VerticalStack},
+    widgets::{
+        Footer, Header, TapeViewport, TapeViewportState, VerticalStack,
+    },
 };
 
 fn reset_terminal() {
@@ -273,54 +274,12 @@ impl App<'_> {
     }
 
     fn draw_header(&self, frame: &mut Frame, area: Rect, int_state: State) {
-        let layout = Layout::default()
-            .direction(Direction::Horizontal)
-            .constraints(vec![
-                Constraint::Length(1),  // Dirty indicator
-                Constraint::Length(1),  // Spacer (skip)
-                Constraint::Min(0),     // Filename
-                Constraint::Length(1),  // Spacer (skip)
-                Constraint::Length(18), // Status (max status length)
-                Constraint::Length(1),  // Spacer (skip)
-                Constraint::Length(1),  // Spinner
-            ])
-            .split(area);
-        sublayouts!(
-            [indicator_area, _, fn_area, _, status_area, _, spinner_area] =
-                layout
-        );
-
-        // Draw dirty indicator
-        if self.is_dirty() {
-            frame.render_widget(Paragraph::new("*"), indicator_area);
-        }
-
-        // Draw filename
-        let p = Paragraph::new(match self.get_file_path() {
-            Some(path) => Span::raw(path),
-            None => "New File".add_modifier(Modifier::ITALIC),
-        });
-        frame.render_widget(p, fn_area);
-
-        // Draw status
-        let status = int_state.status;
-        let style = Style::default().add_modifier(Modifier::BOLD);
-        let style = match status {
-            Status::Done => Style::default(),
-            Status::Running => style.fg(Color::Green),
-            Status::WaitingForInput => style.fg(Color::Yellow),
-            Status::Error(_) => style.fg(Color::Red),
-            Status::FatalError(_) => style.fg(Color::Red),
-        };
-        frame.render_widget(
-            Paragraph::new(status.to_string().set_style(style)),
-            status_area,
-        );
-
-        // Draw spinner
-        if status == Status::Running {
-            frame.render_widget(self.spinner, spinner_area);
-        }
+        Header::default()
+            .is_dirty(self.is_dirty())
+            .file_path(self.get_file_path())
+            .status(int_state.status)
+            .spinner(self.spinner)
+            .render_(frame, area);
     }
 
     fn draw_content(

@@ -3,7 +3,7 @@ use std::num::Wrapping;
 use ratatui::{
     buffer::Buffer,
     layout::{Constraint, Direction, Layout, Rect},
-    style::{Color, Stylize},
+    style::{Modifier, Stylize},
     text::{Line, Span},
     widgets::{Paragraph, Widget},
 };
@@ -108,7 +108,7 @@ impl Widget for CellDisplay<'_> {
         let border = Span::raw(TAPE_BORDER_SET.vertical);
         let display_value = self.display_value();
         let value = if self.is_highlighted {
-            display_value.bg(Color::White).fg(Color::Black)
+            display_value.add_modifier(Modifier::REVERSED)
         } else {
             Span::raw(display_value)
         };

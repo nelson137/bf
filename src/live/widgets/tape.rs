@@ -57,8 +57,6 @@ impl StatefulWidget for TapeViewport<'_> {
          * 0   1   2   3   4   5   6   7   8   9   10  11  12  13  14
          */
 
-        const CURSOR_MARGIN: usize = 3;
-
         // The number of cells that can fit within the viewport.
         let vp_width = ((area.width - 1) as f32 / 4.0).floor() as usize;
         // The cell index of the beginning of the viewport.
@@ -69,13 +67,23 @@ impl StatefulWidget for TapeViewport<'_> {
         // The index of the cursor relative to the beginning of the viewport.
         let vp_cursor = self.tape.cursor().saturating_sub(vp_begin);
 
+        // The number of cells to keep between the cursor and either edge of the
+        // viewport. Only applicable when the cursor is at least that many cells
+        // away from either end of the tape.
+        let cursor_margin = match vp_width {
+            0..=5 => 0,
+            6..=10 => 1,
+            11..=15 => 2,
+            _ => 3,
+        };
+
         // The index of the beginning of the cursorbox relative to the beginning
         // of the viewport.
-        let cursorbox_begin = CURSOR_MARGIN;
+        let cursorbox_begin = cursor_margin;
         // The index of the end of the cursorbox relative to the beginning of
         // the viewport.
         let cursorbox_end = vp_width
-            .saturating_sub(CURSOR_MARGIN)
+            .saturating_sub(cursor_margin)
             .max(cursorbox_begin + 1);
 
         if vp_begin > 0 && self.tape.cursor() < vp_begin + cursorbox_begin {

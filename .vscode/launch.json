@@ -7,24 +7,17 @@
         {
             "name": "Debug",
             "type": "lldb",
-            "sourceLanguages": [
-                "rust"
-            ],
+            "sourceLanguages": ["rust"],
             "request": "launch",
             "preLaunchTask": "cargo build",
             "program": "${workspaceFolder}/target/debug/bf",
-            "args": [
-                "live",
-                "examples/print.bf"
-            ],
-            "stopOnEntry": false,
+            "args": ["live", "examples/print.bf"],
+            "stopOnEntry": false
         },
         {
             "name": "Debug 📎",
             "type": "lldb",
-            "sourceLanguages": [
-                "rust"
-            ],
+            "sourceLanguages": ["rust"],
             "request": "attach",
             "program": "${workspaceFolder}/target/debug/bf",
             "stopOnEntry": false
@@ -32,18 +25,14 @@
         {
             "name": "(Win) Debug",
             "type": "lldb",
-            "sourceLanguages": [
-                "rust"
-            ],
+            "sourceLanguages": ["rust"],
             "request": "launch",
             "program": "${workspaceFolder}\\target\\debug\\bf",
-            "args": [
-                "input-debug"
-            ],
+            "args": ["input-debug"],
             "preLaunchTask": "cargo build",
             "stopOnEntry": false,
             "cwd": "${workspaceFolder}",
-            "internalConsoleOptions": "openOnSessionStart",
+            "internalConsoleOptions": "openOnSessionStart"
         }
     ]
 }

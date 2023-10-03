@@ -329,7 +329,7 @@ impl App<'_> {
         area: Rect,
         int_state: State,
     ) {
-        let output = String::from_utf8_lossy(&int_state.output).into_owned();
+        let output = String::from_utf8_lossy(&int_state.output);
         let output_lines = output.split_terminator('\n').count() as u16;
 
         let output_title = if output.ends_with('\n') {
@@ -353,7 +353,7 @@ impl App<'_> {
         frame.render_widget(stack, area);
         self.draw_content_tape(frame, tape_area);
         self.draw_content_editor(frame, editor_area);
-        self.draw_content_output(frame, output_area, output);
+        self.draw_content_output(frame, output_area, output.as_ref());
     }
 
     fn draw_content_tape(&mut self, frame: &mut Frame, area: Rect) {
@@ -374,7 +374,7 @@ impl App<'_> {
         &self,
         frame: &mut Frame,
         area: Rect,
-        output: String,
+        output: &str,
     ) {
         if !output.is_empty() {
             let p = Paragraph::new(output);

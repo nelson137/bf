@@ -1,3 +1,6 @@
+mod footer;
+pub use footer::*;
+
 mod stack;
 pub use stack::*;
 

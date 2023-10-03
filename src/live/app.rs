@@ -21,7 +21,7 @@ use ratatui::{
     backend::CrosstermBackend,
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style, Styled, Stylize},
-    text::{Line, Span},
+    text::Span,
     widgets::Paragraph,
 };
 use ratatui_textarea::TextArea;
@@ -43,7 +43,7 @@ use super::{
         Reason,
     },
     textarea::TextAreaExts,
-    widgets::{TapeViewport, TapeViewportState, VerticalStack},
+    widgets::{Footer, TapeViewport, TapeViewportState, VerticalStack},
 };
 
 fn reset_terminal() {
@@ -383,30 +383,7 @@ impl App<'_> {
     }
 
     fn draw_footer(&self, frame: &mut Frame, area: Rect) {
-        const CONTROLS: [[&str; 2]; 6] = [
-            ["^S", "Save"],
-            ["^X", "Save As"],
-            ["^C", "Quit"],
-            ["^A", "Toggle ASCII"],
-            ["F1", "Set Input"],
-            ["F2", "Set Auto-Input"],
-        ];
-        let keys_style = Style::default().bg(Color::Cyan).fg(Color::Black);
-
-        let text = Line::from(
-            CONTROLS
-                .iter()
-                .flat_map(|[keys, desc]| {
-                    vec![
-                        keys.set_style(keys_style),
-                        Span::from(":"),
-                        Span::from(*desc),
-                        Span::from("  "),
-                    ]
-                })
-                .collect::<Vec<_>>(),
-        );
-        frame.render_widget(Paragraph::new(text), area);
+        frame.render_widget(Footer, area);
     }
 
     fn on_exit(&mut self) {

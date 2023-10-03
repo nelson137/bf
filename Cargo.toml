@@ -8,9 +8,13 @@ edition = "2021"
 ansi_term = "0.12"
 anyhow = "1.0"
 crossterm = "0.27"
+delegate = "0.10.0"
 itertools = "0.11"
 sha-1 = { version = "0.10", features = ["asm"] }
 structopt = "0.3"
 term_size = "0.3"
 ratatui = "0.23"
 ratatui-textarea = "0.3"
+
+[dev-dependencies]
+test-case = "3.2"

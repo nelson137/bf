@@ -23,6 +23,20 @@
             "stopOnEntry": false
         },
         {
+            "name": "Debug tests",
+            "type": "lldb",
+            "sourceLanguages": ["rust"],
+            "request": "launch",
+            "cargo": {
+                "args": ["test", "--no-run", "--bin=bf", "--package=bf"],
+                "filter": {
+                    "name": "bf",
+                    "kind": "bin"
+                }
+            },
+            "cwd": "${workspaceFolder}"
+        },
+        {
             "name": "(Win) Debug",
             "type": "lldb",
             "sourceLanguages": ["rust"],

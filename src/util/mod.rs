@@ -11,4 +11,7 @@ pub mod read;
 
 pub mod sync;
 
+#[cfg(test)]
+pub mod test;
+
 pub mod tui;

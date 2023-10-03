@@ -106,7 +106,7 @@ impl App<'_> {
         code.set_line_number_style(Style::default().fg(Color::Yellow));
         code.set_cursor_line_style(Style::default());
 
-        let interpreter_code = code.to_string();
+        let interpreter_code = code.bytes().collect();
 
         Ok(Self {
             term_width: 0,
@@ -124,7 +124,7 @@ impl App<'_> {
             dialogue: None,
             async_interpreter: AsyncInterpreter::new(
                 interpreter_code,
-                String::new(),
+                Default::default(),
                 None,
             ),
         })
@@ -177,8 +177,8 @@ impl App<'_> {
                     self.dialogue = Some(Box::new(dialogue));
                 }
                 self.async_interpreter.restart(
-                    self.code.to_string(),
-                    self.input.clone(),
+                    self.code.bytes().collect(),
+                    self.input.bytes().collect(),
                     self.auto_input,
                 )?;
             }

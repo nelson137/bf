@@ -1,4 +1,5 @@
 use std::{
+    collections::VecDeque,
     fmt::{self, Display, Formatter},
     sync::{Arc, Barrier},
     thread,
@@ -48,14 +49,18 @@ pub struct State {
 pub struct AsyncInterpreter {
     stop: SharedBool,
     restart_barrier: Arc<Barrier>,
-    program: SharedCell<(String, String, Option<u8>)>,
+    program: SharedCell<(Vec<u8>, VecDeque<u8>, Option<u8>)>,
     state: SharedCell<State>,
 }
 
 const ERROR_POISONED: &str = "an interpreter thread mutex was poisoned";
 
 impl AsyncInterpreter {
-    pub fn new(code: String, input: String, auto_input: Option<u8>) -> Self {
+    pub fn new(
+        code: Vec<u8>,
+        input: VecDeque<u8>,
+        auto_input: Option<u8>,
+    ) -> Self {
         let this = Self {
             stop: SharedBool::new(false),
             restart_barrier: Arc::new(Barrier::new(2)),
@@ -67,7 +72,7 @@ impl AsyncInterpreter {
         thread::spawn(move || loop {
             let mut int = match shared.program.load() {
                 Ok((code, input, auto_input)) => {
-                    Interpreter::new(code, input, auto_input)
+                    Interpreter::new(code.into_iter(), input, auto_input)
                 }
                 Err(_) => {
                     thread::yield_now();
@@ -120,8 +125,8 @@ impl AsyncInterpreter {
 
     pub fn restart(
         &self,
-        code: String,
-        input: String,
+        code: Vec<u8>,
+        input: VecDeque<u8>,
         auto_input: Option<u8>,
     ) -> Result<()> {
         self.stop.store(true);

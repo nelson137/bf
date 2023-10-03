@@ -19,34 +19,29 @@ pub struct Interpreter {
 }
 
 impl Interpreter {
-    pub fn new<I: AsRef<[u8]>>(
-        code: I,
-        input: I,
+    pub fn new(
+        code: impl Iterator<Item = u8>,
+        input: VecDeque<u8>,
         auto_input: Option<u8>,
     ) -> Self {
-        let instructions = Self::sanitize(code.as_ref());
+        let instructions = Self::sanitize(code);
         let bracemap = Self::build_bracemap(&instructions);
         Self {
             instructions,
             bracemap,
             ip: 0,
             tape: Tape::default(),
-            input: input.as_ref().iter().copied().collect(),
+            input,
             auto_input,
             output: Vec::new(),
         }
     }
 
-    fn sanitize(code: &[u8]) -> Vec<u8> {
-        code.iter()
-            .copied()
-            .filter(|c| {
-                matches!(
-                    *c as char,
-                    '+' | '-' | '>' | '<' | '[' | ']' | '.' | ','
-                )
-            })
-            .collect()
+    fn sanitize(code: impl Iterator<Item = u8>) -> Vec<u8> {
+        code.filter(|c| {
+            matches!(*c as char, '+' | '-' | '>' | '<' | '[' | ']' | '.' | ',')
+        })
+        .collect()
     }
 
     fn build_bracemap(instructions: &[u8]) -> HashMap<usize, usize> {

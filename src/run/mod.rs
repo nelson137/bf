@@ -15,16 +15,14 @@ mod print;
 use print::Printer;
 
 fn run_subcmd(args: RunCli) -> Result<()> {
-    let script = read_script(args.infile.as_ref())?
-        .iter()
-        .flat_map(|l| l.as_bytes())
-        .copied()
-        .collect::<Vec<_>>();
+    let script_lines = read_script(args.infile.as_ref())?;
+    let script = script_lines.iter().flat_map(|l| l.as_bytes()).copied();
+
+    let input = args.input.into_bytes().into_iter().collect();
 
     let width = get_width(args.width);
 
-    let mut interpreter =
-        Interpreter::new(script, args.input.into_bytes(), None);
+    let mut interpreter = Interpreter::new(script, input, None);
 
     let mut printer = Printer::new();
 

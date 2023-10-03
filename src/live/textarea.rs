@@ -8,6 +8,8 @@ use crate::util::{
 };
 
 pub trait TextAreaExts {
+    fn bytes(&self) -> impl Iterator<Item = u8>;
+
     fn hash(&self) -> Sha1Digest;
 
     fn len(&self) -> usize;
@@ -19,6 +21,10 @@ pub trait TextAreaExts {
 }
 
 impl TextAreaExts for TextArea<'_> {
+    fn bytes(&self) -> impl Iterator<Item = u8> {
+        self.lines().iter().flat_map(|l| l.bytes())
+    }
+
     fn hash(&self) -> Sha1Digest {
         let mut digest = Sha1::new();
 

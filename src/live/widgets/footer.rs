@@ -1,16 +1,16 @@
 use ratatui::{
-    style::{Color, Style, Styled},
+    style::{Color, Stylize},
     text::{Line, Span},
     widgets::{Paragraph, Widget},
 };
 
-const CONTROLS: [[&str; 2]; 6] = [
-    ["^S", "Save"],
-    ["^X", "Save As"],
-    ["^C", "Quit"],
-    ["^A", "Toggle ASCII"],
-    ["F1", "Set Input"],
-    ["F2", "Set Auto-Input"],
+const KEY_BINDINGS: &[(&str, &str)] = &[
+    ("^S", "Save"),
+    ("^X", "Save As"),
+    ("^C", "Quit"),
+    ("^A", "Toggle ASCII"),
+    ("F1", "Set Input"),
+    ("F2", "Set Auto-Input"),
 ];
 
 pub struct Footer;
@@ -21,22 +21,18 @@ impl Widget for Footer {
         area: ratatui::prelude::Rect,
         buf: &mut ratatui::prelude::Buffer,
     ) {
-        let keys_style = Style::default().bg(Color::Cyan).fg(Color::Black);
+        let sections = KEY_BINDINGS
+            .iter()
+            .flat_map(|(keys, desc)| {
+                [
+                    keys.bg(Color::Cyan).fg(Color::Black),
+                    Span::from(":"),
+                    Span::from(*desc),
+                    Span::from("  "),
+                ]
+            })
+            .collect::<Vec<_>>();
 
-        let text = Line::from(
-            CONTROLS
-                .iter()
-                .flat_map(|[keys, desc]| {
-                    vec![
-                        keys.set_style(keys_style),
-                        Span::from(":"),
-                        Span::from(*desc),
-                        Span::from("  "),
-                    ]
-                })
-                .collect::<Vec<_>>(),
-        );
-
-        Paragraph::new(text).render(area, buf);
+        Paragraph::new(Line::from(sections)).render(area, buf);
     }
 }

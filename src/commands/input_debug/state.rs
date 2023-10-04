@@ -3,7 +3,7 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
-use crate::util::tui::{BfEvent, Spinner};
+use crate::{util::tui::BfEvent, widgets::Spinner};
 
 pub struct InputHistoryEntry {
     pub event: BfEvent,

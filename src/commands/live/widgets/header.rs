@@ -10,7 +10,8 @@ use ratatui::{
 use crate::{
     commands::live::async_interpreter::Status,
     defaultable_builder,
-    util::tui::{sublayouts, Frame, Spinner},
+    util::tui::{sublayouts, Frame},
+    widgets::Spinner,
 };
 
 defaultable_builder! {

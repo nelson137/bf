@@ -26,13 +26,14 @@ use ratatui::{
 };
 use ratatui_textarea::TextArea;
 
-use crate::util::{
-    common::{sha1_digest, Sha1Digest},
-    read::read_script_file,
-    sync::SharedBool,
-    tui::{
-        sublayouts, BfEvent, EventQueue, Frame, KeyEventExt, Spinner, Terminal,
+use crate::{
+    util::{
+        common::{sha1_digest, Sha1Digest},
+        read::read_script_file,
+        sync::SharedBool,
+        tui::{sublayouts, BfEvent, EventQueue, Frame, KeyEventExt, Terminal},
     },
+    widgets::Spinner,
 };
 
 use super::{

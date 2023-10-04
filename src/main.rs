@@ -3,34 +3,23 @@
 use anyhow::Result;
 use structopt::StructOpt;
 
-mod generate;
-use generate::GenerateCli;
-
-mod input_debug;
-use input_debug::InputDebugCli;
+mod commands;
 
 mod interpreter;
-
-mod live;
-use live::LiveCli;
-
-mod run;
-use run::RunCli;
-
 #[macro_use]
 mod util;
 use util::subcmd::SubCmd;
 
 #[derive(Debug, StructOpt)]
 enum Cli {
-    Run(RunCli),
+    Run(commands::run::RunCli),
 
     #[structopt(alias = "gen")]
-    Generate(GenerateCli),
+    Generate(commands::generate::GenerateCli),
 
-    Live(LiveCli),
+    Live(commands::live::LiveCli),
 
-    InputDebug(InputDebugCli),
+    InputDebug(commands::input_debug::InputDebugCli),
 }
 
 impl Cli {

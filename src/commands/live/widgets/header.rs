@@ -8,8 +8,8 @@ use ratatui::{
 };
 
 use crate::{
+    commands::live::async_interpreter::Status,
     defaultable_builder,
-    live::async_interpreter::Status,
     util::tui::{sublayouts, Frame, Spinner},
 };
 

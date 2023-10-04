@@ -36,7 +36,7 @@ use crate::util::{
 };
 
 use super::{
-    async_interpreter::{AsyncInterpreter, State, Status},
+    async_interpreter::{AsyncInterpreter, Status},
     cli::LiveCli,
     dialogue::{
         centered_rect, ButtonDialogue, Decision, Dialogue, PromptStrDialogue,
@@ -266,8 +266,8 @@ impl App<'_> {
             .split(area);
         sublayouts!([header_area, content_area, footer_area] = layout);
 
-        self.draw_header(frame, header_area, state.clone());
-        self.draw_content(frame, content_area, state);
+        self.draw_header(frame, header_area, state.status.clone());
+        self.draw_content(frame, content_area, &state.output);
         self.draw_footer(frame, footer_area);
 
         if let Some(dialogue) = &self.dialogue {
@@ -276,22 +276,17 @@ impl App<'_> {
         }
     }
 
-    fn draw_header(&self, frame: &mut Frame, area: Rect, int_state: State) {
+    fn draw_header(&self, frame: &mut Frame, area: Rect, status: Status) {
         Header::default()
             .is_dirty(self.is_dirty())
             .file_path(self.get_file_path_string())
-            .status(int_state.status)
+            .status(status)
             .spinner(self.spinner)
             .render_(frame, area);
     }
 
-    fn draw_content(
-        &mut self,
-        frame: &mut Frame,
-        area: Rect,
-        int_state: State,
-    ) {
-        let output = String::from_utf8_lossy(&int_state.output);
+    fn draw_content(&mut self, frame: &mut Frame, area: Rect, output: &[u8]) {
+        let output = String::from_utf8_lossy(output);
         let output_lines = output.split_terminator('\n').count() as u16;
 
         let output_title = if output.ends_with('\n') {
@@ -313,34 +308,23 @@ impl App<'_> {
         let [tape_area, editor_area, output_area] = stack.areas();
 
         frame.render_widget(stack, area);
-        self.draw_content_tape(frame, tape_area);
-        self.draw_content_editor(frame, editor_area);
-        self.draw_content_output(frame, output_area, output.as_ref());
-    }
 
-    fn draw_content_tape(&mut self, frame: &mut Frame, area: Rect) {
+        // Tape
         let interpreter_state = self.async_interpreter.state();
         let widget = TapeViewport::new(&interpreter_state.tape);
         frame.render_stateful_widget(
             widget,
-            area,
+            tape_area,
             &mut self.tape_viewport_state,
         );
-    }
 
-    fn draw_content_editor(&self, frame: &mut Frame, area: Rect) {
-        frame.render_widget(self.code.widget(), area);
-    }
+        // Editor
+        frame.render_widget(self.code.widget(), editor_area);
 
-    fn draw_content_output(
-        &self,
-        frame: &mut Frame,
-        area: Rect,
-        output: &str,
-    ) {
+        // Output
         if !output.is_empty() {
             let p = Paragraph::new(output);
-            frame.render_widget(p, area);
+            frame.render_widget(p, output_area);
         }
     }
 

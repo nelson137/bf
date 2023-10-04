@@ -7,14 +7,14 @@ use crate::interpreter::Tape;
 
 #[derive(Default)]
 pub struct TapeViewportState {
-    pub viewport_start: usize,
+    pub offset: usize,
     pub ascii_values: bool,
 }
 
 impl TapeViewportState {
     pub fn new(ascii_values: bool) -> Self {
         Self {
-            viewport_start: 0,
+            offset: 0,
             ascii_values,
         }
     }
@@ -36,6 +36,7 @@ impl StatefulWidget for TapeViewport<'_> {
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         /*
          * tape length = 14
+         * viewport offset = 1
          * viewport width = 12
          * cursor margin = 2
          *
@@ -60,7 +61,7 @@ impl StatefulWidget for TapeViewport<'_> {
         // The number of cells that can fit within the viewport.
         let vp_width = ((area.width - 1) as f32 / 4.0).floor() as usize;
         // The cell index of the beginning of the viewport.
-        let vp_begin = state.viewport_start;
+        let vp_begin = state.offset;
         // The cell index of the end of the viewport, this be past the end of
         // the tape.
         let vp_end = vp_begin + vp_width;
@@ -88,20 +89,19 @@ impl StatefulWidget for TapeViewport<'_> {
 
         if vp_begin > 0 && self.tape.cursor() < vp_begin + cursorbox_begin {
             // Shift the viewport left to keep the cursor within the cursorbox.
-            state.viewport_start -=
+            state.offset -=
                 vp_begin.min(vp_begin + cursorbox_begin - self.tape.cursor());
         } else if vp_begin > 0 && vp_end > self.tape.len() {
             // Shift the viewport left to fill the gap at the end.
-            state.viewport_start =
-                vp_begin.saturating_sub(vp_end - self.tape.len());
+            state.offset = vp_begin.saturating_sub(vp_end - self.tape.len());
         } else if vp_cursor >= cursorbox_end && vp_end < self.tape.len() {
             // Shift the viewport right to keep the cursor within the cursorbox.
-            state.viewport_start +=
+            state.offset +=
                 (vp_cursor - cursorbox_end + 1).min(self.tape.len() - vp_end);
         }
 
         self.tape
-            .window(state.viewport_start, vp_width, state.ascii_values)
+            .window(state.offset, vp_width, state.ascii_values)
             .render(area, buf);
     }
 }

@@ -5,7 +5,7 @@ use ratatui::{
 
 use crate::interpreter::Tape;
 
-#[derive(Default)]
+#[derive(Clone, Copy, Default)]
 pub struct TapeViewportState {
     pub offset: usize,
     pub ascii_values: bool,

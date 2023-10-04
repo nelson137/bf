@@ -6,10 +6,8 @@ use ratatui::{
 };
 
 use crate::{
-    commands::live::async_interpreter::Status,
-    defaultable_builder,
-    util::tui::{sublayouts, Frame},
-    widgets::Spinner,
+    commands::live::async_interpreter::Status, defaultable_builder,
+    util::tui::sublayouts, widgets::Spinner,
 };
 
 defaultable_builder! {
@@ -19,12 +17,6 @@ defaultable_builder! {
         file_path: Option<&'path str>,
         status: Status,
         spinner: Spinner,
-    }
-}
-
-impl Header<'_> {
-    pub fn render_(&self, frame: &mut Frame, area: Rect) {
-        frame.render_widget(self, area);
     }
 }
 

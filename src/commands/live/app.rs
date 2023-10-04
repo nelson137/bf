@@ -18,9 +18,8 @@ use crossterm::{
 };
 use ratatui::{
     backend::CrosstermBackend,
-    layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Style},
-    widgets::Paragraph,
+    widgets::Widget,
 };
 use ratatui_textarea::TextArea;
 
@@ -29,20 +28,19 @@ use crate::{
         common::{sha1_digest, Sha1Digest},
         read::read_script_file,
         sync::SharedBool,
-        tui::{sublayouts, BfEvent, EventQueue, Frame, KeyEventExt, Terminal},
+        tui::{BfEvent, EventQueue, KeyEventExt, Terminal},
     },
-    widgets::{Spinner, VerticalStack},
+    widgets::Spinner,
 };
 
 use super::{
     async_interpreter::{AsyncInterpreter, Status},
     cli::LiveCli,
     dialogue::{
-        centered_rect, ButtonDialogue, Decision, Dialogue, PromptStrDialogue,
-        Reason,
+        ButtonDialogue, Decision, Dialogue, PromptStrDialogue, Reason,
     },
     textarea::TextAreaExts,
-    widgets::{Footer, Header, TapeViewport, TapeViewportState},
+    widgets::{AppWidget, TapeViewportState},
 };
 
 fn reset_terminal() {
@@ -66,7 +64,7 @@ pub struct App<'textarea> {
     should_quit: SharedBool,
     spinner: Spinner,
     code: TextArea<'textarea>,
-    tape_viewport_state: TapeViewportState,
+    tape_viewport: TapeViewportState,
     input: String,
     auto_input: Option<u8>,
     clean_hash: Sha1Digest,
@@ -114,7 +112,7 @@ impl App<'_> {
             should_quit: SharedBool::new(false),
             spinner: Spinner::default(),
             code,
-            tape_viewport_state: TapeViewportState::new(cli.ascii_values),
+            tape_viewport: TapeViewportState::new(cli.ascii_values),
             input: String::new(),
             auto_input: None,
             clean_hash: sha1_digest(script_raw),
@@ -148,7 +146,7 @@ impl App<'_> {
         while !self.should_quit.load() {
             restart_interpreter = false;
 
-            terminal.draw(|f| self.draw(f))?;
+            terminal.draw(|f| f.render_widget(self.widget(), f.size()))?;
 
             for event in self.event_queue.pop_all() {
                 match event {
@@ -187,6 +185,20 @@ impl App<'_> {
         Ok(())
     }
 
+    fn widget(&self) -> AppWidget<impl Widget + '_> {
+        AppWidget {
+            is_dirty: self.is_dirty(),
+            async_interpreter: self.async_interpreter.state(),
+            editor: self.code.widget(),
+            dialogue: self.dialogue.as_deref(),
+            file_path: self.file_path.as_deref(),
+            spinner: self.spinner,
+            tape_viewport: self.tape_viewport,
+            term_height: self.term_height,
+            term_width: self.term_width,
+        }
+    }
+
     fn handle_key_event(&mut self, event: KeyEvent) -> bool {
         let mut restart_interpreter = false;
 
@@ -223,7 +235,7 @@ impl App<'_> {
                 KeyCode::Char(c) if event.is_ctrl() => match c {
                     's' => self.on_save(),
                     'x' => self.on_save_as(),
-                    'a' => self.tape_viewport_state.ascii_values ^= true,
+                    'a' => self.tape_viewport.ascii_values ^= true,
                     'c' => self.on_exit(),
                     _ => (),
                 },
@@ -243,86 +255,6 @@ impl App<'_> {
         }
 
         restart_interpreter
-    }
-
-    fn draw(&mut self, frame: &mut Frame) {
-        let area = frame.size();
-        let state = self.async_interpreter.state();
-
-        let layout = Layout::default()
-            .direction(Direction::Vertical)
-            .constraints(vec![
-                Constraint::Length(1),
-                Constraint::Min(7),
-                Constraint::Length(1),
-            ])
-            .split(area);
-        sublayouts!([header_area, content_area, footer_area] = layout);
-
-        self.draw_header(frame, header_area, state.status.clone());
-        self.draw_content(frame, content_area, &state.output);
-        self.draw_footer(frame, footer_area);
-
-        if let Some(dialogue) = &self.dialogue {
-            let dialogue_area = centered_rect(50, 50, area);
-            dialogue.draw(frame, dialogue_area);
-        }
-    }
-
-    fn draw_header(&self, frame: &mut Frame, area: Rect, status: Status) {
-        Header::default()
-            .is_dirty(self.is_dirty())
-            .file_path(self.get_file_path())
-            .status(status)
-            .spinner(self.spinner)
-            .render_(frame, area);
-    }
-
-    fn draw_content(&mut self, frame: &mut Frame, area: Rect, output: &[u8]) {
-        let output = String::from_utf8_lossy(output);
-        let output_lines = output.split_terminator('\n').count() as u16;
-
-        let output_title = if output.ends_with('\n') {
-            " Output "
-        } else {
-            " Output (no EOL) "
-        };
-
-        let stack = VerticalStack::<3>::new(
-            [
-                Constraint::Length(3),            // Tape
-                Constraint::Min(1),               // Editor
-                Constraint::Length(output_lines), // Output
-            ],
-            [" Tape ", " Code ", output_title],
-            area,
-        );
-
-        let [tape_area, editor_area, output_area] = stack.areas();
-
-        frame.render_widget(stack, area);
-
-        // Tape
-        let interpreter_state = self.async_interpreter.state();
-        let widget = TapeViewport::new(&interpreter_state.tape);
-        frame.render_stateful_widget(
-            widget,
-            tape_area,
-            &mut self.tape_viewport_state,
-        );
-
-        // Editor
-        frame.render_widget(self.code.widget(), editor_area);
-
-        // Output
-        if !output.is_empty() {
-            let p = Paragraph::new(output);
-            frame.render_widget(p, output_area);
-        }
-    }
-
-    fn draw_footer(&self, frame: &mut Frame, area: Rect) {
-        frame.render_widget(Footer, area);
     }
 
     fn on_exit(&mut self) {

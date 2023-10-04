@@ -8,7 +8,7 @@ use ratatui::{
 };
 use ratatui_textarea::TextArea;
 
-use crate::util::tui::{sublayouts, Frame, KeyEventExt};
+use crate::util::tui::{sublayouts, KeyEventExt};
 
 use super::textarea::TextAreaExts;
 
@@ -37,7 +37,7 @@ pub trait Dialogue: Widget {
     fn set_reason(&mut self, reason: Reason);
     fn set_action(&mut self, f: Box<dyn FnOnce()>);
     fn run_action(&mut self);
-    fn draw(&self, frame: &mut Frame, area: Rect);
+    fn draw(&self, area: Rect, buf: &mut Buffer);
     fn on_event(&mut self, event: KeyEvent) -> Decision;
 }
 
@@ -281,8 +281,8 @@ impl Dialogue for ButtonDialogue {
         self.dialogue.run_action();
     }
 
-    fn draw(&self, frame: &mut Frame, area: Rect) {
-        frame.render_widget(self.clone_data(), area);
+    fn draw(&self, area: Rect, buf: &mut Buffer) {
+        self.clone_data().render(area, buf);
     }
 
     fn on_event(&mut self, event: KeyEvent) -> Decision {
@@ -368,8 +368,8 @@ impl Dialogue for PromptStrDialogue<'_> {
         self.button_dialogue.run_action();
     }
 
-    fn draw(&self, frame: &mut Frame, area: Rect) {
-        frame.render_widget(self.clone_data(), area);
+    fn draw(&self, area: Rect, buf: &mut Buffer) {
+        self.clone_data().render(area, buf);
     }
 
     fn on_event(&mut self, event: KeyEvent) -> Decision {

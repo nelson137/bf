@@ -1,11 +1,6 @@
-mod app;
-pub use app::*;
-
-mod header;
-pub use header::*;
-
-mod footer;
-pub use footer::*;
-
-mod tape;
-pub use tape::*;
+crate::barrel_module! {
+    pub mod app;
+    pub mod header;
+    pub mod footer;
+    pub mod tape;
+}

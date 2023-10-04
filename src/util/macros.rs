@@ -1,4 +1,15 @@
 #[macro_export]
+macro_rules! barrel_module {
+    ($($(#[$attr:meta])* $vis:vis mod $module:ident;)+) => {
+        $(
+            $(#[$attr])*
+            mod $module;
+            $vis use $module::*;
+        )+
+    };
+}
+
+#[macro_export]
 macro_rules! defaultable_builder {
     ($(#[$attr:meta])? $vis:vis struct $name:ident $(<$lifetime:lifetime>)? {
         $($(#[$field_attr:meta])? $field:ident : $field_ty:ty),+ $(,)?

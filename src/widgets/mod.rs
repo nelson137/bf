@@ -1,5 +1,4 @@
-mod spinner;
-pub use spinner::*;
-
-mod stack_vertical;
-pub use stack_vertical::*;
+crate::barrel_module! {
+    pub mod spinner;
+    pub mod stack_vertical;
+}

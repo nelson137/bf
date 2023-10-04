@@ -33,7 +33,7 @@ use crate::{
         sync::SharedBool,
         tui::{sublayouts, BfEvent, EventQueue, Frame, KeyEventExt, Terminal},
     },
-    widgets::Spinner,
+    widgets::{Spinner, VerticalStack},
 };
 
 use super::{
@@ -44,9 +44,7 @@ use super::{
         Reason,
     },
     textarea::TextAreaExts,
-    widgets::{
-        Footer, Header, TapeViewport, TapeViewportState, VerticalStack,
-    },
+    widgets::{Footer, Header, TapeViewport, TapeViewportState},
 };
 
 fn reset_terminal() {

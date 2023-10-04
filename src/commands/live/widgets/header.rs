@@ -1,5 +1,3 @@
-use std::borrow::Cow;
-
 use ratatui::{
     prelude::{Buffer, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style, Styled, Stylize},
@@ -18,7 +16,7 @@ defaultable_builder! {
     #[derive(Default)]
     pub struct Header<'path> {
         is_dirty: bool,
-        file_path: Option<Cow<'path, str>>,
+        file_path: Option<&'path str>,
         status: Status,
         spinner: Spinner,
     }
@@ -55,8 +53,8 @@ impl Widget for &Header<'_> {
         }
 
         // Draw filename
-        Paragraph::new(match &self.file_path {
-            Some(path) => Span::raw(Cow::clone(path)),
+        Paragraph::new(match self.file_path {
+            Some(path) => Span::raw(path),
             None => "New File".add_modifier(Modifier::ITALIC),
         })
         .render(fn_area, buf);

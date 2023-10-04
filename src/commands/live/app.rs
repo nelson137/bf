@@ -1,8 +1,6 @@
 use std::{
-    borrow::Cow,
     fs::File,
     io::{stderr, stdout, Write},
-    path::{Path, PathBuf},
     thread,
     time::Duration,
 };
@@ -64,7 +62,7 @@ fn set_panic_hook() {
 pub struct App<'textarea> {
     term_width: usize,
     term_height: usize,
-    file_path: Option<PathBuf>,
+    file_path: Option<String>,
     should_quit: SharedBool,
     spinner: Spinner,
     code: TextArea<'textarea>,
@@ -112,7 +110,7 @@ impl App<'_> {
         Ok(Self {
             term_width: 0,
             term_height: 0,
-            file_path: cli.infile,
+            file_path: cli.infile.map(|p| p.to_string_lossy().into()),
             should_quit: SharedBool::new(false),
             spinner: Spinner::default(),
             code,
@@ -131,12 +129,8 @@ impl App<'_> {
         })
     }
 
-    fn get_file_path(&self) -> Option<&Path> {
+    fn get_file_path(&self) -> Option<&str> {
         self.file_path.as_deref()
-    }
-
-    fn get_file_path_string(&self) -> Option<Cow<str>> {
-        self.file_path.as_deref().map(Path::to_string_lossy)
     }
 
     fn is_dirty(&self) -> bool {
@@ -206,7 +200,7 @@ impl App<'_> {
                 }
                 Decision::Input(input) => match dialogue.get_reason() {
                     Reason::Filename => {
-                        self.file_path = Some(PathBuf::from(input));
+                        self.file_path = Some(input);
                         self.dialogue = None;
                         self.on_save();
                     }
@@ -278,7 +272,7 @@ impl App<'_> {
     fn draw_header(&self, frame: &mut Frame, area: Rect, status: Status) {
         Header::default()
             .is_dirty(self.is_dirty())
-            .file_path(self.get_file_path_string())
+            .file_path(self.get_file_path())
             .status(status)
             .spinner(self.spinner)
             .render_(frame, area);
@@ -360,8 +354,7 @@ impl App<'_> {
                 if let Err(err) = res {
                     let mut dialogue = ButtonDialogue::error(format!(
                         "Error while saving file: {}\n\n{}",
-                        path.display(),
-                        err
+                        path, err
                     ));
                     dialogue.set_reason(Reason::Info);
                     self.dialogue = Some(Box::new(dialogue));
@@ -376,7 +369,7 @@ impl App<'_> {
         let mut dialogue = PromptStrDialogue::new(
             " Save As ",
             "Filename: ",
-            self.get_file_path_string().as_deref(),
+            self.get_file_path(),
         );
         dialogue.set_reason(Reason::Filename);
         self.dialogue = Some(Box::new(dialogue));

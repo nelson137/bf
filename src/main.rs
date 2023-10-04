@@ -10,6 +10,8 @@ mod interpreter;
 mod util;
 use util::subcmd::SubCmd;
 
+mod widgets;
+
 #[derive(Debug, StructOpt)]
 enum Cli {
     Run(commands::run::RunCli),

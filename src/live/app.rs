@@ -1,7 +1,8 @@
 use std::{
+    borrow::Cow,
     fs::File,
     io::{stderr, stdout, Write},
-    path::PathBuf,
+    path::{Path, PathBuf},
     thread,
     time::Duration,
 };
@@ -131,10 +132,12 @@ impl App<'_> {
         })
     }
 
-    fn get_file_path(&self) -> Option<String> {
-        self.file_path
-            .as_ref()
-            .map(|path| path.display().to_string())
+    fn get_file_path(&self) -> Option<&Path> {
+        self.file_path.as_deref()
+    }
+
+    fn get_file_path_string(&self) -> Option<Cow<str>> {
+        self.file_path.as_deref().map(Path::to_string_lossy)
     }
 
     fn is_dirty(&self) -> bool {
@@ -276,7 +279,7 @@ impl App<'_> {
     fn draw_header(&self, frame: &mut Frame, area: Rect, int_state: State) {
         Header::default()
             .is_dirty(self.is_dirty())
-            .file_path(self.get_file_path())
+            .file_path(self.get_file_path_string())
             .status(int_state.status)
             .spinner(self.spinner)
             .render_(frame, area);
@@ -364,7 +367,7 @@ impl App<'_> {
         match self.get_file_path() {
             None => self.on_save_as(),
             Some(path) => {
-                let res = File::create(&path).and_then(|mut file| {
+                let res = File::create(path).and_then(|mut file| {
                     for line in self.code.lines() {
                         file.write_all(line.as_bytes())?;
                         file.write_all(&[b'\n'])?;
@@ -374,7 +377,8 @@ impl App<'_> {
                 if let Err(err) = res {
                     let mut dialogue = ButtonDialogue::error(format!(
                         "Error while saving file: {}\n\n{}",
-                        &path, err
+                        path.display(),
+                        err
                     ));
                     dialogue.set_reason(Reason::Info);
                     self.dialogue = Some(Box::new(dialogue));
@@ -389,7 +393,7 @@ impl App<'_> {
         let mut dialogue = PromptStrDialogue::new(
             " Save As ",
             "Filename: ",
-            self.get_file_path().as_deref(),
+            self.get_file_path_string().as_deref(),
         );
         dialogue.set_reason(Reason::Filename);
         self.dialogue = Some(Box::new(dialogue));

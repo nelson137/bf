@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use ratatui::{
     prelude::{Buffer, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style, Styled, Stylize},
@@ -13,21 +15,21 @@ use crate::{
 
 defaultable_builder! {
     #[derive(Default)]
-    pub struct Header {
+    pub struct Header<'path> {
         is_dirty: bool,
-        file_path: Option<String>,
+        file_path: Option<Cow<'path, str>>,
         status: Status,
         spinner: Spinner,
     }
 }
 
-impl Header {
+impl Header<'_> {
     pub fn render_(&self, frame: &mut Frame, area: Rect) {
         frame.render_widget(self, area);
     }
 }
 
-impl Widget for &Header {
+impl Widget for &Header<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let layout = Layout::default()
             .direction(Direction::Horizontal)
@@ -53,7 +55,7 @@ impl Widget for &Header {
 
         // Draw filename
         Paragraph::new(match &self.file_path {
-            Some(path) => Span::raw(path),
+            Some(path) => Span::raw(Cow::clone(path)),
             None => "New File".add_modifier(Modifier::ITALIC),
         })
         .render(fn_area, buf);

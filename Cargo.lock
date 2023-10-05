@@ -41,7 +41,7 @@ dependencies = [
  "ansi_term",
  "anyhow",
  "crossterm",
- "itertools 0.9.0",
+ "itertools",
  "ratatui",
  "ratatui-textarea",
  "sha-1",
@@ -208,15 +208,6 @@ checksum = "1e186cfbae8084e513daff4240b4797e342f988cecda4fb6c939150f96315fd8"
 
 [[package]]
 name = "itertools"
-version = "0.9.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "284f18f85651fe11e8a991b2adb42cb078325c996ed026d994719efcfca1d54b"
-dependencies = [
- "either",
-]
-
-[[package]]
-name = "itertools"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b1c173a5686ce8bfa551b3563d0c2170bf24ca44da99c7ca4bfdab5418c3fe57"
@@ -348,7 +339,7 @@ dependencies = [
  "cassowary",
  "crossterm",
  "indoc",
- "itertools 0.11.0",
+ "itertools",
  "paste",
  "strum",
  "unicode-segmentation",

@@ -1,4 +1,4 @@
-use sha1::{Digest, Sha1};
+use sha1::{digest::Update, Digest, Sha1};
 
 #[cfg(windows)]
 pub const EOL: &str = "\r\n";

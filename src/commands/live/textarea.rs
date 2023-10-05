@@ -1,6 +1,6 @@
 use crossterm::event::{KeyCode, KeyEvent};
 use ratatui_textarea::{CursorMove, TextArea};
-use sha1::{Digest, Sha1};
+use sha1::{digest::Update, Digest, Sha1};
 
 use crate::util::{
     common::{sha1_digest, Sha1Digest},

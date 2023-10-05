@@ -54,26 +54,27 @@ impl App {
             terminal.draw(|f| self.draw(f))?;
 
             for bf_event in event_queue.pop_all() {
-                match bf_event {
+                match &bf_event {
                     BfEvent::Tick => {
                         self.state.spinner_tick();
                     }
                     BfEvent::Input(event) => match event {
-                        Event::Key(key_event) => {
+                        &Event::Key(key_event) => {
                             if key_event == KeyCode::Esc.into() {
                                 break 'main;
                             }
-                            self.state.input_history_add(bf_event);
+                            self.state.input_history_add(bf_event.clone());
                         }
                         Event::Mouse(_) => {
                             if self.cli.enable_mouse {
                                 self.state.input_history_add(bf_event);
                             }
                         }
-                        Event::Resize(_w, h) => {
+                        &Event::Resize(_w, h) => {
                             let new_size = (h as usize).saturating_sub(3);
                             self.state.input_history_resize(new_size);
                         }
+                        _ => {}
                     },
                 }
             }

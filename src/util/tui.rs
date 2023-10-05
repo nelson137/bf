@@ -7,7 +7,9 @@ use std::{
     time::Duration,
 };
 
-use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
+use crossterm::event::{
+    self, Event, KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers,
+};
 use ratatui::{backend::CrosstermBackend, symbols::line, terminal};
 
 type Backend = CrosstermBackend<Stdout>;
@@ -101,6 +103,7 @@ impl KeyEventExt for KeyEvent {
     }
 }
 
+#[derive(Clone)]
 pub enum BfEvent {
     Tick,
     Input(Event),
@@ -193,6 +196,8 @@ impl EventQueue {
                 BfEvent::Input(Event::Key(KeyEvent {
                     code: KeyCode::Char($c),
                     modifiers: KeyModifiers::NONE,
+                    kind: KeyEventKind::Press,
+                    state: KeyEventState::NONE,
                 }))
             };
         }

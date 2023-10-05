@@ -33,24 +33,20 @@ impl Cell {
         (self.0).0
     }
 
-    pub fn ascii(&self) -> char {
-        self.value() as char
-    }
-
     pub fn set(&mut self, value: u8) {
         self.0 = Wrapping(value);
     }
 }
 
-pub struct CellDisplay<'a> {
-    pub cell: &'a Cell,
+pub struct CellDisplay {
+    pub value: u8,
     pub left_cap: bool,
     pub right_border_cap: Option<bool>,
     pub is_highlighted: bool,
     pub ascii: bool,
 }
 
-impl<'a> CellDisplay<'a> {
+impl CellDisplay {
     pub fn is_highlighted(&self) -> bool {
         self.is_highlighted
     }
@@ -77,7 +73,7 @@ impl<'a> CellDisplay<'a> {
             };
         }
         if self.ascii {
-            let c = self.cell.ascii();
+            let c = self.value as char;
             match c {
                 '\0' => Cow::Borrowed(r"\0 "),
                 ' ' => Cow::Borrowed("' '"),
@@ -85,12 +81,12 @@ impl<'a> CellDisplay<'a> {
                 _ => fmt!(c as u8),
             }
         } else {
-            fmt!(self.cell.value())
+            fmt!(self.value)
         }
     }
 }
 
-impl Widget for CellDisplay<'_> {
+impl Widget for CellDisplay {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let layout = Layout::default()
             .direction(Direction::Vertical)

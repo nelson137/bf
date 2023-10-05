@@ -67,11 +67,12 @@ impl Tape {
         WindowDisplay(
             self.cells
                 .iter()
+                .map(Cell::value)
                 .enumerate()
                 .skip(offset)
                 .take(size)
-                .map(|(i, c)| CellDisplay {
-                    cell: c,
+                .map(|(i, value)| CellDisplay {
+                    value,
                     left_cap: i == 0,
                     right_border_cap: if i == end_chunk {
                         Some(i == end_tape)
@@ -107,7 +108,7 @@ impl Tape {
                                 None
                             };
                             CellDisplay {
-                                cell,
+                                value: cell.value(),
                                 left_cap: tape_i == 0,
                                 right_border_cap,
                                 is_highlighted: tape_i == self.cursor,
@@ -122,17 +123,17 @@ impl Tape {
     }
 }
 
-pub struct ChunkedTapeDisplay<'a>(Vec<WindowDisplay<'a>>);
+pub struct ChunkedTapeDisplay(Vec<WindowDisplay>);
 
-impl ChunkedTapeDisplay<'_> {
+impl ChunkedTapeDisplay {
     pub fn display(&mut self, prefix: &str) -> String {
         self.0.iter().map(|chunk| chunk.display(prefix)).collect()
     }
 }
 
-pub struct WindowDisplay<'a>(Vec<CellDisplay<'a>>);
+pub struct WindowDisplay(Vec<CellDisplay>);
 
-impl WindowDisplay<'_> {
+impl WindowDisplay {
     fn display_top(&self) -> String {
         self.0
             .iter()
@@ -179,7 +180,7 @@ impl WindowDisplay<'_> {
     }
 }
 
-impl Widget for WindowDisplay<'_> {
+impl Widget for WindowDisplay {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let len = self.0.len();
         if len == 0 {

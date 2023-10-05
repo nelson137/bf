@@ -9,7 +9,8 @@ use ratatui::{
 };
 
 use crate::util::tui::{
-    sublayouts, LineSymbolsExt, TapeBorderHorizontal, TAPE_BORDER_SET,
+    sublayouts, TapeBorderHorizontal, TAPE_BORDER_SET,
+    TAPE_HORIZONTAL_BORDER_BOTTOM, TAPE_HORIZONTAL_BORDER_TOP,
 };
 
 #[derive(Debug, Clone)]
@@ -55,25 +56,18 @@ impl<'a> CellDisplay<'a> {
     }
 
     fn display_horizontal_edge(&self, edge: TapeBorderHorizontal) -> String {
-        let mut buf = String::with_capacity(5);
-
-        buf.push_str(edge.left(self.left_cap));
-
-        buf.push_str(&edge.middle().repeat(3));
-
-        if let Some(right_cap) = self.right_border_cap {
-            buf.push_str(edge.right(right_cap));
-        }
-
-        buf
+        String::with_capacity(5)
+            + edge.left(self.left_cap)
+            + &edge.middle().repeat(3)
+            + self.right_border_cap.map(|c| edge.right(c)).unwrap_or("")
     }
 
     pub fn display_top(&self) -> String {
-        self.display_horizontal_edge(TAPE_BORDER_SET.top())
+        self.display_horizontal_edge(TAPE_HORIZONTAL_BORDER_TOP)
     }
 
     pub fn display_bottom(&self) -> String {
-        self.display_horizontal_edge(TAPE_BORDER_SET.bottom())
+        self.display_horizontal_edge(TAPE_HORIZONTAL_BORDER_BOTTOM)
     }
 
     pub fn display_value(&self) -> Cow<str> {

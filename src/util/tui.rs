@@ -8,11 +8,7 @@ use std::{
 };
 
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
-use ratatui::{
-    backend::CrosstermBackend,
-    symbols::{self, line},
-    terminal,
-};
+use ratatui::{backend::CrosstermBackend, symbols::line, terminal};
 
 use super::common::mutex_safe_do;
 
@@ -31,7 +27,25 @@ macro_rules! sublayouts {
 }
 pub use sublayouts;
 
-pub const TAPE_BORDER_SET: symbols::line::Set = symbols::line::NORMAL;
+pub const TAPE_BORDER_SET: line::Set = line::NORMAL;
+
+pub const TAPE_HORIZONTAL_BORDER_TOP: TapeBorderHorizontal =
+    TapeBorderHorizontal {
+        left_capped: TAPE_BORDER_SET.top_left,
+        left_uncapped: TAPE_BORDER_SET.horizontal_down,
+        middle: TAPE_BORDER_SET.horizontal,
+        right_capped: TAPE_BORDER_SET.top_right,
+        right_uncapped: TAPE_BORDER_SET.horizontal_down,
+    };
+
+pub const TAPE_HORIZONTAL_BORDER_BOTTOM: TapeBorderHorizontal =
+    TapeBorderHorizontal {
+        left_capped: TAPE_BORDER_SET.bottom_left,
+        left_uncapped: TAPE_BORDER_SET.horizontal_up,
+        middle: TAPE_BORDER_SET.horizontal,
+        right_capped: TAPE_BORDER_SET.bottom_right,
+        right_uncapped: TAPE_BORDER_SET.horizontal_up,
+    };
 
 pub struct TapeBorderHorizontal {
     left_capped: &'static str,
@@ -59,33 +73,6 @@ impl TapeBorderHorizontal {
             self.right_capped
         } else {
             self.right_uncapped
-        }
-    }
-}
-
-pub trait LineSymbolsExt {
-    fn top(&self) -> TapeBorderHorizontal;
-    fn bottom(&self) -> TapeBorderHorizontal;
-}
-
-impl LineSymbolsExt for symbols::line::Set {
-    fn top(&self) -> TapeBorderHorizontal {
-        TapeBorderHorizontal {
-            left_capped: self.top_left,
-            left_uncapped: self.horizontal_down,
-            middle: self.horizontal,
-            right_capped: self.top_right,
-            right_uncapped: self.horizontal_down,
-        }
-    }
-
-    fn bottom(&self) -> TapeBorderHorizontal {
-        TapeBorderHorizontal {
-            left_capped: self.bottom_left,
-            left_uncapped: self.horizontal_up,
-            middle: self.horizontal,
-            right_capped: self.bottom_right,
-            right_uncapped: self.horizontal_up,
         }
     }
 }

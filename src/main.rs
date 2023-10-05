@@ -8,7 +8,7 @@ mod commands;
 mod interpreter;
 #[macro_use]
 mod util;
-use util::subcmd::SubCmd;
+use util::cli::SubCmd;
 
 mod widgets;
 

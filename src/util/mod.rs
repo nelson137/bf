@@ -1,3 +1,5 @@
+pub mod cli;
+
 pub mod common;
 
 pub mod err;
@@ -6,8 +8,6 @@ pub mod err;
 pub mod macros;
 
 pub mod read;
-
-pub mod subcmd;
 
 pub mod sync;
 

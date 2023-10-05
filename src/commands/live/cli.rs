@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use anyhow::Result;
 use structopt::StructOpt;
 
-use crate::util::{common::is_valid_infile, subcmd::SubCmd};
+use crate::util::cli::{is_valid_infile, SubCmd};
 
 use super::app::App;
 

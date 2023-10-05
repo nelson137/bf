@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 use sha1::{Digest, Sha1};
 
 #[cfg(windows)]
@@ -13,36 +11,6 @@ fn get_terminal_width() -> Option<usize> {
 
 pub fn get_width(width: Option<usize>) -> i32 {
     width.or_else(get_terminal_width).unwrap_or(65) as i32
-}
-
-pub fn is_valid_infile(value: String) -> Result<(), String> {
-    if value == "-" {
-        return Ok(());
-    }
-
-    let path = PathBuf::from(&value);
-    if path.exists() {
-        if path.is_dir() {
-            Err(format!("file is a directory: {}", value))
-        } else {
-            Ok(())
-        }
-    } else {
-        Err(format!("no such file exists: {}", value))
-    }
-}
-
-pub fn is_valid_width(value: String) -> Result<(), String> {
-    match value.parse::<i64>() {
-        Ok(n) => {
-            if n < 5 {
-                Err("value must be an integer > 5".to_string())
-            } else {
-                Ok(())
-            }
-        }
-        Err(err) => Err(err.to_string()),
-    }
 }
 
 pub type Sha1Digest = [u8; 20];

@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use anyhow::Result;
 use structopt::StructOpt;
 
-use crate::util::subcmd::SubCmd;
+use crate::util::cli::SubCmd;
 
 use super::subcmd_generate;
 

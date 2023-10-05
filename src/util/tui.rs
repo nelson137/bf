@@ -2,15 +2,13 @@ use std::{
     collections::VecDeque,
     fmt::{self, Display, Formatter},
     io::Stdout,
-    sync::{Arc, Mutex},
+    sync::{Arc, Mutex, MutexGuard},
     thread,
     time::Duration,
 };
 
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
 use ratatui::{backend::CrosstermBackend, symbols::line, terminal};
-
-use super::common::mutex_safe_do;
 
 type Backend = CrosstermBackend<Stdout>;
 pub type Terminal = terminal::Terminal<Backend>;
@@ -136,47 +134,56 @@ impl Display for BfEvent {
     }
 }
 
+type EventQueueBuf = VecDeque<BfEvent>;
+
 #[derive(Clone)]
 pub struct EventQueue {
-    data: Arc<Mutex<VecDeque<BfEvent>>>,
+    data: Arc<Mutex<EventQueueBuf>>,
 }
 
 impl EventQueue {
     pub fn new() -> Self {
-        let data = Arc::new(Mutex::new(VecDeque::new()));
-
-        let _input_thread = {
-            let data = data.clone();
-            thread::spawn(move || loop {
-                if let Ok(evt) = event::read() {
-                    mutex_safe_do(&*data, |mut q| {
-                        q.push_back(BfEvent::Input(evt))
-                    });
-                }
-                thread::yield_now();
-            })
+        let this = Self {
+            data: Default::default(),
         };
 
-        Self { data }
+        {
+            let this = this.clone();
+            thread::spawn(move || loop {
+                if let Ok(evt) = event::read() {
+                    this.safe_mutate(|mut q| q.push_back(BfEvent::Input(evt)));
+                }
+                thread::yield_now();
+            });
+        }
+
+        this
+    }
+
+    fn safe_mutate<Ret>(
+        &self,
+        func: impl FnOnce(MutexGuard<EventQueueBuf>) -> Ret,
+    ) -> Ret {
+        func(self.data.lock().expect("EventQueue mutex is poisoned"))
     }
 
     pub fn with_ticks(delay_ms: u64) -> Self {
         let this = Self::new();
 
-        let _tick_thread = {
-            let data = this.data.clone();
+        {
+            let this = this.clone();
             thread::spawn(move || loop {
-                mutex_safe_do(&*data, |mut q| q.push_back(BfEvent::Tick));
+                this.safe_mutate(|mut q| q.push_back(BfEvent::Tick));
                 thread::sleep(Duration::from_millis(delay_ms));
-            })
-        };
+            });
+        }
 
         this
     }
 
     pub fn pop_all(&self) -> VecDeque<BfEvent> {
         let mut events: Vec<BfEvent> =
-            mutex_safe_do(&*self.data, |mut q| q.drain(..).collect());
+            self.safe_mutate(|mut q| q.drain(..).collect());
         if events.is_empty() {
             return events.into();
         }

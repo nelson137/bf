@@ -1,7 +1,4 @@
-use std::{
-    path::PathBuf,
-    sync::{Mutex, MutexGuard},
-};
+use std::path::PathBuf;
 
 use sha1::{Digest, Sha1};
 
@@ -47,17 +44,6 @@ pub fn is_valid_width(value: String) -> Result<(), String> {
             }
         }
         Err(err) => Err(err.to_string()),
-    }
-}
-
-pub fn mutex_safe_do<T, Ret, Func>(data: &Mutex<T>, func: Func) -> Ret
-where
-    Func: FnOnce(MutexGuard<T>) -> Ret,
-{
-    if let Ok(queue) = data.lock() {
-        func(queue)
-    } else {
-        panic!("EventQueue: failed because of poisoned mutex");
     }
 }
 

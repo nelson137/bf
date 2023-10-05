@@ -1,4 +1,4 @@
-use std::num::Wrapping;
+use std::{borrow::Cow, num::Wrapping};
 
 use ratatui::{
     buffer::Buffer,
@@ -76,18 +76,23 @@ impl<'a> CellDisplay<'a> {
         self.display_horizontal_edge(TAPE_BORDER_SET.bottom())
     }
 
-    pub fn display_value(&self) -> String {
-        let num = self.cell.value().to_string();
-        let c = self.cell.ascii();
-        let escaped = c.escape_default().to_string();
-        let value_str = match c {
-            _ if !self.ascii => &num,
-            '\0' => r"\0",
-            ' ' => "' '",
-            '\t' | '\n' | '\r' | '!'..='~' => &escaped,
-            _ => &num,
-        };
-        format!("{:^3}", value_str)
+    pub fn display_value(&self) -> Cow<str> {
+        macro_rules! fmt {
+            ($value:expr) => {
+                Cow::Owned(format!("{:^3}", $value))
+            };
+        }
+        if self.ascii {
+            let c = self.cell.ascii();
+            match c {
+                '\0' => Cow::Borrowed(r"\0 "),
+                ' ' => Cow::Borrowed("' '"),
+                '\t' | '\n' | '\r' | '!'..='~' => fmt!(c.escape_default()),
+                _ => fmt!(c as u8),
+            }
+        } else {
+            fmt!(self.cell.value())
+        }
     }
 }
 

@@ -38,7 +38,7 @@ impl CellWidget {
     }
 
     pub fn display_value(&self) -> Cow<str> {
-        macro_rules! fmt {
+        macro_rules! owned {
             ($value:expr) => {
                 Cow::Owned(format!("{:^3}", $value))
             };
@@ -47,12 +47,15 @@ impl CellWidget {
             let c = self.value as char;
             match c {
                 '\0' => Cow::Borrowed(r"\0 "),
+                '\t' => Cow::Borrowed(r"\t "),
+                '\r' => Cow::Borrowed(r"\r "),
+                '\n' => Cow::Borrowed(r"\n "),
                 ' ' => Cow::Borrowed("' '"),
-                '\t' | '\n' | '\r' | '!'..='~' => fmt!(c.escape_default()),
-                _ => fmt!(c as u8),
+                '!'..='~' => owned!(c),
+                _ => owned!(c as u8),
             }
         } else {
-            fmt!(self.value)
+            owned!(self.value)
         }
     }
 }

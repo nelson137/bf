@@ -22,10 +22,6 @@ pub struct CellWidget {
 }
 
 impl CellWidget {
-    pub fn is_highlighted(&self) -> bool {
-        self.is_highlighted
-    }
-
     fn display_horizontal_edge(&self, edge: TapeBorderHorizontal) -> String {
         String::with_capacity(5)
             + edge.left(self.left_cap)

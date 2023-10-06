@@ -163,11 +163,11 @@ impl WindowDisplay {
         buf.push_str(prefix);
         for cell in self.0.iter() {
             buf.push_str(TAPE_BORDER_SET.vertical);
-            if cell.is_highlighted() {
+            if cell.is_highlighted {
                 buf.push_str("\x1b[30m\x1b[46m");
             }
             buf.push_str(&cell.display_value());
-            if cell.is_highlighted() {
+            if cell.is_highlighted {
                 buf.push_str("\x1b[0m");
             }
         }

@@ -17,4 +17,5 @@ ratatui = "0.23"
 ratatui-textarea = "0.3"
 
 [dev-dependencies]
+fastrand = "2.0.1"
 test-case = "3.2"

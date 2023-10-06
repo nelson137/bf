@@ -126,22 +126,24 @@ mod test {
         use std::iter;
 
         use itertools::Itertools;
-        use ratatui::{style::Style, Terminal};
+        use ratatui::{
+            backend::{Backend, TestBackend},
+            style::Style,
+            Terminal,
+        };
 
         use crate::util::test::{
-            terminal, MyTestBackend, CELL_STYLE_CURSOR, CELL_STYLE_NORMAL,
+            terminal, CELL_STYLE_CURSOR, CELL_STYLE_NORMAL,
         };
 
         use super::super::*;
 
-        pub fn terminal_for_tape(
-            width: u16,
-        ) -> (Terminal<MyTestBackend>, MyTestBackend) {
+        pub fn terminal_for_tape(width: u16) -> Terminal<TestBackend> {
             terminal(1 + 4 * width, 3)
         }
 
         pub fn render_tape(
-            term: &mut Terminal<MyTestBackend>,
+            term: &mut Terminal<impl Backend>,
             widget: TapeViewport,
             state: &mut TapeViewportState,
         ) {
@@ -246,7 +248,7 @@ mod test {
 
     #[test]
     fn renders_a_default_tape() {
-        let (mut term, backend) = terminal_for_tape(1);
+        let mut term = terminal_for_tape(1);
 
         let tape = Tape::default();
         let widget = TapeViewport::new(&tape);
@@ -257,12 +259,12 @@ mod test {
 
         render_tape(&mut term, widget, &mut state);
 
-        backend.get().assert_buffer(&expected_buf);
+        term.backend().assert_buffer(&expected_buf);
     }
 
     #[test]
     fn renders_a_script() {
-        let (mut term, backend) = terminal_for_tape(3);
+        let mut term = terminal_for_tape(3);
 
         /*
          * Script:
@@ -278,7 +280,7 @@ mod test {
 
         render_tape(&mut term, widget, &mut state);
 
-        backend.get().assert_buffer(&expected_buf);
+        term.backend().assert_buffer(&expected_buf);
     }
 
     #[test_case(3  ; "for cursor margin 0")]
@@ -286,7 +288,7 @@ mod test {
     #[test_case(12 ; "for cursor margin 2")]
     #[test_case(16 ; "for cursor margin 3")]
     fn shifts_right_when_cursor_is_right_of_the_viewport(width: usize) {
-        let (mut term, backend) = terminal_for_tape(width as u16);
+        let mut term = terminal_for_tape(width as u16);
 
         /*
          * Script:
@@ -307,7 +309,7 @@ mod test {
         render_tape(&mut term, widget, &mut state);
 
         assert_eq!(state.offset, 1);
-        backend.get().assert_buffer(&expected_buf);
+        term.backend().assert_buffer(&expected_buf);
     }
 
     #[test_case(3,  0 ; "for cursor margin 0")]
@@ -318,7 +320,7 @@ mod test {
         width: usize,
         margin: usize,
     ) {
-        let (mut term, backend) = terminal_for_tape(width as u16);
+        let mut term = terminal_for_tape(width as u16);
 
         /*
          * Script:
@@ -342,13 +344,13 @@ mod test {
         render_tape(&mut term, widget, &mut state);
 
         assert_eq!(state.offset, 1);
-        backend.get().assert_buffer(&expected_buf);
+        term.backend().assert_buffer(&expected_buf);
     }
 
     #[test]
     fn shifts_left_when_cursor_is_left_of_the_viewport() {
         let width = 3_usize;
-        let (mut term, backend) = terminal_for_tape(width as u16);
+        let mut term = terminal_for_tape(width as u16);
 
         /*
          * Script:
@@ -369,7 +371,7 @@ mod test {
         render_tape(&mut term, widget, &mut state);
 
         assert_eq!(state.offset, 0);
-        backend.get().assert_buffer(&expected_buf);
+        term.backend().assert_buffer(&expected_buf);
     }
 
     #[test_case(3,  0 ; "for cursor margin 0")]
@@ -380,7 +382,7 @@ mod test {
         width: usize,
         margin: usize,
     ) {
-        let (mut term, backend) = terminal_for_tape(width as u16);
+        let mut term = terminal_for_tape(width as u16);
 
         /*
          * Script:
@@ -399,12 +401,12 @@ mod test {
         render_tape(&mut term, widget, &mut state);
 
         assert_eq!(state.offset, width);
-        backend.get().assert_buffer(&expected_buf);
+        term.backend().assert_buffer(&expected_buf);
     }
 
     #[test]
     fn shits_left_when_there_is_a_gap_after_the_tape() {
-        let (mut term, backend) = terminal_for_tape(4);
+        let mut term = terminal_for_tape(4);
 
         let tape = tape_from_script(">>>");
         let widget = TapeViewport::new(&tape);
@@ -416,6 +418,6 @@ mod test {
         render_tape(&mut term, widget, &mut state);
 
         assert_eq!(state.offset, 0);
-        backend.get().assert_buffer(&expected_buf);
+        term.backend().assert_buffer(&expected_buf);
     }
 }

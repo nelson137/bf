@@ -100,9 +100,13 @@ mod test {
     use super::*;
 
     mod util {
-        use ratatui::{style::Style, Terminal};
+        use ratatui::{
+            backend::{Backend, TestBackend},
+            style::Style,
+            Terminal,
+        };
 
-        use crate::util::test::{terminal, MyTestBackend};
+        use crate::util::test::terminal;
 
         use super::super::*;
 
@@ -121,8 +125,7 @@ mod test {
             }
         }
 
-        pub fn terminal_for_cell() -> (Terminal<MyTestBackend>, MyTestBackend)
-        {
+        pub fn terminal_for_cell() -> Terminal<TestBackend> {
             terminal(5, 3)
         }
 
@@ -158,7 +161,7 @@ mod test {
         }
 
         pub fn render_cell(
-            term: &mut Terminal<MyTestBackend>,
+            term: &mut Terminal<impl Backend>,
             widget: CellWidget,
         ) {
             term.draw(|f| f.render_widget(widget, f.size())).unwrap();
@@ -188,7 +191,7 @@ mod test {
 
     #[test]
     fn render_left_cap() {
-        let (mut term, backend) = terminal_for_cell();
+        let mut term = terminal_for_cell();
 
         let widget = CellWidget {
             left_cap: true,
@@ -199,14 +202,14 @@ mod test {
 
         render_cell(&mut term, widget);
 
-        backend.get().assert_buffer(&expected_buf);
+        term.backend().assert_buffer(&expected_buf);
     }
 
     #[test_case(None ; "no cap")]
     #[test_case(Some(false) ; "uncapped")]
     #[test_case(Some(true) ; "capped")]
     fn render_right(right_border_cap: Option<bool>) {
-        let (mut term, backend) = terminal_for_cell();
+        let mut term = terminal_for_cell();
 
         let widget = CellWidget {
             right_border_cap,
@@ -217,12 +220,12 @@ mod test {
 
         render_cell(&mut term, widget);
 
-        backend.get().assert_buffer(&expected_buf);
+        term.backend().assert_buffer(&expected_buf);
     }
 
     #[test]
     fn render_highlight() {
-        let (mut term, backend) = terminal_for_cell();
+        let mut term = terminal_for_cell();
 
         let widget = CellWidget {
             is_highlighted: true,
@@ -233,6 +236,6 @@ mod test {
 
         render_cell(&mut term, widget);
 
-        backend.get().assert_buffer(&expected_buf);
+        term.backend().assert_buffer(&expected_buf);
     }
 }

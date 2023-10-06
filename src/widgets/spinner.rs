@@ -25,19 +25,21 @@ mod test {
     use super::*;
 
     mod util {
-        use ratatui::Terminal;
+        use ratatui::{
+            backend::{Backend, TestBackend},
+            Terminal,
+        };
 
-        use crate::util::test::{terminal, MyTestBackend};
+        use crate::util::test::terminal;
 
         use super::super::*;
 
-        pub fn terminal_for_cell() -> (Terminal<MyTestBackend>, MyTestBackend)
-        {
+        pub fn terminal_for_cell() -> Terminal<TestBackend> {
             terminal(1, 1)
         }
 
         pub fn render_cell(
-            term: &mut Terminal<MyTestBackend>,
+            term: &mut Terminal<impl Backend>,
             widget: Spinner,
         ) {
             term.draw(|f| f.render_widget(widget, f.size())).unwrap();
@@ -62,7 +64,7 @@ mod test {
 
     #[test]
     fn renders_a_frame() {
-        let (mut term, backend) = terminal_for_cell();
+        let mut term = terminal_for_cell();
 
         let index = fastrand::usize(0..SPINNER.len());
         let expected_buf = Buffer::with_lines(vec![SPINNER[index]]);
@@ -70,6 +72,6 @@ mod test {
 
         render_cell(&mut term, spinner);
 
-        backend.get().assert_buffer(&expected_buf);
+        term.backend().assert_buffer(&expected_buf);
     }
 }

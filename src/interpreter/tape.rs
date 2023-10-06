@@ -7,9 +7,12 @@ use ratatui::{
     widgets::Widget,
 };
 
-use crate::util::{common::EOL, tui::TAPE_BORDER_SET};
+use crate::{
+    util::{common::EOL, tui::TAPE_BORDER_SET},
+    widgets::CellDisplay,
+};
 
-use super::cell::{Cell, CellDisplay};
+use super::cell::Cell;
 
 #[derive(Clone, Debug)]
 pub struct Tape {

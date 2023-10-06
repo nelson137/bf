@@ -74,18 +74,18 @@ impl Widget for CellWidget {
 
         Paragraph::new(self.display_top()).render(top_area, buf);
 
-        let border = Span::raw(TAPE_BORDER_SET.vertical);
+        let left_border = Span::raw(TAPE_BORDER_SET.vertical);
+        let right_border = Span::raw(match self.right_border_cap {
+            Some(_) => TAPE_BORDER_SET.vertical,
+            None => "",
+        });
         let display_value = self.display_value();
         let value = if self.is_highlighted {
             display_value.reversed()
         } else {
-            Span::raw(display_value)
+            Span::from(display_value)
         };
-        Paragraph::new(Line::from(vec![
-            border.clone(),
-            value,
-            border.clone(),
-        ]))
+        Paragraph::new(Line::from(vec![left_border, value, right_border]))
         .render(middle_area, buf);
 
         Paragraph::new(self.display_bottom()).render(bottom_area, buf);

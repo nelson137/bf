@@ -9,7 +9,7 @@ use ratatui::{
 
 use crate::{
     util::{common::EOL, tui::TAPE_BORDER_SET},
-    widgets::CellDisplay,
+    widgets::CellWidget,
 };
 
 use super::cell::Cell;
@@ -74,7 +74,7 @@ impl Tape {
                 .enumerate()
                 .skip(offset)
                 .take(size)
-                .map(|(i, value)| CellDisplay {
+                .map(|(i, value)| CellWidget {
                     value,
                     left_cap: i == 0,
                     right_border_cap: if i == end_chunk {
@@ -110,7 +110,7 @@ impl Tape {
                             } else {
                                 None
                             };
-                            CellDisplay {
+                            CellWidget {
                                 value: cell.value(),
                                 left_cap: tape_i == 0,
                                 right_border_cap,
@@ -134,7 +134,7 @@ impl ChunkedTapeDisplay {
     }
 }
 
-pub struct WindowDisplay(Vec<CellDisplay>);
+pub struct WindowDisplay(Vec<CellWidget>);
 
 impl WindowDisplay {
     fn display_top(&self) -> String {

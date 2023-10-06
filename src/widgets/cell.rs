@@ -13,7 +13,7 @@ use crate::util::tui::{
     TAPE_HORIZONTAL_BORDER_BOTTOM, TAPE_HORIZONTAL_BORDER_TOP,
 };
 
-pub struct CellDisplay {
+pub struct CellWidget {
     pub value: u8,
     pub left_cap: bool,
     pub right_border_cap: Option<bool>,
@@ -21,7 +21,7 @@ pub struct CellDisplay {
     pub ascii: bool,
 }
 
-impl CellDisplay {
+impl CellWidget {
     pub fn is_highlighted(&self) -> bool {
         self.is_highlighted
     }
@@ -61,7 +61,7 @@ impl CellDisplay {
     }
 }
 
-impl Widget for CellDisplay {
+impl Widget for CellWidget {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let layout = Layout::default()
             .direction(Direction::Vertical)

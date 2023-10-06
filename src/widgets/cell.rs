@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use ratatui::{
     buffer::Buffer,
     layout::{Constraint, Direction, Layout, Rect},
-    style::{Modifier, Stylize},
+    style::Stylize,
     text::{Line, Span},
     widgets::{Paragraph, Widget},
 };
@@ -77,7 +77,7 @@ impl Widget for CellWidget {
         let border = Span::raw(TAPE_BORDER_SET.vertical);
         let display_value = self.display_value();
         let value = if self.is_highlighted {
-            display_value.add_modifier(Modifier::REVERSED)
+            display_value.reversed()
         } else {
             Span::raw(display_value)
         };

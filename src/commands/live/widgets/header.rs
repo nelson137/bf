@@ -1,6 +1,6 @@
 use ratatui::{
     prelude::{Buffer, Constraint, Direction, Layout, Rect},
-    style::{Color, Modifier, Style, Styled, Stylize},
+    style::{Color, Style, Styled, Stylize},
     text::Span,
     widgets::{Paragraph, Widget},
 };
@@ -47,12 +47,12 @@ impl Widget for &Header<'_> {
         // Draw filename
         Paragraph::new(match self.file_path {
             Some(path) => Span::raw(path),
-            None => "New File".add_modifier(Modifier::ITALIC),
+            None => "New File".italic(),
         })
         .render(fn_area, buf);
 
         // Draw status
-        let style = Style::default().add_modifier(Modifier::BOLD);
+        let style = Style::default().bold();
         let style = match self.status {
             Status::Done => Style::default(),
             Status::Running => style.fg(Color::Green),

@@ -2,7 +2,7 @@ use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{
     buffer::Buffer,
     layout::{Alignment, Constraint, Direction, Layout, Margin, Rect},
-    style::{Color, Modifier, Style, Styled},
+    style::{Color, Style, Styled, Stylize},
     text::Span,
     widgets::{Block, Borders, Clear, Paragraph, Widget, Wrap},
 };
@@ -219,7 +219,7 @@ impl Widget for ButtonDialogue {
         let w = all_buttons_area.width;
         let btn_style = Style::default().bg(Color::Blue).fg(Color::White);
         let text_style = Style::default();
-        let text_style_sel = text_style.add_modifier(Modifier::UNDERLINED);
+        let text_style_sel = text_style.underlined();
         if self.buttons.len() == 1 {
             let space_w = w.saturating_sub(Self::BUTTON_WIDTH) / 2;
             let buttons_area = Layout::default()

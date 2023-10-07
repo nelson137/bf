@@ -1,7 +1,7 @@
 #![feature(return_position_impl_trait_in_trait)]
 
 use anyhow::Result;
-use structopt::StructOpt;
+use clap::Parser;
 
 mod commands;
 
@@ -12,11 +12,11 @@ use util::cli::SubCmd;
 
 mod widgets;
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 enum Cli {
     Run(commands::run::RunCli),
 
-    #[structopt(alias = "gen")]
+    #[command(alias = "gen")]
     Generate(commands::generate::GenerateCli),
 
     Live(commands::live::LiveCli),
@@ -26,7 +26,7 @@ enum Cli {
 
 impl Cli {
     fn run_subcmd(self) -> Result<()> {
-        match Self::from_args() {
+        match Self::parse() {
             Self::Run(cli) => cli.run(),
             Self::Generate(cli) => cli.run(),
             Self::Live(cli) => cli.run(),
@@ -41,5 +41,5 @@ fn main() -> Result<()> {
         bail!("failed to enable ANSI support");
     }
 
-    Cli::from_args().run_subcmd()
+    Cli::parse().run_subcmd()
 }

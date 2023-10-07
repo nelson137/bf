@@ -1,9 +1,9 @@
 use std::path::PathBuf;
 
 use anyhow::Result;
-use structopt::StructOpt;
+use clap::Parser;
 
-use crate::util::cli::{is_valid_infile, is_valid_width, SubCmd};
+use crate::util::cli::{parse_infile, parse_width, ClapError, SubCmd};
 
 use super::run_subcmd;
 
@@ -24,33 +24,33 @@ const INFILE_HELP: &str = "The path to the Brainfuck script to execute. Read \
 const OUTFILE_HELP: &str = "The name of the file to which the final output \
                             of the Brainfuck script will be printed.";
 
-fn is_valid_delay(value: String) -> Result<(), String> {
+fn parse_delay(value: &str) -> Result<u64, ClapError> {
     match value.parse::<i64>() {
         Ok(n) => {
             if n < 0 {
-                Err("value must be an integer >= 0".to_string())
+                Err("value must be an integer >= 0".into())
             } else {
-                Ok(())
+                Ok(n as u64)
             }
         }
-        Err(err) => Err(err.to_string()),
+        Err(err) => Err(err.into()),
     }
 }
 
-#[derive(Debug, StructOpt)]
-#[structopt(about=ABOUT)]
+#[derive(Debug, Parser)]
+#[command(about=ABOUT)]
 pub struct RunCli {
-    #[structopt(
+    #[arg(
         short,
         long,
         default_value="0",
-        validator=is_valid_delay,
+        value_parser=parse_delay,
         hide_default_value=true,
         help=DELAY_HELP
     )]
     pub delay: u64,
 
-    #[structopt(
+    #[arg(
         short,
         long,
         default_value="",
@@ -59,19 +59,19 @@ pub struct RunCli {
     )]
     pub input: String,
 
-    #[structopt(short, long, help=SHOW_HELP)]
+    #[arg(short, long, help=SHOW_HELP)]
     pub show_tape: bool,
 
-    #[structopt(short, long, validator=is_valid_width, help=WIDTH_HELP)]
+    #[arg(short, long, value_parser=parse_width, help=WIDTH_HELP)]
     pub width: Option<usize>,
 
-    #[structopt(short, long, help=ASCII_HELP)]
+    #[arg(short, long, help=ASCII_HELP)]
     pub ascii_values: bool,
 
-    #[structopt(short, long, help=OUTFILE_HELP)]
+    #[arg(short, long, help=OUTFILE_HELP)]
     pub outfile: Option<PathBuf>,
 
-    #[structopt(validator=is_valid_infile, help=INFILE_HELP)]
+    #[arg(value_parser=parse_infile, help=INFILE_HELP)]
     pub infile: Option<PathBuf>,
 }
 

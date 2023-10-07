@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use anyhow::Result;
-use structopt::StructOpt;
+use clap::Parser;
 
 use crate::util::cli::SubCmd;
 
@@ -28,25 +28,21 @@ const INFILE_HELP: &str =
     "The file that will be printed by the generated script. If none is given \
     read from stdin.";
 
-const GEN_MODES: &[&str] = &["charwise", "linewise", "unique-chars"];
+const GEN_MODES: [&str; 3] = ["charwise", "linewise", "unique-chars"];
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 #[structopt(about=ABOUT)]
 pub struct GenerateCli {
-    #[structopt(short, long, help=NEWLINE_HELP)]
+    #[arg(short, long, help=NEWLINE_HELP)]
     pub newline: bool,
 
-    #[structopt(short, long, help=OUTFILE_HELP)]
+    #[arg(short, long, help=OUTFILE_HELP)]
     pub outfile: Option<PathBuf>,
 
-    #[structopt(
-        possible_values=GEN_MODES,
-        help=MODE_HELP,
-        long_help=MODE_HELP_LONG
-    )]
+    #[arg(value_parser=GEN_MODES, help=MODE_HELP, long_help=MODE_HELP_LONG)]
     pub mode: String,
 
-    #[structopt(help=INFILE_HELP)]
+    #[arg(help=INFILE_HELP)]
     pub infile: Option<PathBuf>,
 }
 

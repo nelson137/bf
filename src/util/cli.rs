@@ -1,36 +1,37 @@
 use anyhow::Result;
-use std::path::PathBuf;
+use std::{error::Error, path::PathBuf};
 
 pub trait SubCmd {
     fn run(self) -> Result<()>;
 }
 
-pub fn is_valid_infile(value: String) -> Result<(), String> {
-    if value == "-" {
-        return Ok(());
-    }
+pub type ClapError = Box<dyn Error + Send + Sync + 'static>;
 
+pub fn parse_infile(value: &str) -> Result<PathBuf, ClapError> {
     let path = PathBuf::from(&value);
-    if path.exists() {
+
+    if value == "-" {
+        Ok(path)
+    } else if path.exists() {
         if path.is_dir() {
-            Err(format!("file is a directory: {}", value))
+            Err(format!("file is a directory: {}", value).into())
         } else {
-            Ok(())
+            Ok(path)
         }
     } else {
-        Err(format!("no such file exists: {}", value))
+        Err(format!("no such file exists: {}", value).into())
     }
 }
 
-pub fn is_valid_width(value: String) -> Result<(), String> {
+pub fn parse_width(value: &str) -> Result<u64, ClapError> {
     match value.parse::<i64>() {
         Ok(n) => {
             if n < 5 {
-                Err("value must be an integer > 5".to_string())
+                Err("value must be an integer > 5".into())
             } else {
-                Ok(())
+                Ok(n as u64)
             }
         }
-        Err(err) => Err(err.to_string()),
+        Err(err) => Err(err.into()),
     }
 }

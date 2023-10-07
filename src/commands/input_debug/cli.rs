@@ -1,5 +1,5 @@
 use anyhow::Result;
-use structopt::StructOpt;
+use clap::Parser;
 
 use crate::util::cli::SubCmd;
 
@@ -8,10 +8,10 @@ use super::app::App;
 const ABOUT: &str = "User input debugger";
 const MOUSE_HELP: &str = "Whether to show mouse events";
 
-#[derive(Debug, StructOpt)]
-#[structopt(about=ABOUT)]
+#[derive(Debug, Parser)]
+#[command(about=ABOUT)]
 pub struct InputDebugCli {
-    #[structopt(short="m", long, help=MOUSE_HELP)]
+    #[arg(short='m', long, help=MOUSE_HELP)]
     pub enable_mouse: bool,
 }
 

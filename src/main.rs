@@ -1,4 +1,5 @@
 #![feature(return_position_impl_trait_in_trait)]
+#![feature(try_blocks)]
 
 use anyhow::Result;
 use clap::Parser;
@@ -22,6 +23,8 @@ enum Cli {
     Live(commands::live::LiveCli),
 
     InputDebug(commands::input_debug::InputDebugCli),
+
+    InlineScroll(commands::inline_scroll::InlineScrollCli),
 }
 
 impl Cli {
@@ -31,6 +34,7 @@ impl Cli {
             Self::Generate(cli) => cli.run(),
             Self::Live(cli) => cli.run(),
             Self::InputDebug(cli) => cli.run(),
+            Self::InlineScroll(cli) => cli.run(),
         }
     }
 }

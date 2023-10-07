@@ -1,4 +1,7 @@
 [base]
 
+# Config options:
+# https://github.com/xd009642/tarpaulin/blob/0.27.1/src/config/mod.rs#L29
 [report]
+output-dir = "tarpaulin"
 out = ["Html"]

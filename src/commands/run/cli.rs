@@ -5,7 +5,7 @@ use clap::Parser;
 
 use crate::util::cli::{parse_infile, parse_width, ClapError, SubCmd};
 
-use super::run_subcmd;
+use super::app::App;
 
 const ABOUT: &str = "Execute a Brainfuck script";
 const DELAY_HELP: &str = "The delay, in milliseconds, between the evaluation \
@@ -77,6 +77,6 @@ pub struct RunCli {
 
 impl SubCmd for RunCli {
     fn run(self) -> Result<()> {
-        run_subcmd(self)
+        App::new(self)?.run()
     }
 }

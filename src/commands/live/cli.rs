@@ -24,6 +24,6 @@ pub struct LiveCli {
 
 impl SubCmd for LiveCli {
     fn run(self) -> Result<()> {
-        App::new(self).and_then(|mut app| app.run())
+        App::new(self)?.run()
     }
 }

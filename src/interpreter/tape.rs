@@ -7,10 +7,7 @@ use ratatui::{
     widgets::Widget,
 };
 
-use crate::{
-    util::{common::EOL, tui::TAPE_BORDER_SET},
-    widgets::CellWidget,
-};
+use crate::widgets::CellWidget;
 
 use super::cell::Cell;
 
@@ -129,59 +126,31 @@ impl Tape {
 pub struct ChunkedTapeDisplay(Vec<WindowDisplay>);
 
 impl ChunkedTapeDisplay {
-    pub fn display(&mut self, prefix: &str) -> String {
-        self.0.iter().map(|chunk| chunk.display(prefix)).collect()
+    delegate::delegate! {
+        to self.0 {
+            pub fn len(&self) -> usize;
+        }
+    }
+}
+
+impl Widget for ChunkedTapeDisplay {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        let layout = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints(
+                iter::repeat(Constraint::Length(3))
+                    .take(self.0.len())
+                    .collect::<Vec<_>>(),
+            )
+            .split(area);
+
+        for (chunk, &chunk_area) in self.0.into_iter().zip(layout.iter()) {
+            chunk.render(chunk_area, buf);
+        }
     }
 }
 
 pub struct WindowDisplay(Vec<CellWidget>);
-
-impl WindowDisplay {
-    fn display_top(&self) -> String {
-        self.0
-            .iter()
-            .map(|cell| cell.display_top())
-            .collect::<String>()
-    }
-
-    fn display_bottom(&self) -> String {
-        self.0
-            .iter()
-            .map(|cell| cell.display_bottom())
-            .collect::<String>()
-    }
-
-    fn display(&self, prefix: &str) -> String {
-        let mut buf = String::new();
-
-        // Top lid
-        buf.push_str(prefix);
-        buf.push_str(&self.display_top());
-        buf.push_str(EOL);
-
-        // Values and separators
-        buf.push_str(prefix);
-        for cell in self.0.iter() {
-            buf.push_str(TAPE_BORDER_SET.vertical);
-            if cell.is_highlighted {
-                buf.push_str("\x1b[30m\x1b[46m");
-            }
-            buf.push_str(&cell.display_value());
-            if cell.is_highlighted {
-                buf.push_str("\x1b[0m");
-            }
-        }
-        buf.push_str(TAPE_BORDER_SET.vertical);
-        buf.push_str(EOL);
-
-        // Bottom lid
-        buf.push_str(prefix);
-        buf.push_str(&self.display_bottom());
-        buf.push_str(EOL);
-
-        buf
-    }
-}
 
 impl Widget for WindowDisplay {
     fn render(self, area: Rect, buf: &mut Buffer) {

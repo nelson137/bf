@@ -5,14 +5,6 @@ pub const EOL: &str = "\r\n";
 #[cfg(not(windows))]
 pub const EOL: &str = "\n";
 
-fn get_terminal_width() -> Option<usize> {
-    term_size::dimensions().map(|(w, _)| w).filter(|&w| w > 5)
-}
-
-pub fn get_width(width: Option<usize>) -> i32 {
-    width.or_else(get_terminal_width).unwrap_or(65) as i32
-}
-
 pub type Sha1Digest = [u8; 20];
 
 pub fn sha1_digest<D: AsRef<[u8]>>(data: D) -> Sha1Digest {

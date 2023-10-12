@@ -1,4 +1,5 @@
 use std::{
+    borrow::Cow,
     collections::{HashMap, VecDeque},
     io::{self, Read},
 };
@@ -95,8 +96,12 @@ impl Interpreter {
         }
     }
 
-    pub fn output(&self) -> String {
-        String::from_utf8_lossy(&self.output).into_owned()
+    pub fn output(&self) -> Cow<str> {
+        String::from_utf8_lossy(&self.output)
+    }
+
+    pub fn output_bytes(&self) -> &[u8] {
+        &self.output
     }
 }
 

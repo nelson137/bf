@@ -75,7 +75,7 @@ impl App {
         if let Some(path) = &self.outfile {
             File::create(path)
                 .with_context(|| err_file_open!(path))?
-                .write_all(self.interpreter.output().as_bytes())
+                .write_all(self.interpreter.output_bytes())
                 .with_context(|| err_file_write!(path))?;
         }
 

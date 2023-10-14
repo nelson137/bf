@@ -3,7 +3,9 @@ use ratatui::{
     widgets::{Paragraph, StatefulWidget, Widget},
 };
 
-use crate::{interpreter::Interpreter, sublayouts};
+use crate::{
+    interpreter::Interpreter, sublayouts, widgets::ChunkedTapeWidget,
+};
 
 #[derive(Default)]
 pub struct AppWidgetState {
@@ -23,10 +25,11 @@ impl StatefulWidget for AppWidget<'_> {
         let output = self.interpreter.output();
         let output_lines = output.split_terminator('\n').count() as u16;
 
-        let tape_widget = self
-            .interpreter
-            .tape
-            .chunks(area.width as i32, self.ascii_values);
+        let tape_widget = ChunkedTapeWidget::new(
+            &self.interpreter.tape,
+            area.width as i32,
+            self.ascii_values,
+        );
         let tape_height = 3 * tape_widget.len() as u16;
 
         state.height = tape_height + output_lines;

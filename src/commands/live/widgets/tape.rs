@@ -3,7 +3,7 @@ use ratatui::{
     widgets::{StatefulWidget, Widget},
 };
 
-use crate::interpreter::Tape;
+use crate::{interpreter::Tape, widgets::TapeChunkWidget};
 
 #[derive(Clone, Copy, Default)]
 pub struct TapeViewportState {
@@ -108,9 +108,13 @@ impl StatefulWidget for TapeViewport<'_> {
                 (vp_cursor - cursorbox_end + 1).min(self.tape.len() - vp_end);
         }
 
-        self.tape
-            .window(state.offset, vp_width, state.ascii_values)
-            .render(area, buf);
+        TapeChunkWidget::new(
+            self.tape,
+            state.offset,
+            vp_width,
+            state.ascii_values,
+        )
+        .render(area, buf);
     }
 }
 

@@ -61,10 +61,10 @@ impl Tape {
         offset: usize,
         size: usize,
         ascii: bool,
-    ) -> WindowDisplay {
+    ) -> TapeChunkWidget {
         let end_tape = self.cells.len() - 1;
         let end_chunk = (offset + size - 1).min(end_tape);
-        WindowDisplay(
+        TapeChunkWidget(
             self.cells
                 .iter()
                 .map(Cell::value)
@@ -117,13 +117,13 @@ impl Tape {
                         },
                     )
                 })
-                .map(|chunk| WindowDisplay(chunk.into_iter().collect()))
+                .map(|chunk| TapeChunkWidget(chunk.into_iter().collect()))
                 .collect::<Vec<_>>(),
         )
     }
 }
 
-pub struct ChunkedTapeWidget(Vec<WindowDisplay>);
+pub struct ChunkedTapeWidget(Vec<TapeChunkWidget>);
 
 impl ChunkedTapeWidget {
     delegate::delegate! {
@@ -150,9 +150,9 @@ impl Widget for ChunkedTapeWidget {
     }
 }
 
-pub struct WindowDisplay(Vec<CellWidget>);
+pub struct TapeChunkWidget(Vec<CellWidget>);
 
-impl Widget for WindowDisplay {
+impl Widget for TapeChunkWidget {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let len = self.0.len();
         if len == 0 {

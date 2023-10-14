@@ -86,12 +86,12 @@ impl Tape {
         )
     }
 
-    pub fn chunks(&self, width: i32, ascii: bool) -> ChunkedTapeDisplay {
+    pub fn chunks(&self, width: i32, ascii: bool) -> ChunkedTapeWidget {
         // Each cell is 4 wide + the extra vertical separator at the end
         let chunk_size = ((width - 1) / 4) as usize;
         let end_tape = self.cells.len() - 1;
 
-        ChunkedTapeDisplay(
+        ChunkedTapeWidget(
             self.cells
                 .iter()
                 .enumerate()
@@ -123,9 +123,9 @@ impl Tape {
     }
 }
 
-pub struct ChunkedTapeDisplay(Vec<WindowDisplay>);
+pub struct ChunkedTapeWidget(Vec<WindowDisplay>);
 
-impl ChunkedTapeDisplay {
+impl ChunkedTapeWidget {
     delegate::delegate! {
         to self.0 {
             pub fn len(&self) -> usize;
@@ -133,7 +133,7 @@ impl ChunkedTapeDisplay {
     }
 }
 
-impl Widget for ChunkedTapeDisplay {
+impl Widget for ChunkedTapeWidget {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let layout = Layout::default()
             .direction(Direction::Vertical)

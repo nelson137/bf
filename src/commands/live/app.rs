@@ -36,11 +36,11 @@ use crate::{
 use super::{
     async_interpreter::{AsyncInterpreter, Status},
     cli::LiveCli,
-    dialogue::{
-        ButtonDialogue, Decision, Dialogue, PromptStrDialogue, Reason,
-    },
     textarea::TextAreaExts,
-    widgets::{AppWidget, TapeViewportState},
+    widgets::{
+        AppWidget, ButtonDialogue, Decision, Dialogue, PromptStrDialogue,
+        Reason, TapeViewportState,
+    },
 };
 
 fn reset_terminal() {

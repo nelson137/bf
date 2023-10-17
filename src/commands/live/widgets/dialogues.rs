@@ -10,7 +10,7 @@ use ratatui_textarea::TextArea;
 
 use crate::util::tui::{sublayouts, KeyEventExt};
 
-use super::textarea::TextAreaExts;
+use super::super::textarea::TextAreaExts;
 
 pub fn centered_rect(percent_x: u16, percent_y: u16, area: Rect) -> Rect {
     let centered_vert_area = Layout::default()

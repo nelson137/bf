@@ -4,18 +4,15 @@ use ratatui::{
 };
 
 use crate::{
-    commands::live::{
-        async_interpreter::{
-            State as InterpreterState, Status as InterpreterStatus,
-        },
-        dialogue::Dialogue,
+    commands::live::async_interpreter::{
+        State as InterpreterState, Status as InterpreterStatus,
     },
     interpreter::Tape,
     sublayouts,
     widgets::{Spinner, VerticalStack},
 };
 
-use super::{super::dialogue::centered_rect, TapeViewportState};
+use super::{centered_rect, Dialogue, TapeViewportState};
 
 use super::{Footer, Header, TapeViewport};
 

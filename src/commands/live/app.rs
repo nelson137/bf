@@ -37,10 +37,7 @@ use super::{
     async_interpreter::{AsyncInterpreter, Status},
     cli::LiveCli,
     textarea::TextAreaExts,
-    widgets::{
-        AppWidget, ButtonDialogue, Decision, Dialogue, PromptStrDialogue,
-        Reason, TapeViewportState,
-    },
+    widgets::{AppWidget, Dialogue, DialogueCommand, TapeViewportState},
 };
 
 fn reset_terminal() {
@@ -61,7 +58,7 @@ pub struct App<'textarea> {
     term_width: usize,
     term_height: usize,
     file_path: Option<String>,
-    should_quit: SharedBool,
+    should_quit: SharedBool, // TODO: this can probably just be a `bool` now
     spinner: Spinner,
     code: TextArea<'textarea>,
     tape_viewport: TapeViewportState,
@@ -70,7 +67,7 @@ pub struct App<'textarea> {
     clean_hash: Sha1Digest,
     event_queue: EventQueue,
     delay: Duration,
-    dialogue: Option<Box<dyn Dialogue>>,
+    dialogue: Option<Box<Dialogue<'textarea>>>,
     async_interpreter: AsyncInterpreter,
 }
 
@@ -167,9 +164,7 @@ impl App<'_> {
             if restart_interpreter {
                 let status = self.async_interpreter.state().status;
                 if let Status::FatalError(fe) = status {
-                    let mut dialogue = ButtonDialogue::error(fe);
-                    dialogue.set_reason(Reason::Info);
-                    self.dialogue = Some(Box::new(dialogue));
+                    self.dialogue = Some(Box::new(Dialogue::error(fe)));
                 }
                 self.async_interpreter.restart(
                     self.code.bytes().collect(),
@@ -204,30 +199,28 @@ impl App<'_> {
 
         if let Some(dialogue) = &mut self.dialogue {
             match dialogue.on_event(event) {
-                Decision::Waiting => (),
-                Decision::No => self.dialogue = None,
-                Decision::Yes => {
-                    dialogue.run_action();
+                DialogueCommand::None => {}
+                DialogueCommand::Dismissed => {
                     self.dialogue = None;
                 }
-                Decision::Input(input) => match dialogue.get_reason() {
-                    Reason::Filename => {
-                        self.file_path = Some(input);
-                        self.dialogue = None;
-                        self.on_save();
-                    }
-                    Reason::Input => {
-                        self.input = input;
-                        self.dialogue = None;
-                        restart_interpreter = true;
-                    }
-                    Reason::AutoInput => {
-                        self.auto_input = input.as_bytes().first().copied();
-                        self.dialogue = None;
-                        restart_interpreter = true;
-                    }
-                    _ => (),
-                },
+                DialogueCommand::ConfirmUnsavedChangesConfirmed => {
+                    self.should_quit.store(true);
+                }
+                DialogueCommand::FileSaveAsSubmitted(path) => {
+                    self.file_path = Some(path);
+                    self.dialogue = None;
+                    self.on_save();
+                }
+                DialogueCommand::ScriptInputSubmitted(input) => {
+                    self.input = input;
+                    self.dialogue = None;
+                    restart_interpreter = true;
+                }
+                DialogueCommand::ScriptAutoInputSubmitted(input) => {
+                    self.auto_input = input;
+                    self.dialogue = None;
+                    restart_interpreter = true;
+                }
             }
         } else {
             self.code.on_event_multi_line(event);
@@ -259,14 +252,10 @@ impl App<'_> {
 
     fn on_exit(&mut self) {
         if false {
-            let should_quit = self.should_quit.clone();
-            let mut dialogue = ButtonDialogue::confirm(
-                "Warning:\n\nThere are unsaved changes, are you sure you want \
-                    to quit?",
-            );
-            dialogue.set_reason(Reason::Confirm);
-            dialogue.set_action(Box::new(move || should_quit.store(true)));
-            self.dialogue = Some(Box::new(dialogue));
+            self.dialogue = Some(Box::new(Dialogue::confirm_unsaved_changes(
+                "Warning:\n\n\
+                    There are unsaved changes, are you sure you want to quit?",
+            )));
         } else {
             self.should_quit.store(true);
         }
@@ -284,12 +273,9 @@ impl App<'_> {
                     Ok(())
                 });
                 if let Err(err) = res {
-                    let mut dialogue = ButtonDialogue::error(format!(
-                        "Error while saving file: {}\n\n{}",
-                        path, err
-                    ));
-                    dialogue.set_reason(Reason::Info);
-                    self.dialogue = Some(Box::new(dialogue));
+                    self.dialogue = Some(Box::new(Dialogue::error(format!(
+                        "Error while saving file: {path}\n\n{err}",
+                    ))));
                 } else {
                     self.clean_hash = self.code.hash();
                 }
@@ -298,28 +284,16 @@ impl App<'_> {
     }
 
     fn on_save_as(&mut self) {
-        let mut dialogue = PromptStrDialogue::new(
-            " Save As ",
-            "Filename: ",
-            self.get_file_path(),
-        );
-        dialogue.set_reason(Reason::Filename);
-        self.dialogue = Some(Box::new(dialogue));
+        self.dialogue = Some(Box::new(Dialogue::file_save_as(
+            self.get_file_path().map(str::to_string),
+        )));
     }
 
     fn on_set_input(&mut self) {
-        let mut dialogue = PromptStrDialogue::new(" Input ", "Input: ", None);
-        dialogue.set_reason(Reason::Input);
-        self.dialogue = Some(Box::new(dialogue));
+        self.dialogue = Some(Box::new(Dialogue::script_input()));
     }
 
     fn on_set_auto_input(&mut self) {
-        let mut dialogue = PromptStrDialogue::new(
-            " Auto-Input ",
-            "Input (only the first byte will be used): ",
-            None,
-        );
-        dialogue.set_reason(Reason::AutoInput);
-        self.dialogue = Some(Box::new(dialogue));
+        self.dialogue = Some(Box::new(Dialogue::script_auto_input()));
     }
 }

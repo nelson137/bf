@@ -19,7 +19,7 @@ use super::{Footer, Header, TapeViewport};
 pub struct AppWidget<'dialogue, 'file_path, Editor: Widget> {
     pub term_width: usize,
     pub term_height: usize,
-    pub dialogue: Option<&'dialogue dyn Dialogue>,
+    pub dialogue: Option<&'dialogue Dialogue<'dialogue>>,
     pub is_dirty: bool,
     pub file_path: Option<&'file_path str>,
     pub spinner: Spinner,
@@ -62,7 +62,7 @@ impl<Editor: Widget> Widget for AppWidget<'_, '_, Editor> {
 
         if let Some(dialogue) = &self.dialogue {
             let dialogue_area = centered_rect(50, 50, area);
-            dialogue.draw(dialogue_area, buf);
+            dialogue.render(dialogue_area, buf);
         }
     }
 }

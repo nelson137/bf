@@ -27,7 +27,6 @@ use crate::{
     util::{
         common::{sha1_digest, Sha1Digest},
         read::read_script_file,
-        sync::SharedBool,
         tui::{BfEvent, EventQueue, KeyEventExt, Terminal},
     },
     widgets::Spinner,
@@ -58,7 +57,7 @@ pub struct App<'textarea> {
     term_width: usize,
     term_height: usize,
     file_path: Option<String>,
-    should_quit: SharedBool, // TODO: this can probably just be a `bool` now
+    should_quit: bool,
     spinner: Spinner,
     code: TextArea<'textarea>,
     tape_viewport: TapeViewportState,
@@ -106,7 +105,7 @@ impl App<'_> {
             term_width: 0,
             term_height: 0,
             file_path: cli.infile.map(|p| p.to_string_lossy().into()),
-            should_quit: SharedBool::new(false),
+            should_quit: false,
             spinner: Spinner::default(),
             code,
             tape_viewport: TapeViewportState::new(cli.ascii_values),
@@ -140,7 +139,7 @@ impl App<'_> {
         self.term_width = term_size.width as usize;
         self.term_height = term_size.height as usize;
 
-        while !self.should_quit.load() {
+        while !self.should_quit {
             restart_interpreter = false;
 
             terminal.draw(|f| f.render_widget(self.widget(), f.size()))?;
@@ -204,7 +203,7 @@ impl App<'_> {
                     self.dialogue = None;
                 }
                 DialogueCommand::ConfirmUnsavedChangesConfirmed => {
-                    self.should_quit.store(true);
+                    self.should_quit = true;
                 }
                 DialogueCommand::FileSaveAsSubmitted(path) => {
                     self.file_path = Some(path);
@@ -257,7 +256,7 @@ impl App<'_> {
                     There are unsaved changes, are you sure you want to quit?",
             )));
         } else {
-            self.should_quit.store(true);
+            self.should_quit = true;
         }
     }
 

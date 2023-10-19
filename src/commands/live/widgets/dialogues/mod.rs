@@ -1,3 +1,5 @@
+use std::iter;
+
 use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{
     prelude::{Buffer, Constraint, Direction, Layout, Margin, Rect},
@@ -264,50 +266,35 @@ impl Dialogue<'_> {
         sublayouts!([text_area, _, all_buttons_area] = layout);
 
         // Message
+
         Paragraph::new(&*state.message)
             .wrap(Wrap { trim: false })
             .render(text_area, buf);
 
-        // Button(s)
-        let w = all_buttons_area.width;
-        if state.buttons.len() == 1 {
-            let space = w.saturating_sub(BUTTON_WIDTH) / 2;
-            let layout = Layout::new()
-                .direction(Direction::Horizontal)
-                .constraints(vec![
-                    Constraint::Length(space),
-                    Constraint::Length(BUTTON_WIDTH),
-                    Constraint::Min(0),
-                ])
-                .split(all_buttons_area);
-            sublayouts!([_, button_area] = layout);
-            DialogueButtonWidget::new(state.buttons[0], self.fg, true)
+        // Buttons
+
+        let mut constraints = Vec::with_capacity(state.buttons.len() * 2 + 1);
+        constraints.push(Constraint::Min(1));
+        const BUTTON_AND_MARGIN: [Constraint; 2] =
+            [Constraint::Length(BUTTON_WIDTH), Constraint::Length(2)];
+        constraints.extend(
+            iter::repeat(&BUTTON_AND_MARGIN)
+                .take(state.buttons.len())
+                .flatten(),
+        );
+
+        let layout = Layout::new()
+            .direction(Direction::Horizontal)
+            .constraints(constraints)
+            .split(all_buttons_area);
+
+        let buttons = state.buttons.iter().copied();
+        let button_areas = layout.iter().copied().skip(1).step_by(2);
+        for ((i, button), button_area) in buttons.enumerate().zip(button_areas)
+        {
+            let selected = state.button_cursor as usize == i;
+            DialogueButtonWidget::new(button, self.fg, selected)
                 .render(button_area, buf);
-        } else {
-            let space = w.saturating_sub(BUTTON_WIDTH * 2) / 3;
-            let layout = Layout::new()
-                .direction(Direction::Horizontal)
-                .constraints(vec![
-                    Constraint::Length(space),
-                    Constraint::Length(BUTTON_WIDTH),
-                    Constraint::Length(space),
-                    Constraint::Length(BUTTON_WIDTH),
-                    Constraint::Min(0),
-                ])
-                .split(all_buttons_area);
-            sublayouts!([_, left_button_area, _, right_button_area] = layout);
-            DialogueButtonWidget::new(
-                state.buttons[0],
-                self.fg,
-                state.button_cursor == 0,
-            )
-            .render(left_button_area, buf);
-            DialogueButtonWidget::new(
-                state.buttons[1],
-                self.fg,
-                state.button_cursor == 1,
-            )
-            .render(right_button_area, buf);
         }
     }
 

@@ -1,17 +1,26 @@
 use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{
-    prelude::{
-        Alignment, Buffer, Constraint, Direction, Layout, Margin, Rect,
-    },
-    style::{Color, Style, Styled, Stylize},
-    text::Text,
+    prelude::{Buffer, Constraint, Direction, Layout, Margin, Rect},
+    style::{Color, Style},
     widgets::{Block, BorderType, Borders, Clear, Paragraph, Widget, Wrap},
 };
-use ratatui_textarea::TextArea;
+use ratatui_textarea::{CursorMove, TextArea};
 
 use crate::{
-    commands::live::textarea::TextAreaExts, sublayouts, util::tui::KeyEventExt,
+    commands::live::{
+        textarea::TextAreaExts, widgets::dialogues::button::BUTTON_WIDTH,
+    },
+    sublayouts,
+    util::tui::KeyEventExt,
 };
+
+use self::{
+    button::{DialogueButton, DialogueButtonWidget},
+    drop_shadow::DropShadowWidget,
+};
+
+mod button;
+mod drop_shadow;
 
 pub fn centered_rect(percent_x: u16, percent_y: u16, area: Rect) -> Rect {
     let centered_vert_area = Layout::default()
@@ -62,25 +71,30 @@ pub enum DialogueCommand {
 pub struct Dialogue<'textarea> {
     title: &'static str,
     bg: Color,
+    primary: Color,
     fg: Color,
     kind: DialogueKind<'textarea>,
 }
 
 impl Dialogue<'_> {
+    const DEFAULT_BG: Color = Color::Reset;
+    const DEFAULT_FG: Color = Color::White;
+
     fn _prompt_str_input(value: Option<String>) -> TextArea<'static> {
         let mut input =
             TextArea::new(value.map(|v| vec![v]).unwrap_or_default());
         input.set_block(Block::new().borders(Borders::ALL));
+        input.set_cursor_line_style(Style::new());
+        input.move_cursor(CursorMove::End);
         input
     }
-}
 
-impl Dialogue<'_> {
     pub fn confirm_unsaved_changes(message: impl Into<String>) -> Self {
         Self {
             title: " Confirm ",
-            bg: Color::Black,
-            fg: Color::Yellow,
+            bg: Self::DEFAULT_BG,
+            primary: Color::Yellow,
+            fg: Self::DEFAULT_FG,
             kind: DialogueKind::ConfirmUnsavedChanges(ButtonDialogueState {
                 message: message.into(),
                 buttons: vec![DialogueButton::Cancel, DialogueButton::Yes],
@@ -92,8 +106,9 @@ impl Dialogue<'_> {
     pub fn error(message: impl Into<String>) -> Self {
         Self {
             title: " Error ",
-            bg: Color::Black,
-            fg: Color::Red,
+            bg: Self::DEFAULT_BG,
+            primary: Color::Red,
+            fg: Self::DEFAULT_FG,
             kind: DialogueKind::Error(ButtonDialogueState {
                 message: message.into(),
                 buttons: vec![DialogueButton::Ok],
@@ -105,8 +120,9 @@ impl Dialogue<'_> {
     pub fn file_save_as(value: Option<impl Into<String>>) -> Self {
         Self {
             title: " Save As ",
-            bg: Color::Black,
-            fg: Color::Green,
+            bg: Self::DEFAULT_BG,
+            primary: Color::LightGreen,
+            fg: Self::DEFAULT_FG,
             kind: DialogueKind::FileSaveAs(PromptDialogueState {
                 button_state: ButtonDialogueState {
                     message: "Filename: ".to_string(),
@@ -121,8 +137,9 @@ impl Dialogue<'_> {
     pub fn script_input() -> Self {
         Self {
             title: " Input ",
-            bg: Color::Black,
-            fg: Color::Green,
+            bg: Self::DEFAULT_BG,
+            primary: Color::Green,
+            fg: Self::DEFAULT_FG,
             kind: DialogueKind::ScriptInput(PromptDialogueState {
                 button_state: ButtonDialogueState {
                     message: "Input: ".to_string(),
@@ -137,8 +154,9 @@ impl Dialogue<'_> {
     pub fn script_auto_input() -> Self {
         Self {
             title: " Auto-Input ",
-            bg: Color::Black,
-            fg: Color::Green,
+            bg: Self::DEFAULT_BG,
+            primary: Color::Green,
+            fg: Self::DEFAULT_FG,
             kind: DialogueKind::ScriptAutoInput(PromptDialogueState {
                 button_state: ButtonDialogueState {
                     message: "Input (only the first byte will be used): "
@@ -199,44 +217,124 @@ impl<'textarea> Widget for &Dialogue<'textarea> {
     fn render(self, area: Rect, buf: &mut Buffer) {
         Clear.render(area, buf);
 
-        // Margin box (single column on left and right)
-        let block = Block::new()
-            .borders(Borders::LEFT | Borders::RIGHT)
-            .border_style(Style::new().fg(self.bg).bg(self.bg));
-        let dialogue_area = block.inner(area);
-        block.render(area, buf);
-
-        // Box with outline and title
-        // TODO: get rid of margin box, just render this block in `area`
         let block = Block::new()
             .title(self.title)
+            .title_style(Style::new().bg(self.bg).fg(self.primary))
             .borders(Borders::ALL)
             .border_type(BorderType::Thick)
-            .border_style(Style::new().fg(self.fg).bg(self.bg))
-            .style(Style::new().bg(self.bg));
-        let content_area = block.inner(dialogue_area).inner(&Margin {
+            .border_style(Style::new().bg(self.bg).fg(self.primary))
+            .style(Style::new().bg(self.bg).fg(self.fg));
+        let content_area = block.inner(area).inner(&Margin {
             horizontal: 1,
             vertical: 1,
         });
-        block.render(dialogue_area, buf);
+        block.render(area, buf);
 
         match &self.kind {
             DialogueKind::ConfirmUnsavedChanges(state)
-            | DialogueKind::Error(state) => state.render(content_area, buf),
+            | DialogueKind::Error(state) => {
+                self.render_button_dialogue(content_area, buf, state)
+            }
             DialogueKind::FileSaveAs(state)
             | DialogueKind::ScriptInput(state)
             | DialogueKind::ScriptAutoInput(state) => {
-                state.render(content_area, buf)
+                self.render_prompt_dialogue(content_area, buf, state)
             }
         }
+
+        DropShadowWidget::new(2, 2).render(area, buf);
+    }
+}
+
+impl Dialogue<'_> {
+    fn render_button_dialogue(
+        &self,
+        area: Rect,
+        buf: &mut Buffer,
+        state: &ButtonDialogueState,
+    ) {
+        let layout = Layout::new()
+            .direction(Direction::Vertical)
+            .constraints(vec![
+                Constraint::Min(0),    // Message
+                Constraint::Length(1), // Space (skip)
+                Constraint::Length(1), // Buttons
+            ])
+            .split(area);
+        sublayouts!([text_area, _, all_buttons_area] = layout);
+
+        // Message
+        Paragraph::new(&*state.message)
+            .wrap(Wrap { trim: false })
+            .render(text_area, buf);
+
+        // Button(s)
+        let w = all_buttons_area.width;
+        if state.buttons.len() == 1 {
+            let space = w.saturating_sub(BUTTON_WIDTH) / 2;
+            let layout = Layout::new()
+                .direction(Direction::Horizontal)
+                .constraints(vec![
+                    Constraint::Length(space),
+                    Constraint::Length(BUTTON_WIDTH),
+                    Constraint::Min(0),
+                ])
+                .split(all_buttons_area);
+            sublayouts!([_, button_area] = layout);
+            DialogueButtonWidget::new(state.buttons[0], self.fg, true)
+                .render(button_area, buf);
+        } else {
+            let space = w.saturating_sub(BUTTON_WIDTH * 2) / 3;
+            let layout = Layout::new()
+                .direction(Direction::Horizontal)
+                .constraints(vec![
+                    Constraint::Length(space),
+                    Constraint::Length(BUTTON_WIDTH),
+                    Constraint::Length(space),
+                    Constraint::Length(BUTTON_WIDTH),
+                    Constraint::Min(0),
+                ])
+                .split(all_buttons_area);
+            sublayouts!([_, left_button_area, _, right_button_area] = layout);
+            DialogueButtonWidget::new(
+                state.buttons[0],
+                self.fg,
+                state.button_cursor == 0,
+            )
+            .render(left_button_area, buf);
+            DialogueButtonWidget::new(
+                state.buttons[1],
+                self.fg,
+                state.button_cursor == 1,
+            )
+            .render(right_button_area, buf);
+        }
+    }
+
+    fn render_prompt_dialogue(
+        &self,
+        area: Rect,
+        buf: &mut Buffer,
+        state: &PromptDialogueState,
+    ) {
+        self.render_button_dialogue(area, buf, &state.button_state);
+
+        let layout = Layout::new()
+            .direction(Direction::Vertical)
+            .constraints(vec![Constraint::Length(3), Constraint::Min(0)])
+            .split(area.inner(&Margin {
+                horizontal: 0,
+                vertical: 2,
+            }));
+        sublayouts!([input_area, _] = layout);
+
+        state.input.widget().render(input_area, buf);
     }
 }
 
 trait DialogueState {
     fn on_event(&mut self, event: KeyEvent) -> DialogueAction;
 }
-
-const BUTTON_WIDTH: u16 = 10;
 
 struct ButtonDialogueState {
     message: String,
@@ -248,72 +346,6 @@ impl ButtonDialogueState {
     fn button_select_toggle(&mut self) {
         if !self.buttons.is_empty() {
             self.button_cursor ^= 1;
-        }
-    }
-}
-
-impl Widget for &ButtonDialogueState {
-    fn render(self, area: Rect, buf: &mut Buffer) {
-        let layout = Layout::new()
-            .direction(Direction::Vertical)
-            .constraints(vec![
-                Constraint::Min(0),
-                Constraint::Length(1),
-                Constraint::Length(1),
-            ])
-            .split(area);
-        sublayouts!([text_area, _, all_buttons_area] = layout);
-
-        // Text
-        Paragraph::new(Text::from(&*self.message))
-            .wrap(Wrap { trim: false })
-            .render(text_area, buf);
-
-        // Button(s)
-        let w = all_buttons_area.width;
-        let btn_style = Style::default().bg(Color::Blue).fg(Color::White);
-        let text_style = Style::default();
-        let text_style_sel = text_style.underlined();
-        if self.buttons.len() == 1 {
-            let space_w = w.saturating_sub(BUTTON_WIDTH) / 2;
-            let buttons_area = Layout::new()
-                .direction(Direction::Horizontal)
-                .constraints(vec![
-                    Constraint::Length(space_w),
-                    Constraint::Length(BUTTON_WIDTH),
-                    Constraint::Min(0),
-                ])
-                .split(all_buttons_area);
-            let text = self.buttons[0].text().set_style(text_style_sel);
-            Paragraph::new(text)
-                .block(Block::default().style(btn_style))
-                .alignment(Alignment::Center)
-                .render(buttons_area[1], buf);
-        } else {
-            let space_w = w.saturating_sub(BUTTON_WIDTH * 2) / 3;
-            let buttons_area = Layout::new()
-                .direction(Direction::Horizontal)
-                .constraints(vec![
-                    Constraint::Length(space_w),
-                    Constraint::Length(BUTTON_WIDTH),
-                    Constraint::Length(space_w),
-                    Constraint::Length(BUTTON_WIDTH),
-                    Constraint::Min(0),
-                ])
-                .split(all_buttons_area);
-            let [text_style0, text_style1] = if self.button_cursor == 0 {
-                [text_style_sel, text_style]
-            } else {
-                [text_style, text_style_sel]
-            };
-            Paragraph::new(self.buttons[0].text().set_style(text_style0))
-                .block(Block::default().style(btn_style))
-                .alignment(Alignment::Center)
-                .render(buttons_area[1], buf);
-            Paragraph::new(self.buttons[1].text().set_style(text_style1))
-                .block(Block::default().style(btn_style))
-                .alignment(Alignment::Center)
-                .render(buttons_area[3], buf);
         }
     }
 }
@@ -344,43 +376,10 @@ impl DialogueState for ButtonDialogueState {
     }
 }
 
-#[derive(Copy, Clone)]
-enum DialogueButton {
-    Ok,
-    Yes,
-    Cancel,
-}
-
-impl DialogueButton {
-    fn text(&self) -> &'static str {
-        match self {
-            Self::Ok => "OK",
-            Self::Yes => "YES",
-            Self::Cancel => "CANCEL",
-        }
-    }
-}
-
+// TODO: refactor to not have a `ButtonDialogueState`
 struct PromptDialogueState<'textarea> {
     button_state: ButtonDialogueState,
     input: TextArea<'textarea>,
-}
-
-impl Widget for &PromptDialogueState<'_> {
-    fn render(self, area: Rect, buf: &mut Buffer) {
-        self.button_state.render(area, buf);
-
-        let layout = Layout::default()
-            .direction(Direction::Vertical)
-            .constraints(vec![Constraint::Length(3), Constraint::Min(0)])
-            .split(area.inner(&Margin {
-                horizontal: 0,
-                vertical: 2,
-            }));
-        sublayouts!([input_area, _] = layout);
-
-        self.input.widget().render(input_area, buf);
-    }
 }
 
 impl DialogueState for PromptDialogueState<'_> {

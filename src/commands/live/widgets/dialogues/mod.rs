@@ -330,10 +330,14 @@ struct ButtonDialogueState {
 }
 
 impl ButtonDialogueState {
-    fn button_select_toggle(&mut self) {
-        if !self.buttons.is_empty() {
-            self.button_cursor ^= 1;
-        }
+    fn focus_next_button(&mut self) {
+        let len = self.buttons.len() as u8;
+        self.button_cursor = (self.button_cursor + 1) % len;
+    }
+
+    fn focus_prev_button(&mut self) {
+        let len = self.buttons.len() as u8;
+        self.button_cursor = (self.button_cursor + len - 1) % len;
     }
 }
 
@@ -342,6 +346,7 @@ impl DialogueState for ButtonDialogueState {
         match event.code {
             KeyCode::Esc => DialogueAction::No,
             KeyCode::Char('c') if event.is_ctrl() => DialogueAction::No,
+
             KeyCode::Enter => {
                 if self.button_cursor == 0 {
                     DialogueAction::No
@@ -350,11 +355,13 @@ impl DialogueState for ButtonDialogueState {
                 }
             }
 
-            KeyCode::Tab
-            | KeyCode::BackTab
-            | KeyCode::Right
-            | KeyCode::Left => {
-                self.button_select_toggle();
+            KeyCode::Tab | KeyCode::Right => {
+                self.focus_next_button();
+                DialogueAction::None
+            }
+
+            KeyCode::BackTab | KeyCode::Left => {
+                self.focus_prev_button();
                 DialogueAction::None
             }
 

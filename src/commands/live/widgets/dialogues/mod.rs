@@ -100,7 +100,7 @@ impl Dialogue<'_> {
             kind: DialogueKind::ConfirmUnsavedChanges(ButtonDialogueState {
                 message: message.into(),
                 buttons: vec![DialogueButton::Cancel, DialogueButton::Yes],
-                button_cursor: 0,
+                cursor: 0,
             }),
         }
     }
@@ -114,7 +114,7 @@ impl Dialogue<'_> {
             kind: DialogueKind::Error(ButtonDialogueState {
                 message: message.into(),
                 buttons: vec![DialogueButton::Ok],
-                button_cursor: 0,
+                cursor: 0,
             }),
         }
     }
@@ -129,7 +129,7 @@ impl Dialogue<'_> {
                 button_state: ButtonDialogueState {
                     message: "Filename: ".to_string(),
                     buttons: vec![DialogueButton::Cancel, DialogueButton::Ok],
-                    button_cursor: 0,
+                    cursor: 0,
                 },
                 input: Self::_prompt_str_input(value.map(Into::into)),
             }),
@@ -146,7 +146,7 @@ impl Dialogue<'_> {
                 button_state: ButtonDialogueState {
                     message: "Input: ".to_string(),
                     buttons: vec![DialogueButton::Cancel, DialogueButton::Ok],
-                    button_cursor: 0,
+                    cursor: 0,
                 },
                 input: Self::_prompt_str_input(None),
             }),
@@ -164,7 +164,7 @@ impl Dialogue<'_> {
                     message: "Input (only the first byte will be used): "
                         .to_string(),
                     buttons: vec![DialogueButton::Cancel, DialogueButton::Ok],
-                    button_cursor: 0,
+                    cursor: 0,
                 },
                 input: Self::_prompt_str_input(None),
             }),
@@ -292,7 +292,7 @@ impl Dialogue<'_> {
         let button_areas = layout.iter().copied().skip(1).step_by(2);
         for ((i, button), button_area) in buttons.enumerate().zip(button_areas)
         {
-            let selected = state.button_cursor as usize == i;
+            let selected = state.cursor as usize == i;
             DialogueButtonWidget::new(button, self.fg, selected)
                 .render(button_area, buf);
         }
@@ -326,18 +326,18 @@ trait DialogueState {
 struct ButtonDialogueState {
     message: String,
     buttons: Vec<DialogueButton>,
-    button_cursor: u8,
+    cursor: u8,
 }
 
 impl ButtonDialogueState {
     fn focus_next_button(&mut self) {
         let len = self.buttons.len() as u8;
-        self.button_cursor = (self.button_cursor + 1) % len;
+        self.cursor = (self.cursor + 1) % len;
     }
 
     fn focus_prev_button(&mut self) {
         let len = self.buttons.len() as u8;
-        self.button_cursor = (self.button_cursor + len - 1) % len;
+        self.cursor = (self.cursor + len - 1) % len;
     }
 }
 
@@ -348,7 +348,7 @@ impl DialogueState for ButtonDialogueState {
             KeyCode::Char('c') if event.is_ctrl() => DialogueAction::No,
 
             KeyCode::Enter => {
-                if self.button_cursor == 0 {
+                if self.cursor == 0 {
                     DialogueAction::No
                 } else {
                     DialogueAction::Yes

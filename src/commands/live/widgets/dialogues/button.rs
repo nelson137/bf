@@ -26,6 +26,13 @@ impl DialogueButton {
             Self::Cancel => "CANCEL",
         }
     }
+
+    pub fn is_affirmative(self) -> bool {
+        match self {
+            Self::Ok | Self::Yes => true,
+            Self::Cancel => false,
+        }
+    }
 }
 
 pub struct DialogueButtonWidget {

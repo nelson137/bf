@@ -1,6 +1,6 @@
 use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{
-    prelude::{Buffer, Constraint, Direction, Layout, Margin, Rect},
+    prelude::{Buffer, Constraint, Direction, Layout, Rect},
     style::{Color, Style},
     widgets::{
         Block, BorderType, Borders, Clear, Padding, Paragraph, Widget, Wrap,
@@ -122,11 +122,9 @@ impl Dialogue<'_> {
             primary: Color::LightGreen,
             fg: Self::DEFAULT_FG,
             kind: DialogueKind::FileSaveAs(PromptDialogueState {
-                button_state: ButtonDialogueState {
-                    message: "Filename: ".to_string(),
-                    buttons: vec![DialogueButton::Cancel, DialogueButton::Ok],
-                    cursor: 0,
-                },
+                prompt: "Filename: ".to_string(),
+                buttons: vec![DialogueButton::Cancel, DialogueButton::Ok],
+                cursor: PromptDialogueCursor::default(),
                 input: Self::_prompt_str_input(value.map(Into::into)),
             }),
         }
@@ -139,11 +137,9 @@ impl Dialogue<'_> {
             primary: Color::Green,
             fg: Self::DEFAULT_FG,
             kind: DialogueKind::ScriptInput(PromptDialogueState {
-                button_state: ButtonDialogueState {
-                    message: "Input: ".to_string(),
-                    buttons: vec![DialogueButton::Cancel, DialogueButton::Ok],
-                    cursor: 0,
-                },
+                prompt: "Input: ".to_string(),
+                buttons: vec![DialogueButton::Cancel, DialogueButton::Ok],
+                cursor: PromptDialogueCursor::default(),
                 input: Self::_prompt_str_input(None),
             }),
         }
@@ -156,12 +152,10 @@ impl Dialogue<'_> {
             primary: Color::Green,
             fg: Self::DEFAULT_FG,
             kind: DialogueKind::ScriptAutoInput(PromptDialogueState {
-                button_state: ButtonDialogueState {
-                    message: "Input (only the first byte will be used): "
-                        .to_string(),
-                    buttons: vec![DialogueButton::Cancel, DialogueButton::Ok],
-                    cursor: 0,
-                },
+                prompt: "Input (only the first byte will be used): "
+                    .to_string(),
+                buttons: vec![DialogueButton::Cancel, DialogueButton::Ok],
+                cursor: PromptDialogueCursor::default(),
                 input: Self::_prompt_str_input(None),
             }),
         }
@@ -277,18 +271,36 @@ impl Dialogue<'_> {
         buf: &mut Buffer,
         state: &PromptDialogueState,
     ) {
-        self.render_button_dialogue(area, buf, &state.button_state);
-
         let layout = Layout::new()
             .direction(Direction::Vertical)
-            .constraints(vec![Constraint::Length(3), Constraint::Min(0)])
-            .split(area.inner(&Margin {
-                horizontal: 0,
-                vertical: 2,
-            }));
-        sublayouts!([input_area, _] = layout);
+            .constraints(vec![
+                Constraint::Length(1), // Prompt
+                Constraint::Length(1), // Space (skip)
+                Constraint::Length(3), // Input
+                Constraint::Min(0),    // Space (skip)
+                Constraint::Length(1), // Buttons
+            ])
+            .split(area);
+        sublayouts!([prompt_area, _, input_area, _, buttons_area] = layout);
+
+        // Prompt
+
+        Paragraph::new(&*state.prompt)
+            .wrap(Wrap { trim: false })
+            .render(prompt_area, buf);
+
+        // Input
 
         state.input.widget().render(input_area, buf);
+
+        // Buttons
+
+        let cursor = match state.cursor {
+            PromptDialogueCursor::Input => None,
+            PromptDialogueCursor::Button(index) => Some(index),
+        };
+        ButtonRowWidget::new(&state.buttons, cursor, self.fg)
+            .render(buttons_area, buf);
     }
 }
 
@@ -343,23 +355,89 @@ impl DialogueState for ButtonDialogueState {
     }
 }
 
-// TODO: refactor to not have a `ButtonDialogueState`
 struct PromptDialogueState<'textarea> {
-    button_state: ButtonDialogueState,
+    prompt: String,
+    buttons: Vec<DialogueButton>,
+    cursor: PromptDialogueCursor,
     input: TextArea<'textarea>,
+}
+
+impl PromptDialogueState<'_> {
+    fn cursor_should_submit(&self) -> bool {
+        match self.cursor {
+            PromptDialogueCursor::Input => true,
+            PromptDialogueCursor::Button(index) => {
+                self.buttons[index as usize].is_affirmative()
+            }
+        }
+    }
+
+    fn focus_next(&mut self) {
+        self.cursor = match self.cursor {
+            PromptDialogueCursor::Input => PromptDialogueCursor::Button(0),
+            PromptDialogueCursor::Button(index) => {
+                let next = index + 1;
+                if next >= self.buttons.len() as u8 {
+                    PromptDialogueCursor::Input
+                } else {
+                    PromptDialogueCursor::Button(next)
+                }
+            }
+        };
+    }
+
+    fn focus_prev(&mut self) {
+        self.cursor = match self.cursor {
+            PromptDialogueCursor::Input => {
+                PromptDialogueCursor::Button(self.buttons.len() as u8 - 1)
+            }
+            PromptDialogueCursor::Button(index) => {
+                match index.checked_sub(1) {
+                    None => PromptDialogueCursor::Input,
+                    Some(next) => PromptDialogueCursor::Button(next),
+                }
+            }
+        }
+    }
 }
 
 impl DialogueState for PromptDialogueState<'_> {
     fn on_event(&mut self, event: KeyEvent) -> DialogueAction {
-        match self.button_state.on_event(event) {
-            DialogueAction::None => {
+        match event.code {
+            KeyCode::Esc => DialogueAction::No,
+            KeyCode::Char('c') if event.is_ctrl() => DialogueAction::No,
+
+            KeyCode::Enter => {
+                if self.cursor_should_submit() {
+                    DialogueAction::Submit(self.input.to_string())
+                } else {
+                    DialogueAction::No
+                }
+            }
+
+            KeyCode::Tab => {
+                self.focus_next();
+                DialogueAction::None
+            }
+
+            KeyCode::BackTab => {
+                self.focus_prev();
+                DialogueAction::None
+            }
+
+            _ if self.cursor == PromptDialogueCursor::Input => {
                 self.input.on_event_single_line(event);
                 DialogueAction::None
             }
-            DialogueAction::Yes => {
-                DialogueAction::Submit(self.input.to_string())
-            }
-            _ => DialogueAction::No,
+
+            _ => DialogueAction::None,
         }
     }
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+enum PromptDialogueCursor {
+    #[default]
+    Input,
+    Button(u8),
 }

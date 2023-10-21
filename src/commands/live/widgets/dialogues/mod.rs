@@ -1,5 +1,3 @@
-use std::iter;
-
 use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{
     prelude::{Buffer, Constraint, Direction, Layout, Margin, Rect},
@@ -11,15 +9,11 @@ use ratatui::{
 use ratatui_textarea::{CursorMove, TextArea};
 
 use crate::{
-    commands::live::{
-        textarea::TextAreaExts, widgets::dialogues::button::BUTTON_WIDTH,
-    },
-    sublayouts,
-    util::tui::KeyEventExt,
+    commands::live::textarea::TextAreaExts, sublayouts, util::tui::KeyEventExt,
 };
 
 use self::{
-    button::{DialogueButton, DialogueButtonWidget},
+    button::{ButtonRowWidget, DialogueButton},
     drop_shadow::DropShadowWidget,
 };
 
@@ -263,7 +257,7 @@ impl Dialogue<'_> {
                 Constraint::Length(1), // Buttons
             ])
             .split(area);
-        sublayouts!([text_area, _, all_buttons_area] = layout);
+        sublayouts!([text_area, _, buttons_area] = layout);
 
         // Message
 
@@ -273,29 +267,8 @@ impl Dialogue<'_> {
 
         // Buttons
 
-        let mut constraints = Vec::with_capacity(state.buttons.len() * 2 + 1);
-        constraints.push(Constraint::Min(1));
-        const BUTTON_AND_MARGIN: [Constraint; 2] =
-            [Constraint::Length(BUTTON_WIDTH), Constraint::Length(2)];
-        constraints.extend(
-            iter::repeat(&BUTTON_AND_MARGIN)
-                .take(state.buttons.len())
-                .flatten(),
-        );
-
-        let layout = Layout::new()
-            .direction(Direction::Horizontal)
-            .constraints(constraints)
-            .split(all_buttons_area);
-
-        let buttons = state.buttons.iter().copied();
-        let button_areas = layout.iter().copied().skip(1).step_by(2);
-        for ((i, button), button_area) in buttons.enumerate().zip(button_areas)
-        {
-            let selected = state.cursor as usize == i;
-            DialogueButtonWidget::new(button, self.fg, selected)
-                .render(button_area, buf);
-        }
+        ButtonRowWidget::new(&state.buttons, Some(state.cursor), self.fg)
+            .render(buttons_area, buf);
     }
 
     fn render_prompt_dialogue(

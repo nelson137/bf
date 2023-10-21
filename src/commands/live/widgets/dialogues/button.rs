@@ -1,5 +1,7 @@
+use std::iter;
+
 use ratatui::{
-    prelude::{Alignment, Buffer, Rect},
+    prelude::{Alignment, Buffer, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     widgets::{Block, Paragraph, Widget},
 };
@@ -56,5 +58,53 @@ impl Widget for DialogueButtonWidget {
 
         buf.get_mut(area.left(), area.y).set_char('[');
         buf.get_mut(area.right() - 1, area.y).set_char(']');
+    }
+}
+
+pub struct ButtonRowWidget<'buttons> {
+    buttons: &'buttons [DialogueButton],
+    cursor: Option<u8>,
+    fg: Color,
+}
+
+impl<'buttons> ButtonRowWidget<'buttons> {
+    pub fn new(
+        buttons: &'buttons [DialogueButton],
+        cursor: Option<u8>,
+        fg: Color,
+    ) -> Self {
+        Self {
+            buttons,
+            cursor,
+            fg,
+        }
+    }
+}
+
+impl Widget for ButtonRowWidget<'_> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        let mut constraints = Vec::with_capacity(self.buttons.len() * 2 + 1);
+        constraints.push(Constraint::Min(1));
+        const BUTTON_AND_MARGIN: [Constraint; 2] =
+            [Constraint::Length(BUTTON_WIDTH), Constraint::Length(2)];
+        constraints.extend(
+            iter::repeat(&BUTTON_AND_MARGIN)
+                .take(self.buttons.len())
+                .flatten(),
+        );
+
+        let layout = Layout::new()
+            .direction(Direction::Horizontal)
+            .constraints(constraints)
+            .split(area);
+
+        let buttons = self.buttons.iter().copied();
+        let button_areas = layout.iter().copied().skip(1).step_by(2);
+        for ((i, button), button_area) in buttons.enumerate().zip(button_areas)
+        {
+            let selected = matches!(self.cursor, Some(c) if c as usize == i);
+            DialogueButtonWidget::new(button, self.fg, selected)
+                .render(button_area, buf);
+        }
     }
 }

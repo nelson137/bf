@@ -4,7 +4,9 @@ use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{
     prelude::{Buffer, Constraint, Direction, Layout, Margin, Rect},
     style::{Color, Style},
-    widgets::{Block, BorderType, Borders, Clear, Paragraph, Widget, Wrap},
+    widgets::{
+        Block, BorderType, Borders, Clear, Padding, Paragraph, Widget, Wrap,
+    },
 };
 use ratatui_textarea::{CursorMove, TextArea};
 
@@ -225,11 +227,9 @@ impl<'textarea> Widget for &Dialogue<'textarea> {
             .borders(Borders::ALL)
             .border_type(BorderType::Thick)
             .border_style(Style::new().bg(self.bg).fg(self.primary))
-            .style(Style::new().bg(self.bg).fg(self.fg));
-        let content_area = block.inner(area).inner(&Margin {
-            horizontal: 1,
-            vertical: 1,
-        });
+            .style(Style::new().bg(self.bg).fg(self.fg))
+            .padding(Padding::uniform(1));
+        let content_area = block.inner(area);
         block.render(area, buf);
 
         match &self.kind {

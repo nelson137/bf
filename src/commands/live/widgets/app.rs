@@ -16,12 +16,12 @@ use super::{centered_rect, Dialogue, TapeViewportState};
 
 use super::{Footer, Header, TapeViewport};
 
-pub struct AppWidget<'dialogue, 'file_path, Editor: Widget> {
+pub struct AppWidget<'app, 'textarea, Editor: Widget> {
     pub term_width: usize,
     pub term_height: usize,
-    pub dialogue: Option<&'dialogue Dialogue<'dialogue>>,
+    pub dialogue: Option<&'app Dialogue<'textarea>>,
     pub is_dirty: bool,
-    pub file_path: Option<&'file_path str>,
+    pub file_path: Option<&'app str>,
     pub spinner: Spinner,
     pub async_interpreter: InterpreterState,
     pub tape_viewport: TapeViewportState,

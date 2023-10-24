@@ -19,7 +19,6 @@ use crossterm::{
 use ratatui::{
     backend::CrosstermBackend,
     style::{Color, Style},
-    widgets::Widget,
 };
 use ratatui_textarea::TextArea;
 
@@ -53,30 +52,30 @@ fn set_panic_hook() {
     }));
 }
 
-pub struct App<'textarea> {
+pub struct App<'code, 'dialogue> {
     term_width: usize,
     term_height: usize,
     file_path: Option<String>,
     should_quit: bool,
     spinner: Spinner,
-    code: TextArea<'textarea>,
+    code: TextArea<'code>,
     tape_viewport: TapeViewportState,
     input: String,
     auto_input: Option<u8>,
     clean_hash: Sha1Digest,
     event_queue: EventQueue,
     delay: Duration,
-    dialogue: Option<Box<Dialogue<'textarea>>>,
+    dialogue: Option<Box<Dialogue<'dialogue>>>,
     async_interpreter: AsyncInterpreter,
 }
 
-impl Drop for App<'_> {
+impl Drop for App<'_, '_> {
     fn drop(&mut self) {
         reset_terminal();
     }
 }
 
-impl App<'_> {
+impl<'code, 'dialogue> App<'code, 'dialogue> {
     pub fn new(cli: LiveCli) -> Result<Self> {
         set_panic_hook();
 
@@ -142,7 +141,7 @@ impl App<'_> {
         while !self.should_quit {
             restart_interpreter = false;
 
-            terminal.draw(|f| f.render_widget(self.widget(), f.size()))?;
+            self.draw(&mut terminal)?;
 
             for event in self.event_queue.pop_all() {
                 match event {
@@ -179,8 +178,8 @@ impl App<'_> {
         Ok(())
     }
 
-    fn widget(&self) -> AppWidget<impl Widget + '_> {
-        AppWidget {
+    fn draw(&self, terminal: &mut Terminal) -> Result<()> {
+        let widget = AppWidget {
             is_dirty: self.is_dirty(),
             async_interpreter: self.async_interpreter.state(),
             editor: self.code.widget(),
@@ -190,7 +189,9 @@ impl App<'_> {
             tape_viewport: self.tape_viewport,
             term_height: self.term_height,
             term_width: self.term_width,
-        }
+        };
+        terminal.draw(|f| f.render_widget(widget, f.size()))?;
+        Ok(())
     }
 
     fn handle_key_event(&mut self, event: KeyEvent) -> bool {

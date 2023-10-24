@@ -1,7 +1,9 @@
+use std::cell::RefCell;
+
 use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{
     prelude::{Buffer, Constraint, Direction, Layout, Rect},
-    style::{Color, Style},
+    style::{Color, Style, Stylize},
     widgets::{
         Block, BorderType, Borders, Clear, Padding, Paragraph, Widget, Wrap,
     },
@@ -74,17 +76,19 @@ pub struct Dialogue<'textarea> {
     kind: DialogueKind<'textarea>,
 }
 
-impl Dialogue<'_> {
+impl<'textarea> Dialogue<'textarea> {
     const DEFAULT_BG: Color = Color::Reset;
     const DEFAULT_FG: Color = Color::White;
 
-    fn _prompt_str_input(value: Option<String>) -> TextArea<'static> {
+    fn _prompt_str_input(
+        value: Option<String>,
+    ) -> RefCell<TextArea<'textarea>> {
         let mut input =
             TextArea::new(value.map(|v| vec![v]).unwrap_or_default());
         input.set_block(Block::new().borders(Borders::ALL));
         input.set_cursor_line_style(Style::new());
         input.move_cursor(CursorMove::End);
-        input
+        RefCell::new(input)
     }
 
     pub fn confirm_unsaved_changes(message: impl Into<String>) -> Self {
@@ -291,7 +295,19 @@ impl Dialogue<'_> {
 
         // Input
 
-        state.input.widget().render(input_area, buf);
+        let mut input = state.input.borrow_mut();
+
+        let (cursor_style, border_style) = if state.cursor_is_input() {
+            (Style::new().reversed(), Style::new().fg(Color::White))
+        } else {
+            (Style::new(), Style::new().fg(Color::DarkGray))
+        };
+        let block = Block::new()
+            .borders(Borders::ALL)
+            .border_style(border_style);
+        input.set_block(block);
+        input.set_cursor_style(cursor_style);
+        input.widget().render(input_area, buf);
 
         // Buttons
 
@@ -359,10 +375,17 @@ struct PromptDialogueState<'textarea> {
     prompt: String,
     buttons: Vec<DialogueButton>,
     cursor: PromptDialogueCursor,
-    input: TextArea<'textarea>,
+    input: RefCell<TextArea<'textarea>>,
 }
 
 impl PromptDialogueState<'_> {
+    fn cursor_is_input(&self) -> bool {
+        match self.cursor {
+            PromptDialogueCursor::Input => true,
+            PromptDialogueCursor::Button(_) => false,
+        }
+    }
+
     fn cursor_should_submit(&self) -> bool {
         match self.cursor {
             PromptDialogueCursor::Input => true,
@@ -409,7 +432,7 @@ impl DialogueState for PromptDialogueState<'_> {
 
             KeyCode::Enter => {
                 if self.cursor_should_submit() {
-                    DialogueAction::Submit(self.input.to_string())
+                    DialogueAction::Submit(self.input.borrow().to_string())
                 } else {
                     DialogueAction::No
                 }
@@ -426,7 +449,7 @@ impl DialogueState for PromptDialogueState<'_> {
             }
 
             _ if self.cursor == PromptDialogueCursor::Input => {
-                self.input.on_event_single_line(event);
+                self.input.borrow_mut().on_event_single_line(event);
                 DialogueAction::None
             }
 

@@ -4,6 +4,10 @@ version = "0.1.0"
 authors = ["Nelson Earle <nelson.earle137@gmail.com>"]
 edition = "2021"
 
+[[bench]]
+name = "file_hash"
+harness = false
+
 [dependencies]
 ansi_term = "0.12"
 anyhow = "1.0"
@@ -17,5 +21,7 @@ ratatui = "0.23"
 ratatui-textarea = "0.3"
 
 [dev-dependencies]
+blake3 = "1.5.0"
+criterion = { version = "0.5", features = ["html_reports"] }
 fastrand = "2.0.1"
 test-case = "3.2"

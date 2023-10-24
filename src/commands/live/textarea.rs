@@ -1,11 +1,8 @@
 use crossterm::event::{KeyCode, KeyEvent};
 use ratatui_textarea::{CursorMove, TextArea};
-use sha1::{digest::Update, Digest, Sha1};
+use sha1::{Digest, Sha1};
 
-use crate::util::{
-    common::{sha1_digest, Sha1Digest},
-    tui::KeyEventExt,
-};
+use crate::util::{common::Sha1Digest, tui::KeyEventExt};
 
 pub trait TextAreaExts {
     fn bytes(&self) -> impl Iterator<Item = u8>;
@@ -28,8 +25,8 @@ impl TextAreaExts for TextArea<'_> {
     fn hash(&self) -> Sha1Digest {
         let mut digest = Sha1::new();
 
-        for d in self.lines().iter().map(sha1_digest) {
-            digest = digest.chain(d);
+        for line in self.lines() {
+            digest.update(line);
         }
 
         digest.finalize().into()

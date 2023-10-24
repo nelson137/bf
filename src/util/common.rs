@@ -1,4 +1,4 @@
-use sha1::{digest::Update, Digest, Sha1};
+use sha1::{Digest, Sha1};
 
 #[cfg(windows)]
 pub const EOL: &str = "\r\n";
@@ -8,7 +8,7 @@ pub const EOL: &str = "\n";
 pub type Sha1Digest = [u8; 20];
 
 pub fn sha1_digest<D: AsRef<[u8]>>(data: D) -> Sha1Digest {
-    Sha1::new().chain(data).finalize().into()
+    Sha1::new().chain_update(data).finalize().into()
 }
 
 pub trait USizeExt {

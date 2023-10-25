@@ -13,6 +13,7 @@ fn hash_sha1(lines: &[&str]) -> Sha1Digest {
     hash.finalize().into()
 }
 
+#[cfg(feature = "bench-alternative-hash-crates")]
 fn hash_sha1_smol(lines: &[&str]) -> sha1_smol::Digest {
     let mut hash = sha1_smol::Sha1::new();
     for l in lines {
@@ -21,6 +22,7 @@ fn hash_sha1_smol(lines: &[&str]) -> sha1_smol::Digest {
     hash.digest()
 }
 
+#[cfg(feature = "bench-alternative-hash-crates")]
 fn hash_blake3(lines: &[&str]) -> blake3::Hash {
     let mut hasher = blake3::Hasher::new();
     for l in lines {
@@ -43,12 +45,14 @@ fn criterion_benchmark(c: &mut Criterion) {
         |b, i| b.iter(|| black_box(hash_sha1(black_box(i)))),
     );
 
+    #[cfg(feature = "bench-alternative-hash-crates")]
     group.bench_with_input(
         BenchmarkId::new("Sha1_Smol", INPUT_ID),
         input,
         |b, i| b.iter(|| black_box(hash_sha1_smol(black_box(i)))),
     );
 
+    #[cfg(feature = "bench-alternative-hash-crates")]
     group.bench_with_input(
         BenchmarkId::new("Blake3", INPUT_ID),
         input,

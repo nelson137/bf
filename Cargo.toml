@@ -11,18 +11,21 @@ harness = false
 [dependencies]
 ansi_term = "0.12"
 anyhow = "1.0"
+blake3 = { version = "1.5.0", optional = true }
 clap = { version = "4.4", features = ["derive", "wrap_help"] }
 crossterm = "0.26"
 delegate = "0.10.0"
 itertools = "0.11"
 sha-1 = { version = "0.10", features = ["asm"] }
+sha1_smol = { version = "1.0", optional = true }
 term_size = "0.3"
 ratatui = "0.23"
 ratatui-textarea = "0.3"
 
 [dev-dependencies]
-blake3 = "1.5.0"
 criterion = { version = "0.5", features = ["html_reports"] }
 fastrand = "2.0.1"
 test-case = "3.2"
-sha1_smol = "1.0"
+
+[features]
+bench-alternative-hash-crates = ["dep:blake3", "dep:sha1_smol"]

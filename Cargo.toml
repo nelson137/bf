@@ -25,3 +25,4 @@ blake3 = "1.5.0"
 criterion = { version = "0.5", features = ["html_reports"] }
 fastrand = "2.0.1"
 test-case = "3.2"
+sha1_smol = "1.0"

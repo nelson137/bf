@@ -13,6 +13,14 @@ fn hash_sha1(lines: &[&str]) -> Sha1Digest {
     hash.finalize().into()
 }
 
+fn hash_sha1_smol(lines: &[&str]) -> sha1_smol::Digest {
+    let mut hash = sha1_smol::Sha1::new();
+    for l in lines {
+        hash.update(l.as_bytes());
+    }
+    hash.digest()
+}
+
 fn hash_blake3(lines: &[&str]) -> blake3::Hash {
     let mut hasher = blake3::Hasher::new();
     for l in lines {
@@ -33,6 +41,12 @@ fn criterion_benchmark(c: &mut Criterion) {
         BenchmarkId::new("Sha1", INPUT_ID),
         input,
         |b, i| b.iter(|| black_box(hash_sha1(black_box(i)))),
+    );
+
+    group.bench_with_input(
+        BenchmarkId::new("Sha1_Smol", INPUT_ID),
+        input,
+        |b, i| b.iter(|| black_box(hash_sha1_smol(black_box(i)))),
     );
 
     group.bench_with_input(

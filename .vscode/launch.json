@@ -12,6 +12,9 @@
             "preLaunchTask": "cargo build",
             "program": "${workspaceFolder}/target/debug/bf",
             "args": ["live", "examples/print.bf"],
+            "env": {
+                "BF_LOG": "bf=trace"
+            },
             "stopOnEntry": false
         },
         {
@@ -43,6 +46,9 @@
             "request": "launch",
             "program": "${workspaceFolder}\\target\\debug\\bf",
             "args": ["input-debug"],
+            "env": {
+                "BF_LOG": "bf=trace"
+            },
             "preLaunchTask": "cargo build",
             "stopOnEntry": false,
             "cwd": "${workspaceFolder}",

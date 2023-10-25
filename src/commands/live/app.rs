@@ -21,6 +21,7 @@ use ratatui::{
     style::{Color, Style},
 };
 use ratatui_textarea::TextArea;
+use tracing::trace;
 
 use crate::{
     util::{
@@ -34,6 +35,7 @@ use crate::{
 use super::{
     async_interpreter::{AsyncInterpreter, Status},
     cli::LiveCli,
+    logging::init_logging,
     textarea::TextAreaExts,
     widgets::{AppWidget, Dialogue, DialogueCommand, TapeViewportState},
 };
@@ -77,6 +79,9 @@ impl Drop for App<'_, '_> {
 
 impl<'code, 'dialogue> App<'code, 'dialogue> {
     pub fn new(cli: LiveCli) -> Result<Self> {
+        init_logging()?;
+        trace!("initialize TUI app");
+
         set_panic_hook();
 
         enable_raw_mode()?;

@@ -1,33 +1,14 @@
-[package]
-name = "bf"
-version = "0.1.0"
-authors = ["Nelson Earle <nelson.earle137@gmail.com>"]
-edition = "2021"
+[workspace]
+resolver = "2"
+members = ["bf*"]
 
-[[bench]]
-name = "file_hash"
-harness = false
-
-[dependencies]
-ansi_term = "0.12"
+[workspace.dependencies]
+# ansi_term = "0.12"
 anyhow = "1.0"
-blake3 = { version = "1.5.0", optional = true }
-clap = { version = "4.4", features = ["derive", "wrap_help"] }
 crossterm = "0.26"
 delegate = "0.10.0"
 itertools = "0.11"
 ratatui = "0.23"
 ratatui-textarea = "0.3"
 sha-1 = { version = "0.10", features = ["asm"] }
-sha1_smol = { version = "1.0", optional = true }
 tracing = "0.1"
-tracing-error = "0.2.0"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-
-[dev-dependencies]
-criterion = { version = "0.5", features = ["html_reports"] }
-fastrand = "2.0.1"
-test-case = "3.2"
-
-[features]
-bench-alternative-hash-crates = ["dep:blake3", "dep:sha1_smol"]

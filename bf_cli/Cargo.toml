@@ -1,0 +1,36 @@
+[package]
+name = "bf_cli"
+version = "0.1.0"
+edition = "2021"
+
+[[bench]]
+name = "file_hash"
+harness = false
+
+[dependencies.bf]
+path = "../bf"
+
+[dependencies.bf_tui]
+path = "../bf_tui"
+
+[dependencies.bf_utils]
+path = "../bf_utils"
+
+[dependencies]
+anyhow = { workspace = true }
+blake3 = { version = "1.5.0", optional = true }
+clap = { version = "4.4", features = ["derive", "wrap_help"] }
+crossterm = { workspace = true }
+ratatui = { workspace = true }
+ratatui-textarea = { workspace = true }
+sha-1 = { workspace = true }
+sha1_smol = { version = "1.0", optional = true }
+tracing = { workspace = true }
+tracing-error = "0.2.0"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[dev-dependencies]
+criterion = { version = "0.5", features = ["html_reports"] }
+
+[features]
+bench-alternative-hash-crates = ["dep:blake3", "dep:sha1_smol"]

@@ -8,10 +8,7 @@ use std::{
 
 use anyhow::{bail, Context, Result};
 
-use crate::{
-    err_file_open,
-    util::{common::EOL, err::err_file_write},
-};
+use crate::{err_file_open, err_file_write, util::common::EOL};
 
 mod cli;
 pub use cli::GenerateCli;

@@ -5,7 +5,7 @@ use std::{
     thread,
 };
 
-use anyhow::{anyhow, Result};
+use anyhow::{bail, Result};
 use bf::interpreter::{Interpreter, Tape};
 use bf_utils::sync::{SharedBool, SharedCell};
 
@@ -68,10 +68,10 @@ impl AsyncInterpreter {
         let shared = this.clone();
         thread::spawn(move || loop {
             let mut int = match shared.program.load() {
-                Ok((code, input, auto_input)) => {
+                Some((code, input, auto_input)) => {
                     Interpreter::new(code.into_iter(), input, auto_input)
                 }
-                Err(_) => {
+                None => {
                     thread::yield_now();
                     shared.restart_barrier.wait();
                     continue;
@@ -79,14 +79,11 @@ impl AsyncInterpreter {
             };
 
             let set_state = |status: Status, int: &Interpreter| {
-                shared
-                    .state
-                    .store(State {
-                        status,
-                        tape: int.tape.clone(),
-                        output: int.output.clone(),
-                    })
-                    .ok()
+                shared.state.store(State {
+                    status,
+                    tape: int.tape.clone(),
+                    output: int.output.clone(),
+                });
             };
 
             shared.stop.store(false);
@@ -127,9 +124,9 @@ impl AsyncInterpreter {
         auto_input: Option<u8>,
     ) -> Result<()> {
         self.stop.store(true);
-        self.program
-            .store((code, input, auto_input))
-            .map_err(|_| anyhow!(ERROR_POISONED))?;
+        if !self.program.store((code, input, auto_input)) {
+            bail!(ERROR_POISONED);
+        }
         self.restart_barrier.wait();
         self.stop.store(false);
         Ok(())
@@ -137,8 +134,8 @@ impl AsyncInterpreter {
 
     pub fn state(&self) -> State {
         match self.state.load() {
-            Ok(state) => state,
-            Err(()) => State {
+            Some(state) => state,
+            None => State {
                 status: Status::FatalError(ERROR_POISONED.into()),
                 tape: Tape::default(),
                 output: Vec::new(),

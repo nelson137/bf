@@ -55,6 +55,7 @@ impl ChunkedTapeWidget {
 impl ChunkedTapeWidget {
     delegate::delegate! {
         to self.0 {
+            pub fn is_empty(&self) -> bool;
             pub fn len(&self) -> usize;
         }
     }

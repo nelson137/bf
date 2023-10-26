@@ -78,6 +78,7 @@ pub struct EventQueue {
 }
 
 impl EventQueue {
+    #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         let this = Self {
             data: Default::default(),

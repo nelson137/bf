@@ -28,20 +28,15 @@ impl<T: Default + Clone> SharedCell<T> {
         Self(Arc::new(Mutex::new(val)))
     }
 
-    pub fn load(&self) -> Result<T, ()> {
-        if let Ok(val) = self.0.lock() {
-            Ok((*val).clone())
-        } else {
-            Err(())
-        }
+    pub fn load(&self) -> Option<T> {
+        self.0.lock().ok().as_deref().map(Clone::clone)
     }
 
-    pub fn store(&self, new_val: T) -> Result<(), ()> {
+    pub fn store(&self, new_val: T) -> bool {
         if let Ok(mut val) = self.0.lock() {
             *val = new_val;
-            Ok(())
-        } else {
-            Err(())
+            return true;
         }
+        false
     }
 }

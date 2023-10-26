@@ -10,6 +10,7 @@ pub trait TextAreaExts {
 
     fn hash(&self) -> Sha1Digest;
 
+    fn is_empty(&self) -> bool;
     fn len(&self) -> usize;
 
     fn on_event_multi_line(&mut self, event: KeyEvent);
@@ -31,6 +32,10 @@ impl TextAreaExts for TextArea<'_> {
         }
 
         digest.finalize().into()
+    }
+
+    fn is_empty(&self) -> bool {
+        self.lines().is_empty()
     }
 
     fn len(&self) -> usize {

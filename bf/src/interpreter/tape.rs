@@ -22,6 +22,7 @@ impl Tape {
         &self.cells
     }
 
+    #[allow(clippy::len_without_is_empty)]
     pub fn len(&self) -> usize {
         self.cells.len()
     }

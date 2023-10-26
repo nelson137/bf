@@ -1,6 +1,6 @@
 use std::num::Wrapping;
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug, Default)]
 pub struct Cell(Wrapping<u8>);
 
 impl Cell {

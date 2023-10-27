@@ -2,6 +2,7 @@ use std::{
     collections::VecDeque,
     fs::File,
     io::{stderr, stdout, Write},
+    path::Path,
     thread,
     time::Duration,
 };
@@ -35,7 +36,7 @@ use ratatui::{
     style::{Color, Style},
 };
 use ratatui_textarea::TextArea;
-use tracing::trace;
+use tracing::{trace, warn};
 
 use crate::utils::read::read_script_file;
 
@@ -59,6 +60,7 @@ pub struct App<'code, 'dialogue> {
     term_width: usize,
     term_height: usize,
     file_path: Option<String>,
+    file_path_abs: Option<String>,
     should_quit: bool,
     spinner: Spinner,
     code: TextArea<'code>,
@@ -106,10 +108,11 @@ impl<'code, 'dialogue> App<'code, 'dialogue> {
 
         let interpreter_code = code.bytes().collect();
 
-        Ok(Self {
+        let mut this = Self {
             term_width: 0,
             term_height: 0,
-            file_path: cli.infile.map(|p| p.to_string_lossy().into()),
+            file_path: None,
+            file_path_abs: None,
             should_quit: false,
             spinner: Spinner::default(),
             code,
@@ -125,11 +128,36 @@ impl<'code, 'dialogue> App<'code, 'dialogue> {
                 VecDeque::default(),
                 None,
             ),
-        })
+        };
+
+        this.set_file_path(cli.infile.map(|p| p.to_string_lossy().into()));
+
+        Ok(this)
     }
 
     fn get_file_path(&self) -> Option<&str> {
         self.file_path.as_deref()
+    }
+
+    fn get_file_path_abs(&self) -> Option<&str> {
+        self.file_path_abs.as_deref()
+    }
+
+    fn set_file_path(&mut self, maybe_path: Option<String>) {
+        if let Some(path) = maybe_path.as_deref() {
+            self.file_path_abs = Some(
+                if let Ok(path_canon) = Path::new(&path).canonicalize() {
+                    path_canon.to_string_lossy().to_string()
+                } else {
+                    warn!(%path, "Unable to canonicalize path, using relative");
+                    path.to_string()
+                },
+            );
+            self.file_path = maybe_path;
+        } else {
+            self.file_path_abs = None;
+            self.file_path = None;
+        }
     }
 
     fn is_dirty(&self) -> bool {
@@ -190,7 +218,7 @@ impl<'code, 'dialogue> App<'code, 'dialogue> {
             async_interpreter: self.async_interpreter.state(),
             editor: self.code.widget(),
             dialogue: self.dialogue.as_deref(),
-            file_path: self.file_path.as_deref(),
+            file_path: self.get_file_path(),
             spinner: self.spinner,
             tape_viewport: self.tape_viewport,
             term_height: self.term_height,
@@ -213,7 +241,7 @@ impl<'code, 'dialogue> App<'code, 'dialogue> {
                     self.should_quit = true;
                 }
                 DialogueCommand::FileSaveAsSubmitted(path) => {
-                    self.file_path = Some(path);
+                    self.set_file_path(Some(path));
                     self.dialogue = None;
                     self.on_save();
                 }
@@ -291,7 +319,7 @@ impl<'code, 'dialogue> App<'code, 'dialogue> {
 
     fn on_save_as(&mut self) {
         self.dialogue = Some(Box::new(Dialogue::file_save_as(
-            self.get_file_path().map(str::to_string),
+            self.get_file_path_abs().map(str::to_string),
         )));
     }
 

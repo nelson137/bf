@@ -1,7 +1,13 @@
 [package]
 name = "bf_tui"
+description = "TODO"
 version = "0.1.0"
 edition = "2021"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/nelson137/bf"
+readme = "README.md"
+keywords = ["brainfuck", "esolang", "interpreter", "scripting", "tui"]
+categories = ["command-line-utilities", "compilers"]
 
 [dependencies.bf]
 path = "../bf"

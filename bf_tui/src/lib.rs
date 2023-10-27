@@ -1,3 +1,6 @@
+#![deny(clippy::cargo)]
+#![allow(clippy::multiple_crate_versions)]
+
 use std::io::Stdout;
 
 use ratatui::{backend::CrosstermBackend, terminal};

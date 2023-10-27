@@ -1,5 +1,7 @@
 #![feature(return_position_impl_trait_in_trait)]
 #![feature(try_blocks)]
+#![deny(clippy::cargo)]
+#![allow(clippy::multiple_crate_versions)]
 
 use anyhow::Result;
 use clap::Parser;

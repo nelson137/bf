@@ -2,7 +2,11 @@
 #![feature(try_blocks)]
 #![deny(clippy::cargo)]
 #![warn(clippy::nursery)]
-#![allow(clippy::multiple_crate_versions, clippy::option_if_let_else)]
+#![allow(
+    clippy::multiple_crate_versions,
+    clippy::option_if_let_else,
+    stable_features
+)]
 
 use anyhow::Result;
 use clap::Parser;

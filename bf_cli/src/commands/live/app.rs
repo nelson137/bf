@@ -1,4 +1,5 @@
 use std::{
+    collections::VecDeque,
     fs::File,
     io::{stderr, stdout, Write},
     thread,
@@ -95,7 +96,7 @@ impl<'code, 'dialogue> App<'code, 'dialogue> {
 
         let script_raw = script
             .iter()
-            .flat_map(|l| l.as_bytes())
+            .flat_map(String::as_bytes)
             .copied()
             .collect::<Vec<_>>();
 
@@ -121,7 +122,7 @@ impl<'code, 'dialogue> App<'code, 'dialogue> {
             dialogue: None,
             async_interpreter: AsyncInterpreter::new(
                 interpreter_code,
-                Default::default(),
+                VecDeque::default(),
                 None,
             ),
         })
@@ -153,7 +154,7 @@ impl<'code, 'dialogue> App<'code, 'dialogue> {
                     BfEvent::Tick => self.spinner.tick(),
                     BfEvent::Input(input_event) => match input_event {
                         Event::Key(e) => {
-                            restart_interpreter = self.handle_key_event(e)
+                            restart_interpreter = self.handle_key_event(e);
                         }
                         Event::Resize(width, height) => {
                             self.term_width = width as usize;
@@ -246,7 +247,7 @@ impl<'code, 'dialogue> App<'code, 'dialogue> {
                 | KeyCode::Char(_)
                     if !event.is_ctrl() && !event.is_alt() =>
                 {
-                    restart_interpreter = true
+                    restart_interpreter = true;
                 }
                 _ => (),
             }

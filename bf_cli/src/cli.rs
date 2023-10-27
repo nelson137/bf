@@ -15,12 +15,12 @@ pub fn parse_infile(value: &str) -> Result<PathBuf, ClapError> {
         Ok(path)
     } else if path.exists() {
         if path.is_dir() {
-            Err(format!("file is a directory: {}", value).into())
+            Err(format!("file is a directory: {value}").into())
         } else {
             Ok(path)
         }
     } else {
-        Err(format!("no such file exists: {}", value).into())
+        Err(format!("no such file exists: {value}").into())
     }
 }
 

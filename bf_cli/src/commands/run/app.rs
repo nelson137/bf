@@ -52,7 +52,7 @@ impl App {
         enable_raw_mode()?;
 
         let script_lines = read_script(cli.infile.as_ref())?;
-        let script = script_lines.iter().flat_map(|l| l.as_bytes()).copied();
+        let script = script_lines.iter().flat_map(String::as_bytes).copied();
 
         let input = cli.input.into_bytes().into_iter().collect();
 

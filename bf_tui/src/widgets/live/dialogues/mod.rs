@@ -227,12 +227,12 @@ impl<'textarea> Widget for &Dialogue<'textarea> {
         match &self.kind {
             DialogueKind::ConfirmUnsavedChanges(state)
             | DialogueKind::Error(state) => {
-                self.render_button_dialogue(content_area, buf, state)
+                self.render_button_dialogue(content_area, buf, state);
             }
             DialogueKind::FileSaveAs(state)
             | DialogueKind::ScriptInput(state)
             | DialogueKind::ScriptAutoInput(state) => {
-                self.render_prompt_dialogue(content_area, buf, state)
+                self.render_prompt_dialogue(content_area, buf, state);
             }
         }
 

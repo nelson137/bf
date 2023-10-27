@@ -45,7 +45,7 @@ fn run(args: InlineScrollCli) -> Result<()> {
         .flat_map(|l| l.chars().filter(|c| !c.is_whitespace()))
         .collect();
 
-    let mut output: Vec<String> = Default::default();
+    let mut output: Vec<String> = Vec::default();
     let mut id = 0;
 
     enable_raw_mode()?;
@@ -83,7 +83,7 @@ fn run(args: InlineScrollCli) -> Result<()> {
                             quit = true;
                         }
                     }
-                    _ => {}
+                    BfEvent::Input(_) => {}
                 }
             }
         }

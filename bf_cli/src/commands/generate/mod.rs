@@ -2,7 +2,6 @@ use std::{
     collections::{HashMap, HashSet},
     fs::File,
     io::{self, Write},
-    iter::FromIterator,
     path::PathBuf,
 };
 
@@ -47,18 +46,18 @@ pub fn subcmd_generate(args: GenerateCli) -> Result<()> {
     };
 
     writer
-        .write_all(gen_func(data).as_bytes())
+        .write_all(gen_func(&data).as_bytes())
         .with_context(|| err_file_write!(path))
 }
 
-fn generator_charwise(data: String) -> String {
+fn generator_charwise(data: &str) -> String {
     let mut script = String::new();
     gen_loop(&mut script, data.bytes(), true);
     script.push_str(EOL);
     script
 }
 
-fn generator_linewise(data: String) -> String {
+fn generator_linewise(data: &str) -> String {
     let has_final_eol = data.ends_with(EOL);
     let bf_eol = if data.contains("\r\n") {
         "+++++++++++++.---.>" // print "\r\n"
@@ -80,17 +79,21 @@ fn generator_linewise(data: String) -> String {
     script
 }
 
-fn generator_unique_chars(data: String) -> String {
+fn generator_unique_chars(data: &str) -> String {
     // Vec of all unique bytes in data, sorted
-    let mut unique_data = HashSet::<u8>::from_iter(data.bytes())
+    let mut unique_data = data
+        .bytes()
+        .collect::<HashSet<u8>>()
         .into_iter()
         .collect::<Vec<_>>();
-    unique_data.sort();
+    unique_data.sort_unstable();
 
     // HashMap: Key = byte from data, Value = cell index in tape of the byte
-    let cell_value_indexes = HashMap::<u8, usize>::from_iter(
-        unique_data.iter().enumerate().map(|(i, &b)| (b, i + 1)),
-    );
+    let cell_value_indexes = unique_data
+        .iter()
+        .enumerate()
+        .map(|(i, &b)| (b, i + 1))
+        .collect::<HashMap<u8, usize>>();
 
     let mut script = String::new();
 

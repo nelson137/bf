@@ -60,7 +60,7 @@ impl TextAreaExts for TextArea<'_> {
                 self.insert_tab();
             }
             KeyCode::Char(c) if !event.is_ctrl() && !event.is_alt() => {
-                self.insert_char(c)
+                self.insert_char(c);
             }
 
             // Deletions
@@ -86,7 +86,7 @@ impl TextAreaExts for TextArea<'_> {
 
             // Insertions
             KeyCode::Char(c) if !event.is_ctrl() && !event.is_alt() => {
-                self.insert_char(c)
+                self.insert_char(c);
             }
 
             // Deletions

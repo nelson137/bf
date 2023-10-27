@@ -35,7 +35,7 @@ enum Cli {
 
 impl Cli {
     fn run_subcmd(self) -> Result<()> {
-        match Self::parse() {
+        match self {
             Self::Run(cli) => cli.run(),
             Self::Generate(cli) => cli.run(),
             Self::Live(cli) => cli.run(),

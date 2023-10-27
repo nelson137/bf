@@ -59,13 +59,13 @@ impl Display for BfEvent {
                 }
                 pieces.push(match key_event.code {
                     KeyCode::Char('\'') => String::from("'\\''"),
-                    KeyCode::Char(c) => format!("'{}'", c),
-                    KeyCode::F(f) => format!("F{}", f),
-                    keycode => format!("{:?}", keycode),
+                    KeyCode::Char(c) => format!("'{c}'"),
+                    KeyCode::F(f) => format!("F{f}"),
+                    keycode => format!("{keycode:?}"),
                 });
                 fmt.write_str(&pieces.join(" + "))
             }
-            Self::Input(event) => fmt.write_str(&format!("{:?}", event)),
+            Self::Input(event) => fmt.write_str(&format!("{event:?}")),
         }
     }
 }
@@ -81,7 +81,7 @@ impl EventQueue {
     #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         let this = Self {
-            data: Default::default(),
+            data: Arc::default(),
         };
 
         {

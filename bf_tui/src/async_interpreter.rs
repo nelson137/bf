@@ -67,15 +67,14 @@ impl AsyncInterpreter {
 
         let shared = this.clone();
         thread::spawn(move || loop {
-            let mut int = match shared.program.load() {
-                Some((code, input, auto_input)) => {
-                    Interpreter::new(code.into_iter(), input, auto_input)
-                }
-                None => {
-                    thread::yield_now();
-                    shared.restart_barrier.wait();
-                    continue;
-                }
+            let mut int = if let Some((code, input, auto_input)) =
+                shared.program.load()
+            {
+                Interpreter::new(code.into_iter(), input, auto_input)
+            } else {
+                thread::yield_now();
+                shared.restart_barrier.wait();
+                continue;
             };
 
             let set_state = |status: Status, int: &Interpreter| {

@@ -55,8 +55,7 @@ impl Widget for &Header<'_> {
             Status::Done => Style::default(),
             Status::Running => style.fg(Color::Green),
             Status::WaitingForInput => style.fg(Color::Yellow),
-            Status::Error(_) => style.fg(Color::Red),
-            Status::FatalError(_) => style.fg(Color::Red),
+            Status::Error(_) | Status::FatalError(_) => style.fg(Color::Red),
         };
         Paragraph::new(self.status.to_string().set_style(style))
             .render(status_area, buf);

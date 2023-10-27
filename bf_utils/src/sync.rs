@@ -16,7 +16,7 @@ impl SharedBool {
     }
 
     pub fn store(&self, val: bool) {
-        self.0.store(val, Ordering::Relaxed)
+        self.0.store(val, Ordering::Relaxed);
     }
 }
 

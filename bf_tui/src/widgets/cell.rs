@@ -30,7 +30,7 @@ impl CellWidget {
         String::with_capacity(5)
             + edge.left(self.left_cap)
             + &edge.middle().repeat(3)
-            + self.right_border_cap.map(|c| edge.right(c)).unwrap_or("")
+            + self.right_border_cap.map_or("", |c| edge.right(c))
     }
 
     pub fn display_top(&self) -> String {
@@ -140,17 +140,16 @@ mod test {
             let top_left = if left_cap { "┌" } else { "┬" };
             let top_right_char =
                 |capped: bool| if capped { "┐" } else { "┬" };
-            let top_right = right.map(top_right_char).unwrap_or(" ");
+            let top_right = right.map_or(" ", top_right_char);
             let top = String::with_capacity(5) + top_left + "───" + top_right;
 
-            let middle = String::with_capacity(5)
-                + "│ 0 "
-                + right.map(|_| "│").unwrap_or(" ");
+            let middle =
+                String::with_capacity(5) + "│ 0 " + right.map_or(" ", |_| "│");
 
             let bottom_left = if left_cap { "└" } else { "┴" };
             let bottom_right_char =
                 |capped: bool| if capped { "┘" } else { "┴" };
-            let bottom_right = right.map(bottom_right_char).unwrap_or(" ");
+            let bottom_right = right.map_or(" ", bottom_right_char);
             let bottom =
                 String::with_capacity(5) + bottom_left + "───" + bottom_right;
 

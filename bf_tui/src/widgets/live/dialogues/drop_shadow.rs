@@ -10,7 +10,7 @@ pub struct DropShadowWidget {
 }
 
 impl DropShadowWidget {
-    pub fn new(offset_x: u16, offset_y: u16) -> Self {
+    pub const fn new(offset_x: u16, offset_y: u16) -> Self {
         Self { offset_x, offset_y }
     }
 }

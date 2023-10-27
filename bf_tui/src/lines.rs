@@ -29,7 +29,7 @@ pub struct TapeBorderHorizontal {
 }
 
 impl TapeBorderHorizontal {
-    pub fn left(&self, capped: bool) -> &'static str {
+    pub const fn left(&self, capped: bool) -> &'static str {
         if capped {
             self.left_capped
         } else {
@@ -37,11 +37,11 @@ impl TapeBorderHorizontal {
         }
     }
 
-    pub fn middle(&self) -> &'static str {
+    pub const fn middle(&self) -> &'static str {
         self.middle
     }
 
-    pub fn right(&self, capped: bool) -> &'static str {
+    pub const fn right(&self, capped: bool) -> &'static str {
         if capped {
             self.right_capped
         } else {

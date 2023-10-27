@@ -38,7 +38,7 @@ impl Tape {
         self.get(self.cursor)
     }
 
-    pub fn cursor(&self) -> usize {
+    pub const fn cursor(&self) -> usize {
         self.cursor
     }
 

@@ -41,7 +41,7 @@ impl State {
         self.input_history.iter()
     }
 
-    pub fn get_spinner(&self) -> Spinner {
+    pub const fn get_spinner(&self) -> Spinner {
         self.spinner
     }
 

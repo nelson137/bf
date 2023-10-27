@@ -4,7 +4,7 @@ use std::num::Wrapping;
 pub struct Cell(Wrapping<u8>);
 
 impl Cell {
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Self(Wrapping(0))
     }
 
@@ -16,7 +16,7 @@ impl Cell {
         self.0 -= Wrapping(1);
     }
 
-    pub fn value(&self) -> u8 {
+    pub const fn value(&self) -> u8 {
         (self.0).0
     }
 

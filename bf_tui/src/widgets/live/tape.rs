@@ -13,7 +13,7 @@ pub struct TapeViewportState {
 }
 
 impl TapeViewportState {
-    pub fn new(ascii_values: bool) -> Self {
+    pub const fn new(ascii_values: bool) -> Self {
         Self {
             offset: 0,
             ascii_values,
@@ -21,7 +21,7 @@ impl TapeViewportState {
     }
 
     #[cfg(test)]
-    fn _new(offset: usize) -> Self {
+    const fn _new(offset: usize) -> Self {
         Self {
             offset,
             ascii_values: false,
@@ -34,7 +34,7 @@ pub struct TapeViewport<'tape> {
 }
 
 impl<'tape> TapeViewport<'tape> {
-    pub fn new(tape: &'tape Tape) -> Self {
+    pub const fn new(tape: &'tape Tape) -> Self {
         Self { tape }
     }
 }
@@ -184,12 +184,12 @@ mod test {
         }
 
         impl TapeEndcaps {
-            pub fn left(self) -> bool {
-                matches!(self, TapeEndcaps::Left | TapeEndcaps::LeftRight)
+            pub const fn left(self) -> bool {
+                matches!(self, Self::Left | Self::LeftRight)
             }
 
-            pub fn right(self) -> bool {
-                matches!(self, TapeEndcaps::Right | TapeEndcaps::LeftRight)
+            pub const fn right(self) -> bool {
+                matches!(self, Self::Right | Self::LeftRight)
             }
         }
 

@@ -16,7 +16,7 @@ pub enum DialogueButton {
 pub const BUTTON_WIDTH: u16 = 10;
 
 impl DialogueButton {
-    pub fn text(self) -> &'static str {
+    pub const fn text(self) -> &'static str {
         /*
          * NOTE: Keep `BUTTON_WIDTH` up to date with the length of longest text.
          */
@@ -27,7 +27,7 @@ impl DialogueButton {
         }
     }
 
-    pub fn is_affirmative(self) -> bool {
+    pub const fn is_affirmative(self) -> bool {
         match self {
             Self::Ok | Self::Yes => true,
             Self::Cancel => false,
@@ -42,7 +42,7 @@ pub struct DialogueButtonWidget {
 }
 
 impl DialogueButtonWidget {
-    pub fn new(kind: DialogueButton, fg: Color, selected: bool) -> Self {
+    pub const fn new(kind: DialogueButton, fg: Color, selected: bool) -> Self {
         Self { kind, fg, selected }
     }
 }
@@ -75,7 +75,7 @@ pub struct ButtonRowWidget<'buttons> {
 }
 
 impl<'buttons> ButtonRowWidget<'buttons> {
-    pub fn new(
+    pub const fn new(
         buttons: &'buttons [DialogueButton],
         cursor: Option<u8>,
         fg: Color,

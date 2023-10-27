@@ -9,10 +9,7 @@ use anyhow::{Context, Result};
 use crate::{err_file_open, err_file_read};
 
 pub fn read_data(infile: Option<PathBuf>) -> Result<String> {
-    match infile {
-        Some(path) => read_data_file(&path),
-        None => read_data_stdin(),
-    }
+    infile.map_or_else(read_data_stdin, |path| read_data_file(&path))
 }
 
 fn read_data_stdin() -> Result<String> {

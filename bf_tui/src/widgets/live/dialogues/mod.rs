@@ -379,7 +379,7 @@ struct PromptDialogueState<'textarea> {
 }
 
 impl PromptDialogueState<'_> {
-    fn cursor_is_input(&self) -> bool {
+    const fn cursor_is_input(&self) -> bool {
         match self.cursor {
             PromptDialogueCursor::Input => true,
             PromptDialogueCursor::Button(_) => false,

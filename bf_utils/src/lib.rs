@@ -1,5 +1,6 @@
 #![deny(clippy::cargo)]
-#![allow(clippy::multiple_crate_versions)]
+#![warn(clippy::nursery)]
+#![allow(clippy::multiple_crate_versions, clippy::option_if_let_else)]
 
 #[macro_use]
 mod macros;

@@ -144,15 +144,19 @@ impl<'code, 'dialogue> App<'code, 'dialogue> {
     }
 
     fn set_file_path(&mut self, maybe_path: Option<String>) {
-        if let Some(path) = maybe_path.as_deref() {
-            self.file_path_abs = Some(
-                if let Ok(path_canon) = Path::new(&path).canonicalize() {
-                    path_canon.to_string_lossy().to_string()
-                } else {
-                    warn!(%path, "Unable to canonicalize path, using relative");
-                    path.to_string()
-                },
-            );
+        if let Some(path_str) = maybe_path.as_deref() {
+            let path = Path::new(&path_str);
+            self.file_path_abs = Some(if path.is_absolute() {
+                path_str.to_string()
+            } else {
+                match path.canonicalize() {
+                    Ok(canon) => canon.to_string_lossy().to_string(),
+                    Err(err) => {
+                        warn!(path = %path_str, "Unable to canonicalize path, using relative: {err}");
+                        path_str.to_string()
+                    }
+                }
+            });
             self.file_path = maybe_path;
         } else {
             self.file_path_abs = None;

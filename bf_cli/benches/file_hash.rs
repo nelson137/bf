@@ -1,11 +1,11 @@
 use criterion::{
     black_box, criterion_group, criterion_main, BenchmarkId, Criterion,
 };
-use sha1::{Digest, Sha1};
 
 pub type Sha1Digest = [u8; 20];
 
 fn hash_sha1(lines: &[&str]) -> Sha1Digest {
+    use sha1::{Digest, Sha1};
     let mut hash = Sha1::new();
     for l in lines {
         hash.update(l);

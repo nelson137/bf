@@ -291,7 +291,7 @@ impl<'code, 'dialogue> App<'code, 'dialogue> {
     }
 
     fn on_exit(&mut self) {
-        if false {
+        if self.is_dirty() {
             self.dialogue = Some(Box::new(Dialogue::confirm_unsaved_changes(
                 "Warning:\n\n\
                     There are unsaved changes, are you sure you want to quit?",

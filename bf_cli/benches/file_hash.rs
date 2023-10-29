@@ -31,6 +31,16 @@ fn hash_blake3(lines: &[&str]) -> blake3::Hash {
     hasher.finalize()
 }
 
+#[cfg(feature = "bench-alternative-hash-crates")]
+fn hash_metro(lines: &[&str]) -> metrohash::MetroHash128 {
+    use std::hash::Hasher;
+    let mut hasher = metrohash::MetroHash128::new();
+    for l in lines {
+        hasher.write(l.as_bytes());
+    }
+    hasher
+}
+
 fn criterion_benchmark(c: &mut Criterion) {
     const INPUT_ID: &str = "HelloWorld";
     let data = include_str!("../../examples/hello-world.bf");
@@ -57,6 +67,13 @@ fn criterion_benchmark(c: &mut Criterion) {
         BenchmarkId::new("Blake3", INPUT_ID),
         input,
         |b, i| b.iter(|| black_box(hash_blake3(black_box(i)))),
+    );
+
+    #[cfg(feature = "bench-alternative-hash-crates")]
+    group.bench_with_input(
+        BenchmarkId::new("MetroHash", INPUT_ID),
+        input,
+        |b, i| b.iter(|| black_box(hash_metro(black_box(i)))),
     );
 }
 

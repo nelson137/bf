@@ -27,6 +27,7 @@ anyhow = { workspace = true }
 blake3 = { version = "1.5.0", optional = true }
 clap = { version = "4.4", features = ["derive", "wrap_help"] }
 crossterm = { workspace = true }
+metrohash = { version = "1.0", optional = true }
 ratatui = { workspace = true }
 ratatui-textarea = { workspace = true }
 sha-1 = { workspace = true }
@@ -39,4 +40,4 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 criterion = { version = "0.5", features = ["html_reports"] }
 
 [features]
-bench-alternative-hash-crates = ["dep:blake3", "dep:sha1_smol"]
+bench-alternative-hash-crates = ["dep:blake3", "dep:metrohash", "dep:sha1_smol"]

@@ -8,7 +8,8 @@ use crate::cli::SubCmd;
 use super::subcmd_generate;
 
 const ABOUT: &str =
-    "Generate a Brainfuck script that prints the given text file";
+    "Generate a Brainfuck script that prints the given text file \
+    (aliases: gen, g)";
 const NEWLINE_HELP: &str =
     "Append a final newline to the data if it is missing.";
 const OUTFILE_HELP: &str =

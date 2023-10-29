@@ -7,7 +7,7 @@ use crate::cli::{parse_infile, SubCmd};
 
 use super::app::App;
 
-const ABOUT: &str = "Live scripting playground";
+const ABOUT: &str = "Live scripting playground (aliases: l)";
 const ASCII_HELP: &str = "Show the ASCII characters in the tape output \
                           instead of the decimal values";
 const INFILE_HELP: &str = "The script to edit in live mode";

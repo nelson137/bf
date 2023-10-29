@@ -25,13 +25,17 @@ mod utils;
 
 #[derive(Debug, Parser)]
 enum Cli {
+    #[command(alias = "r")]
     Run(commands::run::RunCli),
 
+    #[command(alias = "g")]
     #[command(alias = "gen")]
     Generate(commands::generate::GenerateCli),
 
+    #[command(alias = "l")]
     Live(commands::live::LiveCli),
 
+    #[command(alias = "input")]
     InputDebug(commands::input_debug::InputDebugCli),
 
     InlineScroll(commands::inline_scroll::InlineScrollCli),

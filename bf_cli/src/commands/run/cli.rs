@@ -7,7 +7,7 @@ use crate::cli::{parse_infile, parse_width, ClapError, SubCmd};
 
 use super::app::App;
 
-const ABOUT: &str = "Execute a Brainfuck script";
+const ABOUT: &str = "Execute a Brainfuck script (aliases: r)";
 const DELAY_HELP: &str = "The delay, in milliseconds, between the evaluation \
                           of each Brainfuck instruction. Does nothing if \
                           -s/--show-tape is not given.";

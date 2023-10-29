@@ -5,7 +5,7 @@ use crate::cli::SubCmd;
 
 use super::app::App;
 
-const ABOUT: &str = "User input debugger";
+const ABOUT: &str = "User input debugger (aliases: input)";
 const MOUSE_HELP: &str = "Whether to show mouse events";
 
 #[derive(Debug, Parser)]

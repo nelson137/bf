@@ -1,8 +1,10 @@
 use std::{
     collections::VecDeque,
+    ffi::OsStr,
+    fmt::Write as FmtWrite,
     fs::File,
-    io::{stderr, stdout, Write},
-    path::Path,
+    io::{stderr, stdout, Write as IoWrite},
+    path::{Path, PathBuf},
     thread,
     time::Duration,
 };
@@ -322,9 +324,54 @@ impl<'code, 'dialogue> App<'code, 'dialogue> {
     }
 
     fn on_save_as(&mut self) {
-        self.dialogue = Some(Box::new(Dialogue::file_save_as(
-            self.get_file_path_abs().map(str::to_string),
-        )));
+        let initial_path = self.get_file_path_abs().map(|path_abs_str| {
+            let mut path_abs = PathBuf::from(path_abs_str);
+            let mut stem = path_abs
+                .file_stem()
+                .expect("File path has no file name")
+                .to_string_lossy()
+                .into_owned();
+            stem.reserve(9); // Pre-allocate for the appended "-copy-N"
+            let ext = path_abs.extension().map(OsStr::to_os_string);
+
+            stem.push_str("-copy");
+            path_abs.set_file_name(&stem);
+            if let Some(ext) = &ext {
+                path_abs.set_extension(ext);
+            }
+
+            if !path_abs.exists() {
+                return path_abs.to_string_lossy().to_string();
+            }
+
+            stem.push('-');
+            let stem_len_without_n = stem.len();
+
+            let mut n = 2_u32;
+
+            loop {
+                stem.truncate(stem_len_without_n);
+                if let Err(err) = write!(&mut stem, "{n}") {
+                    warn!(n, string = ?stem, "Failed to write number to string: {err}");
+                    return path_abs_str.to_string();
+                }
+
+                path_abs.set_file_name(&stem);
+                if let Some(ext) = &ext {
+                    path_abs.set_extension(ext);
+                }
+
+                if !path_abs.exists() {
+                    break;
+                }
+
+                n += 1;
+            }
+
+            path_abs.to_string_lossy().to_string()
+        });
+
+        self.dialogue = Some(Box::new(Dialogue::file_save_as(initial_path)));
     }
 
     fn on_set_input(&mut self) {

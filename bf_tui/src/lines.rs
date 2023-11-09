@@ -1,4 +1,6 @@
-use ratatui::symbols::line;
+use ratatui::{symbols::line, widgets::BorderType};
+
+pub const TAPE_BORDER_TYPE: BorderType = BorderType::Plain;
 
 pub const TAPE_BORDER_SET: line::Set = line::NORMAL;
 

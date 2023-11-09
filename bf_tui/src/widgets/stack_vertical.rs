@@ -1,9 +1,9 @@
 use ratatui::{
     prelude::{Buffer, Constraint, Direction, Layout, Rect},
-    widgets::{Block, BorderType, Borders, Paragraph, Widget},
+    widgets::{Block, Borders, Paragraph, Widget},
 };
 
-use crate::lines::LineSetExts;
+use crate::lines::{LineSetExts, TAPE_BORDER_SET, TAPE_BORDER_TYPE};
 
 pub struct VerticalStack<'titles, const SECTIONS: usize> {
     titles: [&'titles str; SECTIONS],
@@ -71,24 +71,22 @@ impl<const SECTIONS: usize> Widget for VerticalStack<'_, SECTIONS> {
         assert!(area == self.area, "VerticalStack area for rendering is different than the one given to VerticalStack::new");
 
         let width = area.width as usize;
-        let border_type = BorderType::Plain;
-        let line = BorderType::line_symbols(border_type);
 
         for i in 0..self.divider_areas.len() {
             let area = self.divider_areas[i];
             let divider = match i {
-                0 => line.top_divider(width, self.titles[i]),
+                0 => TAPE_BORDER_SET.top_divider(width, self.titles[i]),
                 x if x < self.divider_areas.len() - 1 => {
-                    line.middle_divider(width, self.titles[i])
+                    TAPE_BORDER_SET.middle_divider(width, self.titles[i])
                 }
-                _ => line.bottom_divider(width),
+                _ => TAPE_BORDER_SET.bottom_divider(width),
             };
             Paragraph::new(divider).render(area, buf);
         }
 
         for area in self.section_areas {
             Block::new()
-                .border_type(border_type)
+                .border_type(TAPE_BORDER_TYPE)
                 .borders(Borders::LEFT | Borders::RIGHT)
                 .render(area, buf);
         }

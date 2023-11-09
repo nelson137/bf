@@ -22,4 +22,3 @@ pub mod widgets;
 
 type Backend = CrosstermBackend<Stdout>;
 pub type Terminal = terminal::Terminal<Backend>;
-pub type Frame<'a> = terminal::Frame<'a, Backend>;

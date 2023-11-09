@@ -4,10 +4,7 @@ use std::{
 };
 
 use anyhow::Result;
-use bf_tui::{
-    events::{BfEvent, EventQueue},
-    Frame,
-};
+use bf_tui::events::{BfEvent, EventQueue};
 use crossterm::{
     event::{Event, KeyCode},
     terminal::{disable_raw_mode, enable_raw_mode},
@@ -16,7 +13,7 @@ use ratatui::{
     prelude::{Backend, CrosstermBackend},
     text::{Line, Text},
     widgets::Paragraph,
-    Terminal, TerminalOptions, Viewport,
+    Frame, Terminal, TerminalOptions, Viewport,
 };
 
 use crate::utils::read::read_script;

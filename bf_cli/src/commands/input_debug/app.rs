@@ -3,7 +3,7 @@ use std::{io::stdout, thread, time::Duration};
 use anyhow::Result;
 use bf_tui::{
     events::{BfEvent, EventQueue},
-    sublayouts, Frame, Terminal,
+    sublayouts, Terminal,
 };
 use crossterm::{
     event::{DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
@@ -17,6 +17,7 @@ use ratatui::{
     backend::CrosstermBackend,
     layout::{Constraint, Direction, Layout, Rect},
     widgets::{Block, Borders, Paragraph, Row, Table},
+    Frame,
 };
 
 use super::{cli::InputDebugCli, state::State};

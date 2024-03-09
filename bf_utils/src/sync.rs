@@ -29,7 +29,7 @@ impl<T: Default + Clone> SharedCell<T> {
     }
 
     pub fn load(&self) -> Option<T> {
-        self.0.lock().ok().as_deref().map(Clone::clone)
+        self.0.lock().ok().as_deref().cloned()
     }
 
     pub fn store(&self, new_val: T) -> bool {

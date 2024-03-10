@@ -8,7 +8,7 @@ use ratatui::{
         Block, BorderType, Borders, Clear, Padding, Paragraph, Widget, Wrap,
     },
 };
-use ratatui_textarea::{CursorMove, TextArea};
+use tui_textarea::{CursorMove, TextArea};
 
 use crate::{events::KeyEventExt, sublayouts};
 

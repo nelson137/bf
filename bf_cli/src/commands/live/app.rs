@@ -37,8 +37,8 @@ use ratatui::{
     backend::CrosstermBackend,
     style::{Color, Style},
 };
-use ratatui_textarea::TextArea;
 use tracing::{trace, warn};
+use tui_textarea::TextArea;
 
 use crate::utils::read::read_script_file;
 

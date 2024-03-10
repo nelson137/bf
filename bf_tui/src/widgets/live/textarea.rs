@@ -1,7 +1,7 @@
 use bf_utils::hash::Sha1Digest;
 use crossterm::event::{KeyCode, KeyEvent};
-use ratatui_textarea::{CursorMove, TextArea};
 use sha1::{Digest, Sha1};
+use tui_textarea::{CursorMove, TextArea};
 
 use crate::events::KeyEventExt;
 

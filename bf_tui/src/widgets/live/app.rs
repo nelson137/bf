@@ -1,6 +1,8 @@
 use bf::interpreter::Tape;
 use ratatui::{
     prelude::{Buffer, Constraint, Layout, Rect},
+    style::Stylize,
+    text::{Line, Span},
     widgets::{Paragraph, StatefulWidget, Widget},
 };
 
@@ -92,11 +94,13 @@ fn draw_content(
     let output = String::from_utf8_lossy(output);
     let output_lines = output.split_terminator('\n').count() as u16;
 
+    let tape_title = Line::raw(" Tape ");
     let output_title = if output.ends_with('\n') {
-        " Output "
+        Line::raw(" Output ")
     } else {
-        " Output (no EOL) "
+        vec![Span::raw(" Output "), "(no EOL) ".italic().dark_gray()].into()
     };
+    let code_title = Line::raw(" Code ");
 
     let stack = VerticalStack::<3>::new(
         [
@@ -104,7 +108,7 @@ fn draw_content(
             Constraint::Min(1),               // Editor
             Constraint::Length(output_lines), // Output
         ],
-        [" Tape ", " Code ", output_title],
+        [&tape_title, &code_title, &output_title],
         area,
     );
 

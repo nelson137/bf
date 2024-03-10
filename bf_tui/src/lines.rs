@@ -1,4 +1,8 @@
-use ratatui::{symbols::line, widgets::BorderType};
+use ratatui::{
+    symbols::line,
+    text::{Line, Span},
+    widgets::BorderType,
+};
 
 pub const TAPE_BORDER_TYPE: BorderType = BorderType::Plain;
 
@@ -53,33 +57,60 @@ impl TapeBorderHorizontal {
 }
 
 pub trait LineSetExts {
-    fn top_divider(&self, width: usize, label: &str) -> String;
-    fn middle_divider(&self, width: usize, label: &str) -> String;
-    fn bottom_divider(&self, width: usize) -> String;
+    fn top_divider<'label>(
+        &self,
+        width: usize,
+        label: &Line<'label>,
+    ) -> Line<'label>;
+    fn middle_divider<'label>(
+        &self,
+        width: usize,
+        label: &Line<'label>,
+    ) -> Line<'label>;
+    fn bottom_divider(&self, width: usize) -> Line;
 }
 
 impl LineSetExts for line::Set {
-    fn top_divider(&self, width: usize, label: &str) -> String {
-        self.top_left.to_owned()
-            + label
-            + &self
-                .horizontal
-                .repeat(width.saturating_sub(2 + label.len()))
-            + self.top_right
+    fn top_divider<'label>(
+        &self,
+        width: usize,
+        label: &Line<'label>,
+    ) -> Line<'label> {
+        let mut spans = Vec::with_capacity(1 + label.iter().count() + 2);
+        spans.push(Span::raw(self.top_left));
+        spans.extend(label.iter().cloned());
+        spans.push(
+            self.horizontal
+                .repeat(width.saturating_sub(2 + label.width()))
+                .into(),
+        );
+        spans.push(self.top_right.into());
+        spans.into()
     }
 
-    fn middle_divider(&self, width: usize, label: &str) -> String {
-        self.vertical_right.to_owned()
-            + label
-            + &self
-                .horizontal
-                .repeat(width.saturating_sub(2 + label.len()))
-            + self.vertical_left
+    fn middle_divider<'label>(
+        &self,
+        width: usize,
+        label: &Line<'label>,
+    ) -> Line<'label> {
+        let mut spans = Vec::with_capacity(1 + label.iter().count() + 2);
+        spans.push(Span::raw(self.vertical_right));
+        spans.extend(label.iter().cloned());
+        spans.push(
+            self.horizontal
+                .repeat(width.saturating_sub(2 + label.width()))
+                .into(),
+        );
+        spans.push(self.vertical_left.into());
+        spans.into()
     }
 
-    fn bottom_divider(&self, width: usize) -> String {
-        self.bottom_left.to_owned()
-            + &self.horizontal.repeat(width.saturating_sub(2))
-            + self.bottom_right
+    fn bottom_divider(&self, width: usize) -> Line {
+        vec![
+            Span::raw(self.bottom_left),
+            self.horizontal.repeat(width.saturating_sub(2)).into(),
+            self.bottom_right.into(),
+        ]
+        .into()
     }
 }

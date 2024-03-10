@@ -1,12 +1,13 @@
 use ratatui::{
     prelude::{Buffer, Constraint, Layout, Rect},
+    text::Line,
     widgets::{Block, Borders, Paragraph, Widget},
 };
 
 use crate::lines::{LineSetExts, TAPE_BORDER_SET, TAPE_BORDER_TYPE};
 
 pub struct VerticalStack<'titles, const SECTIONS: usize> {
-    titles: [&'titles str; SECTIONS],
+    titles: [&'titles Line<'titles>; SECTIONS],
     area: Rect,
     divider_areas: Vec<Rect>,
     section_areas: Vec<Rect>,
@@ -16,7 +17,7 @@ pub struct VerticalStack<'titles, const SECTIONS: usize> {
 impl<'titles, const SECTIONS: usize> VerticalStack<'titles, SECTIONS> {
     pub fn new(
         heights: [Constraint; SECTIONS],
-        titles: [&'titles str; SECTIONS],
+        titles: [&'titles Line<'titles>; SECTIONS],
         area: Rect,
     ) -> Self {
         assert!(SECTIONS > 0, "VerticalStack must have at least 1 section");

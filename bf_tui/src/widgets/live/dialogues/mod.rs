@@ -2,11 +2,9 @@ use std::cell::RefCell;
 
 use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{
-    prelude::{Buffer, Constraint, Direction, Layout, Rect},
+    prelude::{Buffer, Constraint, Layout, Rect},
     style::{Color, Style, Stylize},
-    widgets::{
-        Block, BorderType, Borders, Clear, Padding, Paragraph, Widget, Wrap,
-    },
+    widgets::{Block, BorderType, Clear, Padding, Paragraph, Widget, Wrap},
 };
 use tui_textarea::{CursorMove, TextArea};
 
@@ -23,23 +21,19 @@ mod button;
 mod drop_shadow;
 
 pub fn centered_rect(percent_x: u16, percent_y: u16, area: Rect) -> Rect {
-    let centered_vert_area = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints(vec![
-            Constraint::Percentage((100 - percent_y) / 2),
-            Constraint::Percentage(percent_y),
-            Constraint::Percentage((100 - percent_y) / 2),
-        ])
-        .split(area)[1];
+    let centered_vert_area = Layout::vertical(vec![
+        Constraint::Fill(1),
+        Constraint::Percentage(percent_y),
+        Constraint::Fill(1),
+    ])
+    .split(area)[1];
 
-    Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints(vec![
-            Constraint::Percentage((100 - percent_x) / 2),
-            Constraint::Percentage(percent_x),
-            Constraint::Percentage((100 - percent_x) / 2),
-        ])
-        .split(centered_vert_area)[1]
+    Layout::horizontal(vec![
+        Constraint::Fill(1),
+        Constraint::Percentage(percent_x),
+        Constraint::Fill(1),
+    ])
+    .split(centered_vert_area)[1]
 }
 
 enum DialogueKind<'textarea> {
@@ -85,7 +79,7 @@ impl<'textarea> Dialogue<'textarea> {
     ) -> RefCell<TextArea<'textarea>> {
         let mut input =
             TextArea::new(value.map(|v| vec![v]).unwrap_or_default());
-        input.set_block(Block::new().borders(Borders::ALL));
+        input.set_block(Block::bordered());
         input.set_cursor_line_style(Style::new());
         input.move_cursor(CursorMove::End);
         RefCell::new(input)
@@ -213,10 +207,9 @@ impl<'textarea> Widget for &Dialogue<'textarea> {
     fn render(self, area: Rect, buf: &mut Buffer) {
         Clear.render(area, buf);
 
-        let block = Block::new()
+        let block = Block::bordered()
             .title(self.title)
             .title_style(Style::new().bg(self.bg).fg(self.primary))
-            .borders(Borders::ALL)
             .border_type(BorderType::Thick)
             .border_style(Style::new().bg(self.bg).fg(self.primary))
             .style(Style::new().bg(self.bg).fg(self.fg))
@@ -247,13 +240,13 @@ impl Dialogue<'_> {
         buf: &mut Buffer,
         state: &ButtonDialogueState,
     ) {
-        let constraints = vec![
-            Constraint::Min(0),    // Message
-            Constraint::Length(1), // Space (skip)
+        let layout = Layout::vertical(vec![
+            Constraint::Fill(1),   // Message
             Constraint::Length(1), // Buttons
-        ];
-        let layout = Layout::new(Direction::Vertical, constraints).split(area);
-        sublayouts!([text_area, _, buttons_area] = layout);
+        ])
+        .spacing(1)
+        .split(area);
+        sublayouts!([text_area, buttons_area] = layout);
 
         // Message
 
@@ -273,14 +266,14 @@ impl Dialogue<'_> {
         buf: &mut Buffer,
         state: &PromptDialogueState,
     ) {
-        let constraints = vec![
+        let layout = Layout::vertical(vec![
             Constraint::Length(1), // Prompt
             Constraint::Length(1), // Space (skip)
             Constraint::Length(3), // Input
-            Constraint::Min(0),    // Space (skip)
+            Constraint::Fill(1),   // Space (skip)
             Constraint::Length(1), // Buttons
-        ];
-        let layout = Layout::new(Direction::Vertical, constraints).split(area);
+        ])
+        .split(area);
         sublayouts!([prompt_area, _, input_area, _, buttons_area] = layout);
 
         // Prompt
@@ -298,9 +291,7 @@ impl Dialogue<'_> {
         } else {
             (Style::new(), Style::new().fg(Color::DarkGray))
         };
-        let block = Block::new()
-            .borders(Borders::ALL)
-            .border_style(border_style);
+        let block = Block::bordered().border_style(border_style);
         input.set_block(block);
         input.set_cursor_style(cursor_style);
         input.widget().render(input_area, buf);

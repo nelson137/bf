@@ -4,7 +4,7 @@ use bf::interpreter::Tape;
 use itertools::Itertools;
 use ratatui::{
     buffer::Buffer,
-    layout::{Constraint, Direction, Layout, Rect},
+    layout::{Constraint, Layout, Rect},
     widgets::Widget,
 };
 
@@ -63,12 +63,10 @@ impl ChunkedTapeWidget {
 
 impl Widget for ChunkedTapeWidget {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let layout = Layout::default()
-            .direction(Direction::Vertical)
-            .constraints(
-                iter::repeat(Constraint::Length(3)).take(self.0.len()),
-            )
-            .split(area);
+        let layout = Layout::vertical(
+            iter::repeat(Constraint::Length(3)).take(self.0.len()),
+        )
+        .split(area);
 
         for (chunk, &chunk_area) in self.0.into_iter().zip(layout.iter()) {
             chunk.render(chunk_area, buf);
@@ -113,14 +111,12 @@ impl Widget for TapeChunkWidget {
             return;
         }
 
-        let layout = Layout::default()
-            .direction(Direction::Horizontal)
-            .constraints(
-                iter::repeat(Constraint::Length(4))
-                    .take(len - 1)
-                    .chain(iter::once(Constraint::Min(0))),
-            )
-            .split(area);
+        let layout = Layout::horizontal(
+            iter::repeat(Constraint::Length(4))
+                .take(len - 1)
+                .chain(iter::once(Constraint::Fill(1))),
+        )
+        .split(area);
 
         for (cell, cell_area) in self.0.into_iter().zip(layout.iter()) {
             cell.render(*cell_area, buf);

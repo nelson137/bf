@@ -1,7 +1,6 @@
-use std::iter;
-
 use ratatui::{
-    prelude::{Alignment, Buffer, Constraint, Direction, Layout, Rect},
+    layout::Flex,
+    prelude::{Alignment, Buffer, Constraint, Layout, Rect},
     style::{Color, Modifier, Style},
     widgets::{Block, Paragraph, Widget},
 };
@@ -90,21 +89,15 @@ impl<'buttons> ButtonRowWidget<'buttons> {
 
 impl Widget for ButtonRowWidget<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let mut constraints = Vec::with_capacity(self.buttons.len() * 2 + 1);
-        constraints.push(Constraint::Min(1));
-        const BUTTON_AND_MARGIN: [Constraint; 2] =
-            [Constraint::Length(BUTTON_WIDTH), Constraint::Length(2)];
-        constraints.extend(
-            iter::repeat(&BUTTON_AND_MARGIN)
-                .take(self.buttons.len())
-                .flatten(),
-        );
-
-        let layout =
-            Layout::new(Direction::Horizontal, constraints).split(area);
+        let constraint = Constraint::Length(BUTTON_WIDTH);
+        let layout = Layout::horizontal(vec![constraint; self.buttons.len()])
+            .flex(Flex::End)
+            .spacing(2)
+            .horizontal_margin(2)
+            .split(area);
 
         let buttons = self.buttons.iter().copied();
-        let button_areas = layout.iter().copied().skip(1).step_by(2);
+        let button_areas = layout.iter().copied();
         for ((i, button), button_area) in buttons.enumerate().zip(button_areas)
         {
             let selected = matches!(self.cursor, Some(c) if c as usize == i);

@@ -1,6 +1,6 @@
 use bf_utils::defaultable_builder;
 use ratatui::{
-    prelude::{Buffer, Constraint, Direction, Layout, Rect},
+    prelude::{Buffer, Constraint, Layout, Rect},
     style::{Color, Style, Styled, Stylize},
     text::Span,
     widgets::{Paragraph, Widget},
@@ -20,21 +20,16 @@ defaultable_builder! {
 
 impl Widget for &Header<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let layout = Layout::default()
-            .direction(Direction::Horizontal)
-            .constraints(vec![
-                Constraint::Length(1),  // Dirty indicator
-                Constraint::Length(1),  // Spacer (skip)
-                Constraint::Min(0),     // Filename
-                Constraint::Length(1),  // Spacer (skip)
-                Constraint::Length(18), // Status (max status length)
-                Constraint::Length(1),  // Spacer (skip)
-                Constraint::Length(1),  // Spinner
-            ])
-            .split(area);
+        let layout = Layout::horizontal(vec![
+            Constraint::Length(1),  // Dirty indicator
+            Constraint::Fill(1),    // Filename
+            Constraint::Length(18), // Status (max status length)
+            Constraint::Length(1),  // Spinner
+        ])
+        .spacing(1)
+        .split(area);
         sublayouts!(
-            [indicator_area, _, fn_area, _, status_area, _, spinner_area] =
-                layout
+            [indicator_area, fn_area, status_area, spinner_area] = layout
         );
 
         // Draw dirty indicator

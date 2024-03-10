@@ -2,7 +2,7 @@ use std::borrow::Cow;
 
 use ratatui::{
     buffer::Buffer,
-    layout::{Constraint, Direction, Layout, Rect},
+    layout::{Constraint, Layout, Rect},
     style::Stylize,
     text::{Line, Span},
     widgets::{Paragraph, Widget},
@@ -66,14 +66,12 @@ impl CellWidget {
 
 impl Widget for CellWidget {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let layout = Layout::default()
-            .direction(Direction::Vertical)
-            .constraints(vec![
-                Constraint::Length(1),
-                Constraint::Length(1),
-                Constraint::Length(1),
-            ])
-            .split(area);
+        let layout = Layout::vertical(vec![
+            Constraint::Length(1),
+            Constraint::Length(1),
+            Constraint::Length(1),
+        ])
+        .split(area);
         sublayouts!([top_area, middle_area, bottom_area] = layout);
 
         Paragraph::new(self.display_top()).render(top_area, buf);

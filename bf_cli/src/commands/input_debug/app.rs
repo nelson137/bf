@@ -15,8 +15,8 @@ use crossterm::{
 };
 use ratatui::{
     backend::CrosstermBackend,
-    layout::{Constraint, Direction, Layout, Rect},
-    widgets::{Block, Borders, Paragraph, Row, Table},
+    layout::{Constraint, Layout, Rect},
+    widgets::{Block, Paragraph, Row, Table},
     Frame,
 };
 
@@ -89,10 +89,9 @@ impl App {
     }
 
     fn draw(&self, frame: &mut Frame) {
-        let layout = Layout::default()
-            .direction(Direction::Vertical)
-            .constraints(vec![Constraint::Length(1), Constraint::Min(0)])
-            .split(frame.size());
+        let layout =
+            Layout::vertical(vec![Constraint::Length(1), Constraint::Fill(1)])
+                .split(frame.size());
         sublayouts!([header_area, content_area] = layout);
 
         self.draw_header(frame, header_area);
@@ -100,16 +99,14 @@ impl App {
     }
 
     fn draw_header(&self, frame: &mut Frame, area: Rect) {
-        let layout = Layout::default()
-            .direction(Direction::Horizontal)
-            .horizontal_margin(1)
-            .constraints(vec![
-                Constraint::Min(0),    // Title
-                Constraint::Length(1), // Spacer (skip)
-                Constraint::Length(1), // Spinner
-            ])
-            .split(area);
-        sublayouts!([title_area, _, spinner_area] = layout);
+        let layout = Layout::horizontal(vec![
+            Constraint::Fill(1),   // Title
+            Constraint::Length(1), // Spinner
+        ])
+        .spacing(1)
+        .horizontal_margin(1)
+        .split(area);
+        sublayouts!([title_area, spinner_area] = layout);
 
         let title = Paragraph::new("Input Debugger (Press Esc to quit)");
         frame.render_widget(title, title_area);
@@ -129,8 +126,8 @@ impl App {
             })
             .collect();
         let table =
-            Table::new(items, &[Constraint::Length(17), Constraint::Min(0)])
-                .block(Block::default().borders(Borders::ALL))
+            Table::new(items, &[Constraint::Length(17), Constraint::Fill(1)])
+                .block(Block::bordered())
                 .column_spacing(2);
         frame.render_widget(table, area);
     }

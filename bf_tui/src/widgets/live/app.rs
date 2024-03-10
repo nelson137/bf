@@ -1,6 +1,6 @@
 use bf::interpreter::Tape;
 use ratatui::{
-    prelude::{Buffer, Constraint, Direction, Layout, Rect},
+    prelude::{Buffer, Constraint, Layout, Rect},
     widgets::{Paragraph, StatefulWidget, Widget},
 };
 
@@ -30,14 +30,12 @@ pub struct AppWidget<'app, 'textarea, Editor: Widget> {
 
 impl<Editor: Widget> Widget for AppWidget<'_, '_, Editor> {
     fn render(mut self, area: Rect, buf: &mut Buffer) {
-        let layout = Layout::default()
-            .direction(Direction::Vertical)
-            .constraints(vec![
-                Constraint::Length(1),
-                Constraint::Min(7),
-                Constraint::Length(1),
-            ])
-            .split(area);
+        let layout = Layout::vertical(vec![
+            Constraint::Length(1),
+            Constraint::Min(7),
+            Constraint::Length(1),
+        ])
+        .split(area);
         sublayouts!([header_area, content_area, footer_area] = layout);
 
         draw_header(

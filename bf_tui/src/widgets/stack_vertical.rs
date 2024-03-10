@@ -1,5 +1,5 @@
 use ratatui::{
-    prelude::{Buffer, Constraint, Direction, Layout, Rect},
+    prelude::{Buffer, Constraint, Layout, Rect},
     widgets::{Block, Borders, Paragraph, Widget},
 };
 
@@ -30,10 +30,7 @@ impl<'titles, const SECTIONS: usize> VerticalStack<'titles, SECTIONS> {
             constraints.push(Constraint::Length(1));
         }
 
-        let all_areas = Layout::default()
-            .direction(Direction::Vertical)
-            .constraints(constraints)
-            .split(area);
+        let all_areas = Layout::vertical(constraints).split(area);
 
         let mut divider_areas = Vec::with_capacity(n_dividers);
         let mut section_areas = Vec::with_capacity(SECTIONS);

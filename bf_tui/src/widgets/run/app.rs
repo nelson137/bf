@@ -1,6 +1,6 @@
 use bf::interpreter::Interpreter;
 use ratatui::{
-    prelude::{Buffer, Constraint, Direction, Layout, Rect},
+    prelude::{Buffer, Constraint, Layout, Rect},
     widgets::{Paragraph, StatefulWidget, Widget},
 };
 
@@ -33,11 +33,11 @@ impl StatefulWidget for AppWidget<'_> {
 
         state.height = tape_height + output_lines;
 
-        let constraints = [
+        let layout = Layout::vertical([
             Constraint::Length(tape_height),
             Constraint::Length(output_lines),
-        ];
-        let layout = Layout::new(Direction::Vertical, constraints).split(area);
+        ])
+        .split(area);
         sublayouts!([tape_area, output_area] = layout);
 
         tape_widget.render(tape_area, buf);

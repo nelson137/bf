@@ -128,10 +128,10 @@ impl App {
                 ])
             })
             .collect();
-        let table = Table::new(items)
-            .block(Block::default().borders(Borders::ALL))
-            .widths(&[Constraint::Length(17), Constraint::Min(0)])
-            .column_spacing(2);
+        let table =
+            Table::new(items, &[Constraint::Length(17), Constraint::Min(0)])
+                .block(Block::default().borders(Borders::ALL))
+                .column_spacing(2);
         frame.render_widget(table, area);
     }
 }

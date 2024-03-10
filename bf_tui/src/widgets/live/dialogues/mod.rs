@@ -247,14 +247,12 @@ impl Dialogue<'_> {
         buf: &mut Buffer,
         state: &ButtonDialogueState,
     ) {
-        let layout = Layout::new()
-            .direction(Direction::Vertical)
-            .constraints(vec![
-                Constraint::Min(0),    // Message
-                Constraint::Length(1), // Space (skip)
-                Constraint::Length(1), // Buttons
-            ])
-            .split(area);
+        let constraints = vec![
+            Constraint::Min(0),    // Message
+            Constraint::Length(1), // Space (skip)
+            Constraint::Length(1), // Buttons
+        ];
+        let layout = Layout::new(Direction::Vertical, constraints).split(area);
         sublayouts!([text_area, _, buttons_area] = layout);
 
         // Message
@@ -275,16 +273,14 @@ impl Dialogue<'_> {
         buf: &mut Buffer,
         state: &PromptDialogueState,
     ) {
-        let layout = Layout::new()
-            .direction(Direction::Vertical)
-            .constraints(vec![
-                Constraint::Length(1), // Prompt
-                Constraint::Length(1), // Space (skip)
-                Constraint::Length(3), // Input
-                Constraint::Min(0),    // Space (skip)
-                Constraint::Length(1), // Buttons
-            ])
-            .split(area);
+        let constraints = vec![
+            Constraint::Length(1), // Prompt
+            Constraint::Length(1), // Space (skip)
+            Constraint::Length(3), // Input
+            Constraint::Min(0),    // Space (skip)
+            Constraint::Length(1), // Buttons
+        ];
+        let layout = Layout::new(Direction::Vertical, constraints).split(area);
         sublayouts!([prompt_area, _, input_area, _, buttons_area] = layout);
 
         // Prompt

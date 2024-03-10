@@ -66,9 +66,7 @@ impl Widget for ChunkedTapeWidget {
         let layout = Layout::default()
             .direction(Direction::Vertical)
             .constraints(
-                iter::repeat(Constraint::Length(3))
-                    .take(self.0.len())
-                    .collect::<Vec<_>>(),
+                iter::repeat(Constraint::Length(3)).take(self.0.len()),
             )
             .split(area);
 
@@ -120,8 +118,7 @@ impl Widget for TapeChunkWidget {
             .constraints(
                 iter::repeat(Constraint::Length(4))
                     .take(len - 1)
-                    .chain(iter::once(Constraint::Min(0)))
-                    .collect::<Vec<Constraint>>(),
+                    .chain(iter::once(Constraint::Min(0))),
             )
             .split(area);
 

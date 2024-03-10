@@ -100,10 +100,8 @@ impl Widget for ButtonRowWidget<'_> {
                 .flatten(),
         );
 
-        let layout = Layout::new()
-            .direction(Direction::Horizontal)
-            .constraints(constraints)
-            .split(area);
+        let layout =
+            Layout::new(Direction::Horizontal, constraints).split(area);
 
         let buttons = self.buttons.iter().copied();
         let button_areas = layout.iter().copied().skip(1).step_by(2);

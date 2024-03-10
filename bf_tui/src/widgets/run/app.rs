@@ -33,13 +33,11 @@ impl StatefulWidget for AppWidget<'_> {
 
         state.height = tape_height + output_lines;
 
-        let layout = Layout::new()
-            .direction(Direction::Vertical)
-            .constraints([
-                Constraint::Length(tape_height),
-                Constraint::Length(output_lines),
-            ])
-            .split(area);
+        let constraints = [
+            Constraint::Length(tape_height),
+            Constraint::Length(output_lines),
+        ];
+        let layout = Layout::new(Direction::Vertical, constraints).split(area);
         sublayouts!([tape_area, output_area] = layout);
 
         tape_widget.render(tape_area, buf);

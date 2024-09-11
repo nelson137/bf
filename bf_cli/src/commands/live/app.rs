@@ -222,7 +222,7 @@ impl<'code, 'dialogue> App<'code, 'dialogue> {
         let widget = AppWidget {
             is_dirty: self.is_dirty(),
             async_interpreter: self.async_interpreter.state(),
-            editor: self.code.widget(),
+            editor: &self.code,
             dialogue: self.dialogue.as_deref(),
             file_path: self.get_file_path(),
             spinner: self.spinner,

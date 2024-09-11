@@ -294,7 +294,7 @@ impl Dialogue<'_> {
         let block = Block::bordered().border_style(border_style);
         input.set_block(block);
         input.set_cursor_style(cursor_style);
-        input.widget().render(input_area, buf);
+        input.render(input_area, buf);
 
         // Buttons
 

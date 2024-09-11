@@ -4,7 +4,7 @@
 
 use std::io::Stdout;
 
-use ratatui::{backend::CrosstermBackend, terminal};
+use ratatui::backend::CrosstermBackend;
 
 pub mod async_interpreter;
 
@@ -21,4 +21,4 @@ pub mod test_utils;
 pub mod widgets;
 
 type Backend = CrosstermBackend<Stdout>;
-pub type Terminal = terminal::Terminal<Backend>;
+pub type Terminal = ratatui::Terminal<Backend>;

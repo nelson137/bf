@@ -97,7 +97,7 @@ fn draw<'s>(
     lines: impl Iterator<Item = &'s str>,
     scroll: u16,
 ) {
-    let area = frame.size();
+    let area = frame.area();
     let lines: Vec<Line> = lines.map(Line::from).collect();
     let text = Text::from(lines);
     let widget = Paragraph::new(text).scroll((scroll, 0));

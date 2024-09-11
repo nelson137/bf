@@ -5,10 +5,10 @@ members = ["bf*"]
 [workspace.dependencies]
 # ansi_term = "0.12"
 anyhow = "1.0"
-crossterm = "0.27"
+crossterm = "0.28"
 delegate = "0.13"
 itertools = "0.13"
-ratatui = "0.27"
+ratatui = "0.28"
 sha-1 = { version = "0.10", features = ["asm"] }
 tracing = "0.1"
-tui-textarea = "0.5"
+tui-textarea = "0.6"

@@ -91,7 +91,7 @@ impl App {
     fn draw(&self, frame: &mut Frame) {
         let layout =
             Layout::vertical(vec![Constraint::Length(1), Constraint::Fill(1)])
-                .split(frame.size());
+                .split(frame.area());
         sublayouts!([header_area, content_area] = layout);
 
         self.draw_header(frame, header_area);

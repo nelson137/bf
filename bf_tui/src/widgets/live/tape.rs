@@ -152,7 +152,7 @@ mod test {
             widget: TapeViewport,
             state: &mut TapeViewportState,
         ) {
-            term.draw(|f| f.render_stateful_widget(widget, f.size(), state))
+            term.draw(|f| f.render_stateful_widget(widget, f.area(), state))
                 .unwrap();
         }
 

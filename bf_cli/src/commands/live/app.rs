@@ -230,7 +230,7 @@ impl<'code, 'dialogue> App<'code, 'dialogue> {
             term_height: self.term_height,
             term_width: self.term_width,
         };
-        terminal.draw(|f| f.render_widget(widget, f.size()))?;
+        terminal.draw(|f| f.render_widget(widget, f.area()))?;
         Ok(())
     }
 

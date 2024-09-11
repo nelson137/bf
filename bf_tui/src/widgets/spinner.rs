@@ -42,7 +42,7 @@ mod test {
             term: &mut Terminal<impl Backend>,
             widget: Spinner,
         ) {
-            term.draw(|f| f.render_widget(widget, f.size())).unwrap();
+            term.draw(|f| f.render_widget(widget, f.area())).unwrap();
         }
     }
     use util::*;

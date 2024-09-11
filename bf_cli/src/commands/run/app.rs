@@ -86,7 +86,9 @@ impl App {
         let script_err = self.run_script_loop(&mut terminal)?;
 
         reset_terminal();
-        terminal.set_cursor(0, self.render_state.height).ok();
+        terminal
+            .set_cursor_position((0, self.render_state.height))
+            .ok();
 
         if let Some(err) = script_err {
             eprintln!();
@@ -127,7 +129,7 @@ impl App {
 
     fn draw_frame(&mut self, terminal: &mut Terminal) -> Result<()> {
         terminal.draw(|f| {
-            let area = f.size();
+            let area = f.area();
             let widget = AppWidget {
                 show_tape: self.show_tape,
                 ascii_values: self.ascii_values,

@@ -36,7 +36,7 @@ impl Widget for DropShadowWidget {
         fn render_section(area: Rect, buf: &mut Buffer) {
             for y in area.top()..area.bottom() {
                 for x in area.left()..area.right() {
-                    let cell = buf.get_mut(x, y);
+                    let cell = &mut buf[(x, y)];
                     cell.reset();
                     cell.set_style(Style::new().bg(Color::Black));
                 }

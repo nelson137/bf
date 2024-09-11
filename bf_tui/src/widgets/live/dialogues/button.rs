@@ -62,8 +62,8 @@ impl Widget for DialogueButtonWidget {
             .alignment(Alignment::Center)
             .render(area, buf);
 
-        buf.get_mut(area.left(), area.y).set_char('[');
-        buf.get_mut(area.right() - 1, area.y).set_char(']');
+        buf[(area.left(), area.y)].set_char('[');
+        buf[(area.right() - 1, area.y)].set_char(']');
     }
 }
 

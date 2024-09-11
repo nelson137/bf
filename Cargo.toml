@@ -7,7 +7,7 @@ members = ["bf*"]
 anyhow = "1.0"
 crossterm = "0.27"
 delegate = "0.10.0"
-itertools = "0.11"
+itertools = "0.13"
 ratatui = "0.27"
 sha-1 = { version = "0.10", features = ["asm"] }
 tracing = "0.1"

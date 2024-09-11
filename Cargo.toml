@@ -6,7 +6,7 @@ members = ["bf*"]
 # ansi_term = "0.12"
 anyhow = "1.0"
 crossterm = "0.27"
-delegate = "0.10.0"
+delegate = "0.13"
 itertools = "0.13"
 ratatui = "0.27"
 sha-1 = { version = "0.10", features = ["asm"] }

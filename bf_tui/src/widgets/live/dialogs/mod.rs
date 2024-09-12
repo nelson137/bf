@@ -1,4 +1,4 @@
-use button::DialogueButton;
+use button::DialogButton;
 use crossterm::event::KeyEvent;
 use ratatui::{
     prelude::{Buffer, Constraint, Layout, Rect},
@@ -20,24 +20,24 @@ bf_utils::barrel_module! {
     pub mod unsaved_changes;
 }
 
-pub struct Dialogue<'dialog> {
+pub struct Dialog<'dialog> {
     title: &'static str,
     bg: Color,
     primary: Color,
     fg: Color,
-    dialogue: Box<dyn AppDialogue + 'dialog>,
+    dialog: Box<dyn AppDialog + 'dialog>,
 }
 
-impl Dialogue<'_> {
+impl Dialog<'_> {
     const DEFAULT_BG: Color = Color::Reset;
     const DEFAULT_FG: Color = Color::White;
 
-    pub fn on_event(&mut self, event: KeyEvent) -> DialogueCommand {
-        self.dialogue.on_event(event)
+    pub fn on_event(&mut self, event: KeyEvent) -> DialogCommand {
+        self.dialog.on_event(event)
     }
 }
 
-impl Widget for &Dialogue<'_> {
+impl Widget for &Dialog<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
         Clear.render(area, buf);
 
@@ -51,19 +51,19 @@ impl Widget for &Dialogue<'_> {
         let content_area = block.inner(area);
         block.render(area, buf);
 
-        self.dialogue.render(content_area, buf);
+        self.dialog.render(content_area, buf);
 
         DropShadowWidget::new(2, 2).render(area, buf);
     }
 }
 
-pub trait AppDialogue {
-    fn on_event(&mut self, event: KeyEvent) -> DialogueCommand;
+pub trait AppDialog {
+    fn on_event(&mut self, event: KeyEvent) -> DialogCommand;
     fn render(&self, area: Rect, buf: &mut Buffer);
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum DialogueCommand {
+pub enum DialogCommand {
     None,
     Dismissed,
     ConfirmUnsavedChangesConfirmed,
@@ -88,23 +88,23 @@ pub fn centered_rect(percent_x: u16, percent_y: u16, area: Rect) -> Rect {
     .split(centered_vert_area)[1]
 }
 
-struct DialogueFocusController {
-    order: Vec<DialogueFocus>,
+struct DialogFocusController {
+    order: Vec<DialogFocus>,
     index: usize,
 }
 
-impl DialogueFocusController {
-    const fn new(order: Vec<DialogueFocus>) -> Self {
+impl DialogFocusController {
+    const fn new(order: Vec<DialogFocus>) -> Self {
         Self { order, index: 0 }
     }
 
-    fn to_buttons(&self) -> Vec<DialogueButton> {
+    fn to_buttons(&self) -> Vec<DialogButton> {
         let mut buttons: Vec<_> = self
             .order
             .iter()
             .filter_map(|f| match *f {
-                DialogueFocus::Input => None,
-                DialogueFocus::Button { index, kind } => Some((index, kind)),
+                DialogFocus::Input => None,
+                DialogFocus::Button { index, kind } => Some((index, kind)),
             })
             .collect();
         buttons.sort_by_key(|b| b.0);
@@ -115,24 +115,24 @@ impl DialogueFocusController {
     // Getters
     //
 
-    fn get(&self) -> DialogueFocus {
+    fn get(&self) -> DialogFocus {
         self.order[self.index]
     }
 
     fn is_input(&self) -> bool {
-        self.get() == DialogueFocus::Input
+        self.get() == DialogFocus::Input
     }
 
     fn should_submit(&self) -> bool {
         match self.get() {
-            DialogueFocus::Input => true,
-            DialogueFocus::Button { kind, .. } => kind.is_affirmative(),
+            DialogFocus::Input => true,
+            DialogFocus::Button { kind, .. } => kind.is_affirmative(),
         }
     }
 
     fn button_cursor(&self) -> Option<u8> {
         match self.get() {
-            DialogueFocus::Button { index, .. } => Some(index),
+            DialogFocus::Button { index, .. } => Some(index),
             _ => None,
         }
     }
@@ -151,17 +151,17 @@ impl DialogueFocusController {
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-enum DialogueFocus {
+enum DialogFocus {
     #[default]
     Input,
     Button {
         index: u8,
-        kind: DialogueButton,
+        kind: DialogButton,
     },
 }
 
-impl DialogueFocus {
-    const fn button(index: u8, kind: DialogueButton) -> Self {
+impl DialogFocus {
+    const fn button(index: u8, kind: DialogButton) -> Self {
         Self::Button { index, kind }
     }
 }

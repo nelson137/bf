@@ -10,32 +10,30 @@ use tui_textarea::{CursorMove, TextArea};
 use crate::{events::KeyEventExt, widgets::live::TextAreaExts};
 
 use super::{
-    button::{ButtonRowWidget, DialogueButton},
-    render_input, AppDialogue, Dialogue, DialogueCommand, DialogueFocus,
-    DialogueFocusController,
+    button::{ButtonRowWidget, DialogButton},
+    render_input, AppDialog, Dialog, DialogCommand, DialogFocus,
+    DialogFocusController,
 };
 
-pub struct FileSaveAsDialogue<'textarea> {
+pub struct ScriptInputDialog<'textarea> {
     prompt: String,
-    buttons: Vec<DialogueButton>,
-    focus: DialogueFocusController,
+    buttons: Vec<DialogButton>,
+    focus: DialogFocusController,
     input: RefCell<TextArea<'textarea>>,
 }
 
-impl<'textarea> FileSaveAsDialogue<'textarea> {
-    pub fn build(value: Option<impl Into<String>>) -> Dialogue<'textarea> {
-        let focus = DialogueFocusController::new(vec![
-            DialogueFocus::Input,
-            DialogueFocus::button(0, DialogueButton::Cancel),
-            DialogueFocus::button(1, DialogueButton::Ok),
+impl<'textarea> ScriptInputDialog<'textarea> {
+    pub fn build() -> Dialog<'textarea> {
+        let focus = DialogFocusController::new(vec![
+            DialogFocus::Input,
+            DialogFocus::button(0, DialogButton::Cancel),
+            DialogFocus::button(1, DialogButton::Ok),
         ]);
 
         let buttons = focus.to_buttons();
 
         let input = {
-            let mut input = TextArea::new(
-                value.map(|v| vec![v.into()]).unwrap_or_default(),
-            );
+            let mut input = tui_textarea::TextArea::new(vec![]);
             input.set_block(Block::bordered());
             input.set_cursor_line_style(Style::new());
             input.move_cursor(CursorMove::End);
@@ -43,56 +41,54 @@ impl<'textarea> FileSaveAsDialogue<'textarea> {
         };
 
         let this = Self {
-            prompt: "Filename: ".to_string(),
+            prompt: "Input: ".to_string(),
             buttons,
             focus,
             input,
         };
 
-        Dialogue {
-            title: " Save As ",
-            bg: Dialogue::DEFAULT_BG,
-            primary: Color::LightGreen,
-            fg: Dialogue::DEFAULT_FG,
-            dialogue: Box::new(this),
+        Dialog {
+            title: " Input ",
+            bg: Dialog::DEFAULT_BG,
+            primary: Color::Green,
+            fg: Dialog::DEFAULT_FG,
+            dialog: Box::new(this),
         }
     }
 }
 
-impl AppDialogue for FileSaveAsDialogue<'_> {
-    fn on_event(&mut self, event: KeyEvent) -> super::DialogueCommand {
+impl AppDialog for ScriptInputDialog<'_> {
+    fn on_event(&mut self, event: KeyEvent) -> super::DialogCommand {
         match event.code {
-            KeyCode::Esc => DialogueCommand::Dismissed,
-            KeyCode::Char('c') if event.is_ctrl() => {
-                DialogueCommand::Dismissed
-            }
+            KeyCode::Esc => DialogCommand::Dismissed,
+            KeyCode::Char('c') if event.is_ctrl() => DialogCommand::Dismissed,
 
             KeyCode::Enter => {
                 if self.focus.should_submit() {
-                    DialogueCommand::FileSaveAsSubmitted(
+                    DialogCommand::ScriptInputSubmitted(
                         self.input.borrow().to_string(),
                     )
                 } else {
-                    DialogueCommand::Dismissed
+                    DialogCommand::Dismissed
                 }
             }
 
             KeyCode::Tab => {
                 self.focus.next();
-                DialogueCommand::None
+                DialogCommand::None
             }
 
             KeyCode::BackTab => {
                 self.focus.prev();
-                DialogueCommand::None
+                DialogCommand::None
             }
 
             _ if self.focus.is_input() => {
                 self.input.borrow_mut().on_event_single_line(event);
-                DialogueCommand::None
+                DialogCommand::None
             }
 
-            _ => DialogueCommand::None,
+            _ => DialogCommand::None,
         }
     }
 
@@ -123,7 +119,7 @@ impl AppDialogue for FileSaveAsDialogue<'_> {
         ButtonRowWidget::new(
             &self.buttons,
             self.focus.button_cursor(),
-            Dialogue::DEFAULT_FG,
+            Dialog::DEFAULT_FG,
         )
         .render(buttons_area, buf);
     }

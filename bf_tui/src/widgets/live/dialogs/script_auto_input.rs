@@ -10,24 +10,24 @@ use tui_textarea::{CursorMove, TextArea};
 use crate::{events::KeyEventExt, widgets::live::TextAreaExts};
 
 use super::{
-    button::{ButtonRowWidget, DialogueButton},
-    render_input, AppDialogue, Dialogue, DialogueCommand, DialogueFocus,
-    DialogueFocusController,
+    button::{ButtonRowWidget, DialogButton},
+    render_input, AppDialog, Dialog, DialogCommand, DialogFocus,
+    DialogFocusController,
 };
 
-pub struct ScriptAutoInputDialogue<'textarea> {
+pub struct ScriptAutoInputDialog<'textarea> {
     prompt: String,
-    buttons: Vec<DialogueButton>,
-    focus: DialogueFocusController,
+    buttons: Vec<DialogButton>,
+    focus: DialogFocusController,
     input: RefCell<TextArea<'textarea>>,
 }
 
-impl<'textarea> ScriptAutoInputDialogue<'textarea> {
-    pub fn build() -> Dialogue<'textarea> {
-        let focus = DialogueFocusController::new(vec![
-            DialogueFocus::Input,
-            DialogueFocus::button(0, DialogueButton::Cancel),
-            DialogueFocus::button(1, DialogueButton::Ok),
+impl<'textarea> ScriptAutoInputDialog<'textarea> {
+    pub fn build() -> Dialog<'textarea> {
+        let focus = DialogFocusController::new(vec![
+            DialogFocus::Input,
+            DialogFocus::button(0, DialogButton::Cancel),
+            DialogFocus::button(1, DialogButton::Ok),
         ]);
 
         let buttons = focus.to_buttons();
@@ -47,27 +47,25 @@ impl<'textarea> ScriptAutoInputDialogue<'textarea> {
             input,
         };
 
-        Dialogue {
+        Dialog {
             title: " Auto-Input ",
-            bg: Dialogue::DEFAULT_BG,
+            bg: Dialog::DEFAULT_BG,
             primary: Color::Green,
-            fg: Dialogue::DEFAULT_FG,
-            dialogue: Box::new(this),
+            fg: Dialog::DEFAULT_FG,
+            dialog: Box::new(this),
         }
     }
 }
 
-impl AppDialogue for ScriptAutoInputDialogue<'_> {
-    fn on_event(&mut self, event: KeyEvent) -> super::DialogueCommand {
+impl AppDialog for ScriptAutoInputDialog<'_> {
+    fn on_event(&mut self, event: KeyEvent) -> super::DialogCommand {
         match event.code {
-            KeyCode::Esc => DialogueCommand::Dismissed,
-            KeyCode::Char('c') if event.is_ctrl() => {
-                DialogueCommand::Dismissed
-            }
+            KeyCode::Esc => DialogCommand::Dismissed,
+            KeyCode::Char('c') if event.is_ctrl() => DialogCommand::Dismissed,
 
             KeyCode::Enter => {
                 if self.focus.should_submit() {
-                    DialogueCommand::ScriptAutoInputSubmitted(
+                    DialogCommand::ScriptAutoInputSubmitted(
                         self.input
                             .borrow()
                             .lines()
@@ -75,26 +73,26 @@ impl AppDialogue for ScriptAutoInputDialogue<'_> {
                             .and_then(|l| l.as_bytes().first().copied()),
                     )
                 } else {
-                    DialogueCommand::Dismissed
+                    DialogCommand::Dismissed
                 }
             }
 
             KeyCode::Tab => {
                 self.focus.next();
-                DialogueCommand::None
+                DialogCommand::None
             }
 
             KeyCode::BackTab => {
                 self.focus.prev();
-                DialogueCommand::None
+                DialogCommand::None
             }
 
             _ if self.focus.is_input() => {
                 self.input.borrow_mut().on_event_single_line(event);
-                DialogueCommand::None
+                DialogCommand::None
             }
 
-            _ => DialogueCommand::None,
+            _ => DialogCommand::None,
         }
     }
 
@@ -125,7 +123,7 @@ impl AppDialogue for ScriptAutoInputDialogue<'_> {
         ButtonRowWidget::new(
             &self.buttons,
             self.focus.button_cursor(),
-            Dialogue::DEFAULT_FG,
+            Dialog::DEFAULT_FG,
         )
         .render(buttons_area, buf);
     }

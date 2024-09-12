@@ -7,43 +7,41 @@ use ratatui::{
 use crate::events::KeyEventExt;
 
 use super::{
-    button::{ButtonRowWidget, DialogueButton},
-    AppDialogue, Dialogue, DialogueCommand,
+    button::{ButtonRowWidget, DialogButton},
+    AppDialog, Dialog, DialogCommand,
 };
 
-pub struct ErrorDialogue {
+pub struct ErrorDialog {
     message: String,
-    buttons: Vec<DialogueButton>,
+    buttons: Vec<DialogButton>,
 }
 
-impl ErrorDialogue {
-    pub fn build(message: String) -> Dialogue<'static> {
+impl ErrorDialog {
+    pub fn build(message: String) -> Dialog<'static> {
         let this = Self {
             message,
-            buttons: vec![DialogueButton::Ok],
+            buttons: vec![DialogButton::Ok],
         };
 
-        Dialogue {
+        Dialog {
             title: " Error ",
-            bg: Dialogue::DEFAULT_BG,
+            bg: Dialog::DEFAULT_BG,
             primary: Color::Red,
-            fg: Dialogue::DEFAULT_FG,
-            dialogue: Box::new(this),
+            fg: Dialog::DEFAULT_FG,
+            dialog: Box::new(this),
         }
     }
 }
 
-impl AppDialogue for ErrorDialogue {
-    fn on_event(&mut self, event: KeyEvent) -> super::DialogueCommand {
+impl AppDialog for ErrorDialog {
+    fn on_event(&mut self, event: KeyEvent) -> super::DialogCommand {
         match event.code {
-            KeyCode::Esc => DialogueCommand::Dismissed,
-            KeyCode::Char('c') if event.is_ctrl() => {
-                DialogueCommand::Dismissed
-            }
+            KeyCode::Esc => DialogCommand::Dismissed,
+            KeyCode::Char('c') if event.is_ctrl() => DialogCommand::Dismissed,
 
-            KeyCode::Enter => DialogueCommand::Dismissed,
+            KeyCode::Enter => DialogCommand::Dismissed,
 
-            _ => DialogueCommand::None,
+            _ => DialogCommand::None,
         }
     }
 
@@ -64,7 +62,7 @@ impl AppDialogue for ErrorDialogue {
 
         // Buttons
 
-        ButtonRowWidget::new(&self.buttons, Some(0), Dialogue::DEFAULT_FG)
+        ButtonRowWidget::new(&self.buttons, Some(0), Dialog::DEFAULT_FG)
             .render(buttons_area, buf);
     }
 }

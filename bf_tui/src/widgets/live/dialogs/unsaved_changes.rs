@@ -7,25 +7,24 @@ use ratatui::{
 use crate::events::KeyEventExt;
 
 use super::{
-    button::{ButtonRowWidget, DialogueButton},
-    AppDialogue, Dialogue, DialogueCommand, DialogueFocus,
-    DialogueFocusController,
+    button::{ButtonRowWidget, DialogButton},
+    AppDialog, Dialog, DialogCommand, DialogFocus, DialogFocusController,
 };
 
-pub struct UnsavedChangesDialogue {
+pub struct UnsavedChangesDialog {
     message: String,
-    buttons: Vec<DialogueButton>,
-    focus: DialogueFocusController,
+    buttons: Vec<DialogButton>,
+    focus: DialogFocusController,
 }
 
-impl UnsavedChangesDialogue {
-    pub fn build() -> Dialogue<'static> {
+impl UnsavedChangesDialog {
+    pub fn build() -> Dialog<'static> {
         let message = "Warning:\n\n\
             There are unsaved changes, are you sure you want to quit?";
 
-        let focus = DialogueFocusController::new(vec![
-            DialogueFocus::button(0, DialogueButton::Cancel),
-            DialogueFocus::button(1, DialogueButton::Yes),
+        let focus = DialogFocusController::new(vec![
+            DialogFocus::button(0, DialogButton::Cancel),
+            DialogFocus::button(1, DialogButton::Yes),
         ]);
 
         let buttons = focus.to_buttons();
@@ -36,43 +35,41 @@ impl UnsavedChangesDialogue {
             focus,
         };
 
-        Dialogue {
+        Dialog {
             title: " Confirm ",
-            bg: Dialogue::DEFAULT_BG,
+            bg: Dialog::DEFAULT_BG,
             primary: Color::Yellow,
-            fg: Dialogue::DEFAULT_FG,
-            dialogue: Box::new(this),
+            fg: Dialog::DEFAULT_FG,
+            dialog: Box::new(this),
         }
     }
 }
 
-impl AppDialogue for UnsavedChangesDialogue {
-    fn on_event(&mut self, event: KeyEvent) -> super::DialogueCommand {
+impl AppDialog for UnsavedChangesDialog {
+    fn on_event(&mut self, event: KeyEvent) -> super::DialogCommand {
         match event.code {
-            KeyCode::Esc => DialogueCommand::Dismissed,
-            KeyCode::Char('c') if event.is_ctrl() => {
-                DialogueCommand::Dismissed
-            }
+            KeyCode::Esc => DialogCommand::Dismissed,
+            KeyCode::Char('c') if event.is_ctrl() => DialogCommand::Dismissed,
 
             KeyCode::Enter => {
                 if self.focus.should_submit() {
-                    DialogueCommand::ConfirmUnsavedChangesConfirmed
+                    DialogCommand::ConfirmUnsavedChangesConfirmed
                 } else {
-                    DialogueCommand::Dismissed
+                    DialogCommand::Dismissed
                 }
             }
 
             KeyCode::Tab | KeyCode::Right => {
                 self.focus.next();
-                DialogueCommand::None
+                DialogCommand::None
             }
 
             KeyCode::BackTab | KeyCode::Left => {
                 self.focus.prev();
-                DialogueCommand::None
+                DialogCommand::None
             }
 
-            _ => DialogueCommand::None,
+            _ => DialogCommand::None,
         }
     }
 
@@ -96,7 +93,7 @@ impl AppDialogue for UnsavedChangesDialogue {
         ButtonRowWidget::new(
             &self.buttons,
             self.focus.button_cursor(),
-            Dialogue::DEFAULT_FG,
+            Dialog::DEFAULT_FG,
         )
         .render(buttons_area, buf);
     }

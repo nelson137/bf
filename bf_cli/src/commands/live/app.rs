@@ -15,9 +15,9 @@ use bf_tui::{
     events::{BfEvent, EventQueue, KeyEventExt},
     widgets::{
         live::{
-            AppWidget, Dialogue, DialogueCommand, ErrorDialogue,
-            FileSaveAsDialogue, ScriptAutoInputDialogue, ScriptInputDialogue,
-            TapeViewportState, TextAreaExts, UnsavedChangesDialogue,
+            AppWidget, Dialog, DialogCommand, ErrorDialog, FileSaveAsDialog,
+            ScriptAutoInputDialog, ScriptInputDialog, TapeViewportState,
+            TextAreaExts, UnsavedChangesDialog,
         },
         Spinner,
     },
@@ -59,7 +59,7 @@ fn set_panic_hook() {
     }));
 }
 
-pub struct App<'code, 'dialogue> {
+pub struct App<'code, 'dialog> {
     term_width: usize,
     term_height: usize,
     file_path: Option<String>,
@@ -73,7 +73,7 @@ pub struct App<'code, 'dialogue> {
     clean_hash: Sha1Digest,
     event_queue: EventQueue,
     delay: Duration,
-    dialogue: Option<Dialogue<'dialogue>>,
+    dialog: Option<Dialog<'dialog>>,
     async_interpreter: AsyncInterpreter,
 }
 
@@ -83,7 +83,7 @@ impl Drop for App<'_, '_> {
     }
 }
 
-impl<'code, 'dialogue> App<'code, 'dialogue> {
+impl<'code, 'dialog> App<'code, 'dialog> {
     pub fn new(cli: LiveCli) -> Result<Self> {
         init_logging()?;
         trace!("initialize TUI app");
@@ -125,7 +125,7 @@ impl<'code, 'dialogue> App<'code, 'dialogue> {
             clean_hash: sha1_digest(script_raw),
             event_queue: EventQueue::with_ticks(100),
             delay: Duration::from_millis(20),
-            dialogue: None,
+            dialog: None,
             async_interpreter: AsyncInterpreter::new(
                 interpreter_code,
                 VecDeque::default(),
@@ -203,7 +203,7 @@ impl<'code, 'dialogue> App<'code, 'dialogue> {
             if restart_interpreter {
                 let status = self.async_interpreter.state().status;
                 if let Status::FatalError(fe) = status {
-                    self.dialogue = Some(ErrorDialogue::build(fe));
+                    self.dialog = Some(ErrorDialog::build(fe));
                 }
                 self.async_interpreter.restart(
                     self.code.bytes().collect(),
@@ -224,7 +224,7 @@ impl<'code, 'dialogue> App<'code, 'dialogue> {
             is_dirty: self.is_dirty(),
             async_interpreter: self.async_interpreter.state(),
             editor: &self.code,
-            dialogue: self.dialogue.as_ref(),
+            dialog: self.dialog.as_ref(),
             file_path: self.get_file_path(),
             spinner: self.spinner,
             tape_viewport: self.tape_viewport,
@@ -238,28 +238,28 @@ impl<'code, 'dialogue> App<'code, 'dialogue> {
     fn handle_key_event(&mut self, event: KeyEvent) -> bool {
         let mut restart_interpreter = false;
 
-        if let Some(dialogue) = &mut self.dialogue {
-            match dialogue.on_event(event) {
-                DialogueCommand::None => {}
-                DialogueCommand::Dismissed => {
-                    self.dialogue = None;
+        if let Some(dialog) = &mut self.dialog {
+            match dialog.on_event(event) {
+                DialogCommand::None => {}
+                DialogCommand::Dismissed => {
+                    self.dialog = None;
                 }
-                DialogueCommand::ConfirmUnsavedChangesConfirmed => {
+                DialogCommand::ConfirmUnsavedChangesConfirmed => {
                     self.should_quit = true;
                 }
-                DialogueCommand::FileSaveAsSubmitted(path) => {
+                DialogCommand::FileSaveAsSubmitted(path) => {
                     self.set_file_path(Some(path));
-                    self.dialogue = None;
+                    self.dialog = None;
                     self.on_save();
                 }
-                DialogueCommand::ScriptInputSubmitted(input) => {
+                DialogCommand::ScriptInputSubmitted(input) => {
                     self.input = input;
-                    self.dialogue = None;
+                    self.dialog = None;
                     restart_interpreter = true;
                 }
-                DialogueCommand::ScriptAutoInputSubmitted(input) => {
+                DialogCommand::ScriptAutoInputSubmitted(input) => {
                     self.auto_input = input;
-                    self.dialogue = None;
+                    self.dialog = None;
                     restart_interpreter = true;
                 }
             }
@@ -293,7 +293,7 @@ impl<'code, 'dialogue> App<'code, 'dialogue> {
 
     fn on_exit(&mut self) {
         if self.is_dirty() {
-            self.dialogue = Some(UnsavedChangesDialogue::build());
+            self.dialog = Some(UnsavedChangesDialog::build());
         } else {
             self.should_quit = true;
         }
@@ -311,7 +311,7 @@ impl<'code, 'dialogue> App<'code, 'dialogue> {
                     Ok(())
                 });
                 if let Err(err) = res {
-                    self.dialogue = Some(ErrorDialogue::build(format!(
+                    self.dialog = Some(ErrorDialog::build(format!(
                         "Error while saving file: {path}\n\n{err}",
                     )));
                 } else {
@@ -369,14 +369,14 @@ impl<'code, 'dialogue> App<'code, 'dialogue> {
             path_abs.to_string_lossy().to_string()
         });
 
-        self.dialogue = Some(FileSaveAsDialogue::build(initial_path));
+        self.dialog = Some(FileSaveAsDialog::build(initial_path));
     }
 
     fn on_set_input(&mut self) {
-        self.dialogue = Some(ScriptInputDialogue::build());
+        self.dialog = Some(ScriptInputDialog::build());
     }
 
     fn on_set_auto_input(&mut self) {
-        self.dialogue = Some(ScriptAutoInputDialogue::build());
+        self.dialog = Some(ScriptAutoInputDialog::build());
     }
 }

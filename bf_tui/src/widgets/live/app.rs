@@ -15,14 +15,14 @@ use crate::{
 };
 
 use super::{
-    dialogues::{centered_rect, Dialogue},
+    dialogs::{centered_rect, Dialog},
     Footer, Header, TapeViewport, TapeViewportState,
 };
 
 pub struct AppWidget<'app, 'textarea, Editor: Widget> {
     pub term_width: usize,
     pub term_height: usize,
-    pub dialogue: Option<&'app Dialogue<'textarea>>,
+    pub dialog: Option<&'app Dialog<'textarea>>,
     pub is_dirty: bool,
     pub file_path: Option<&'app str>,
     pub spinner: Spinner,
@@ -61,9 +61,9 @@ impl<Editor: Widget> Widget for AppWidget<'_, '_, Editor> {
 
         draw_footer(footer_area, buf);
 
-        if let Some(dialogue) = &self.dialogue {
-            let dialogue_area = centered_rect(50, 50, area);
-            dialogue.render(dialogue_area, buf);
+        if let Some(dialog) = &self.dialog {
+            let dialog_area = centered_rect(50, 50, area);
+            dialog.render(dialog_area, buf);
         }
     }
 }

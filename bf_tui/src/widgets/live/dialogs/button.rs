@@ -6,7 +6,7 @@ use ratatui::{
 };
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum DialogueButton {
+pub enum DialogButton {
     Ok,
     Yes,
     Cancel,
@@ -14,7 +14,7 @@ pub enum DialogueButton {
 
 pub const BUTTON_WIDTH: u16 = 10;
 
-impl DialogueButton {
+impl DialogButton {
     pub const fn text(self) -> &'static str {
         /*
          * NOTE: Keep `BUTTON_WIDTH` up to date with the length of longest text.
@@ -34,19 +34,19 @@ impl DialogueButton {
     }
 }
 
-pub struct DialogueButtonWidget {
-    kind: DialogueButton,
+pub struct DialogButtonWidget {
+    kind: DialogButton,
     fg: Color,
     selected: bool,
 }
 
-impl DialogueButtonWidget {
-    pub const fn new(kind: DialogueButton, fg: Color, selected: bool) -> Self {
+impl DialogButtonWidget {
+    pub const fn new(kind: DialogButton, fg: Color, selected: bool) -> Self {
         Self { kind, fg, selected }
     }
 }
 
-impl Widget for DialogueButtonWidget {
+impl Widget for DialogButtonWidget {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let block = Block::new().style(if self.selected {
             Style::new()
@@ -68,14 +68,14 @@ impl Widget for DialogueButtonWidget {
 }
 
 pub struct ButtonRowWidget<'buttons> {
-    buttons: &'buttons [DialogueButton],
+    buttons: &'buttons [DialogButton],
     cursor: Option<u8>,
     fg: Color,
 }
 
 impl<'buttons> ButtonRowWidget<'buttons> {
     pub const fn new(
-        buttons: &'buttons [DialogueButton],
+        buttons: &'buttons [DialogButton],
         cursor: Option<u8>,
         fg: Color,
     ) -> Self {
@@ -101,7 +101,7 @@ impl Widget for ButtonRowWidget<'_> {
         for ((i, button), button_area) in buttons.enumerate().zip(button_areas)
         {
             let selected = matches!(self.cursor, Some(c) if c as usize == i);
-            DialogueButtonWidget::new(button, self.fg, selected)
+            DialogButtonWidget::new(button, self.fg, selected)
                 .render(button_area, buf);
         }
     }

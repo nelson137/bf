@@ -15,7 +15,8 @@ use crate::{
 };
 
 use super::{
-    centered_rect, Dialogue, Footer, Header, TapeViewport, TapeViewportState,
+    dialogues::{centered_rect, Dialogue},
+    Footer, Header, TapeViewport, TapeViewportState,
 };
 
 pub struct AppWidget<'app, 'textarea, Editor: Widget> {

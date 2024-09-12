@@ -15,8 +15,9 @@ use bf_tui::{
     events::{BfEvent, EventQueue, KeyEventExt},
     widgets::{
         live::{
-            AppWidget, Dialogue, DialogueCommand, TapeViewportState,
-            TextAreaExts,
+            AppWidget, Dialogue, DialogueCommand, ErrorDialogue,
+            FileSaveAsDialogue, ScriptAutoInputDialogue, ScriptInputDialogue,
+            TapeViewportState, TextAreaExts, UnsavedChangesDialogue,
         },
         Spinner,
     },
@@ -72,7 +73,7 @@ pub struct App<'code, 'dialogue> {
     clean_hash: Sha1Digest,
     event_queue: EventQueue,
     delay: Duration,
-    dialogue: Option<Box<Dialogue<'dialogue>>>,
+    dialogue: Option<Dialogue<'dialogue>>,
     async_interpreter: AsyncInterpreter,
 }
 
@@ -202,7 +203,7 @@ impl<'code, 'dialogue> App<'code, 'dialogue> {
             if restart_interpreter {
                 let status = self.async_interpreter.state().status;
                 if let Status::FatalError(fe) = status {
-                    self.dialogue = Some(Box::new(Dialogue::error(fe)));
+                    self.dialogue = Some(ErrorDialogue::build(fe));
                 }
                 self.async_interpreter.restart(
                     self.code.bytes().collect(),
@@ -223,7 +224,7 @@ impl<'code, 'dialogue> App<'code, 'dialogue> {
             is_dirty: self.is_dirty(),
             async_interpreter: self.async_interpreter.state(),
             editor: &self.code,
-            dialogue: self.dialogue.as_deref(),
+            dialogue: self.dialogue.as_ref(),
             file_path: self.get_file_path(),
             spinner: self.spinner,
             tape_viewport: self.tape_viewport,
@@ -292,10 +293,7 @@ impl<'code, 'dialogue> App<'code, 'dialogue> {
 
     fn on_exit(&mut self) {
         if self.is_dirty() {
-            self.dialogue = Some(Box::new(Dialogue::confirm_unsaved_changes(
-                "Warning:\n\n\
-                    There are unsaved changes, are you sure you want to quit?",
-            )));
+            self.dialogue = Some(UnsavedChangesDialogue::build());
         } else {
             self.should_quit = true;
         }
@@ -313,9 +311,9 @@ impl<'code, 'dialogue> App<'code, 'dialogue> {
                     Ok(())
                 });
                 if let Err(err) = res {
-                    self.dialogue = Some(Box::new(Dialogue::error(format!(
+                    self.dialogue = Some(ErrorDialogue::build(format!(
                         "Error while saving file: {path}\n\n{err}",
-                    ))));
+                    )));
                 } else {
                     self.clean_hash = self.code.hash();
                 }
@@ -371,14 +369,14 @@ impl<'code, 'dialogue> App<'code, 'dialogue> {
             path_abs.to_string_lossy().to_string()
         });
 
-        self.dialogue = Some(Box::new(Dialogue::file_save_as(initial_path)));
+        self.dialogue = Some(FileSaveAsDialogue::build(initial_path));
     }
 
     fn on_set_input(&mut self) {
-        self.dialogue = Some(Box::new(Dialogue::script_input()));
+        self.dialogue = Some(ScriptInputDialogue::build());
     }
 
     fn on_set_auto_input(&mut self) {
-        self.dialogue = Some(Box::new(Dialogue::script_auto_input()));
+        self.dialogue = Some(ScriptAutoInputDialogue::build());
     }
 }

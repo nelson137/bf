@@ -5,7 +5,7 @@ use ratatui::{
     widgets::{Block, Paragraph, Widget},
 };
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum DialogueButton {
     Ok,
     Yes,

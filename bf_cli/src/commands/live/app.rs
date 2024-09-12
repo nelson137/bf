@@ -308,7 +308,7 @@ impl<'code, 'dialogue> App<'code, 'dialogue> {
                 let res = File::create(path).and_then(|mut file| {
                     for line in self.code.lines() {
                         file.write_all(line.as_bytes())?;
-                        file.write_all(&[b'\n'])?;
+                        file.write_all(b"\n")?;
                     }
                     Ok(())
                 });

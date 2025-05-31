@@ -4,14 +4,21 @@ version = "0.1.0"
 authors = ["Nelson Earle <nelson.earle137@gmail.com>"]
 edition = "2018"
 
+[profile.release]
+#strip = "symbols"
+
 [dependencies]
 ansi_term = "0.12"
 crossterm = { version = "0.17", features = ["event-stream"] }
 futures = "0.3.14"
 futures-timer = "3.0.2"
 itertools = "0.9"
+nix = "0.17.0"
 pancurses = { version = "0.16", features = ["wide"] }
 sha-1 = "0.9.6"
 structopt = "0.3"
 term_size = "0.3"
 tui = { version = "0.15.0", features = ["crossterm"] }
+
+[features]
+debug-server = []

@@ -2,6 +2,10 @@ use std::process::exit;
 
 use structopt::StructOpt;
 
+#[cfg(feature="debug-server")]
+#[macro_use]
+mod debug_server;
+
 mod generate;
 use generate::GenerateCli;
 
@@ -44,6 +48,32 @@ impl Cli {
 }
 
 fn bf_main() -> BfResult<()> {
+    #[cfg(feature="debug-server")]
+    {
+        use nix::{
+            Error as NixError,
+            errno::Errno,
+            fcntl::{OFlag, open},
+            sys::stat::Mode,
+            unistd::mkfifo,
+        };
+        use debug_server::{PIPE_PATH, PIPE_FD};
+
+        let mode = Mode::from_bits(0o664)
+            .ok_or(bf_err!("failed to construct mode"))?;
+
+        match mkfifo(PIPE_PATH, mode) {
+            Ok(()) => (),
+            Err(NixError::Sys(Errno::EEXIST)) => (),
+            Err(e) => panic!("{}", e),
+        };
+
+        eprintln!("Blocking until pipe is opened for reading...");
+        let fd = open(PIPE_PATH, OFlag::O_WRONLY, mode)
+            .map_err(|e| format!("failed to open pipe for writing: {}", e))?;
+        unsafe { PIPE_FD = Some(fd); }
+    }
+
     #[cfg(windows)]
     if ansi_term::enable_ansi_support().is_err() {
         return Err(err!("failed to enable ANSI support"));

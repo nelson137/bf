@@ -9,6 +9,6 @@ crossterm = "0.28"
 delegate = "0.13"
 itertools = "0.13"
 ratatui = "0.30"
-ratatui-textarea = "0.8"
+ratatui-textarea = "0.9"
 sha-1 = { version = "0.10", features = ["asm"] }
 tracing = "0.1"

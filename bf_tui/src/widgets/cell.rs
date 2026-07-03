@@ -8,12 +8,9 @@ use ratatui::{
     widgets::{Paragraph, Widget},
 };
 
-use crate::{
-    lines::{
-        TapeBorderHorizontal, TAPE_BORDER_SET, TAPE_HORIZONTAL_BORDER_BOTTOM,
-        TAPE_HORIZONTAL_BORDER_TOP,
-    },
-    sublayouts,
+use crate::lines::{
+    TapeBorderHorizontal, TAPE_BORDER_SET, TAPE_HORIZONTAL_BORDER_BOTTOM,
+    TAPE_HORIZONTAL_BORDER_TOP,
 };
 
 #[derive(Default)]
@@ -41,7 +38,7 @@ impl CellWidget {
         self.display_horizontal_edge(TAPE_HORIZONTAL_BORDER_BOTTOM)
     }
 
-    pub fn display_value(&self) -> Cow<str> {
+    pub fn display_value(&self) -> Cow<'_, str> {
         macro_rules! owned {
             ($value:expr) => {
                 Cow::Owned(format!("{:^3}", $value))

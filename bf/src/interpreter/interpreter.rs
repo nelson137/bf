@@ -96,7 +96,7 @@ impl Interpreter {
         }
     }
 
-    pub fn output(&self) -> Cow<str> {
+    pub fn output(&self) -> Cow<'_, str> {
         String::from_utf8_lossy(&self.output)
     }
 

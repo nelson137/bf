@@ -67,7 +67,7 @@ pub trait LineSetExts {
         width: usize,
         label: &Line<'label>,
     ) -> Line<'label>;
-    fn bottom_divider(&self, width: usize) -> Line;
+    fn bottom_divider(&self, width: usize) -> Line<'_>;
 }
 
 impl LineSetExts for line::Set {
@@ -105,7 +105,7 @@ impl LineSetExts for line::Set {
         spans.into()
     }
 
-    fn bottom_divider(&self, width: usize) -> Line {
+    fn bottom_divider(&self, width: usize) -> Line<'_> {
         vec![
             Span::raw(self.bottom_left),
             self.horizontal.repeat(width.saturating_sub(2)).into(),

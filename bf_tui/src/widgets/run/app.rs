@@ -4,7 +4,7 @@ use ratatui::{
     widgets::{Paragraph, StatefulWidget, Widget},
 };
 
-use crate::{sublayouts, widgets::ChunkedTapeWidget};
+use crate::widgets::ChunkedTapeWidget;
 
 #[derive(Default)]
 pub struct AppWidgetState {

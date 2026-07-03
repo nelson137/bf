@@ -6,7 +6,7 @@ use ratatui::{
     widgets::{Paragraph, Widget},
 };
 
-use crate::{async_interpreter::Status, sublayouts, widgets::Spinner};
+use crate::{async_interpreter::Status, widgets::Spinner};
 
 defaultable_builder! {
     #[derive(Default)]

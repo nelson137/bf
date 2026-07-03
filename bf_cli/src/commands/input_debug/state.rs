@@ -37,7 +37,7 @@ impl State {
         }
     }
 
-    pub fn get_input_history(&self) -> vec_deque::Iter<InputHistoryEntry> {
+    pub fn get_input_history(&self) -> vec_deque::Iter<'_, InputHistoryEntry> {
         self.input_history.iter()
     }
 

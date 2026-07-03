@@ -138,7 +138,7 @@ dependencies = [
  "blake3",
  "clap",
  "criterion",
- "crossterm 0.28.1",
+ "crossterm",
  "metrohash",
  "ratatui",
  "ratatui-textarea",
@@ -157,7 +157,7 @@ dependencies = [
  "bf",
  "bf_utils",
  "criterion",
- "crossterm 0.28.1",
+ "crossterm",
  "delegate",
  "fastrand",
  "itertools 0.13.0",
@@ -452,22 +452,6 @@ name = "crossbeam-utils"
 version = "0.8.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "248e3bacc7dc6baa3b21e405ee045c3047101a49145e7e9eca583ab4c2ca5345"
-
-[[package]]
-name = "crossterm"
-version = "0.28.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "829d955a0bb380ef178a640b91779e3987da38c9aea133b20614cfed8cdea9c6"
-dependencies = [
- "bitflags 2.13.0",
- "crossterm_winapi",
- "mio",
- "parking_lot",
- "rustix 0.38.36",
- "signal-hook",
- "signal-hook-mio",
- "winapi",
-]
 
 [[package]]
 name = "crossterm"
@@ -1379,7 +1363,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "567584a3b0e6a8203c23de40b4861497266725eb5363dbfd18a1edd603cca9f0"
 dependencies = [
  "cfg-if",
- "crossterm 0.29.0",
+ "crossterm",
  "instability",
  "ratatui-core",
 ]

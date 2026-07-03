@@ -5,7 +5,7 @@ use ratatui::{
     prelude::*,
     widgets::{Block, Paragraph, Wrap},
 };
-use tui_textarea::{CursorMove, TextArea};
+use ratatui_textarea::{CursorMove, TextArea};
 
 use crate::{events::KeyEventExt, widgets::live::TextAreaExts};
 

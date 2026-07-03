@@ -5,7 +5,7 @@ use ratatui::{
     prelude::*,
     widgets::{Block, Paragraph, Wrap},
 };
-use tui_textarea::{CursorMove, TextArea};
+use ratatui_textarea::{CursorMove, TextArea};
 
 use crate::{events::KeyEventExt, widgets::live::TextAreaExts};
 
@@ -33,7 +33,7 @@ impl<'textarea> ScriptAutoInputDialog<'textarea> {
         let buttons = focus.to_buttons();
 
         let input = {
-            let mut input = tui_textarea::TextArea::new(vec![]);
+            let mut input = ratatui_textarea::TextArea::new(vec![]);
             input.set_block(Block::bordered());
             input.set_cursor_line_style(Style::new());
             input.move_cursor(CursorMove::End);

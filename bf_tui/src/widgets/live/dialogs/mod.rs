@@ -2,10 +2,10 @@ use button::DialogButton;
 use crossterm::event::KeyEvent;
 use ratatui::{
     prelude::{Buffer, Constraint, Layout, Rect},
-    style::{Color, Style, Stylize},
+    style::{Color, Style},
     widgets::{Block, BorderType, Clear, Padding, Widget},
 };
-use tui_textarea::TextArea;
+use ratatui_textarea::TextArea;
 
 use self::drop_shadow::DropShadowWidget;
 

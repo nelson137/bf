@@ -56,26 +56,33 @@ impl TapeBorderHorizontal {
     }
 }
 
-pub trait LineSetExts {
+pub trait LineSetExts<'this> {
     fn top_divider<'label>(
-        &self,
+        &'this self,
         width: usize,
         label: &Line<'label>,
-    ) -> Line<'label>;
+    ) -> Line<'label>
+    where
+        'this: 'label;
     fn middle_divider<'label>(
-        &self,
+        &'this self,
         width: usize,
         label: &Line<'label>,
-    ) -> Line<'label>;
+    ) -> Line<'label>
+    where
+        'this: 'label;
     fn bottom_divider(&self, width: usize) -> Line<'_>;
 }
 
-impl LineSetExts for line::Set {
+impl<'this> LineSetExts<'this> for line::Set<'this> {
     fn top_divider<'label>(
-        &self,
+        &'this self,
         width: usize,
         label: &Line<'label>,
-    ) -> Line<'label> {
+    ) -> Line<'label>
+    where
+        'this: 'label,
+    {
         let mut spans = Vec::with_capacity(1 + label.iter().count() + 2);
         spans.push(Span::raw(self.top_left));
         spans.extend(label.iter().cloned());
@@ -89,10 +96,13 @@ impl LineSetExts for line::Set {
     }
 
     fn middle_divider<'label>(
-        &self,
+        &'this self,
         width: usize,
         label: &Line<'label>,
-    ) -> Line<'label> {
+    ) -> Line<'label>
+    where
+        'this: 'label,
+    {
         let mut spans = Vec::with_capacity(1 + label.iter().count() + 2);
         spans.push(Span::raw(self.vertical_right));
         spans.extend(label.iter().cloned());

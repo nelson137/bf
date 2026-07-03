@@ -3,7 +3,7 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use bf_tui::events::{BfEvent, EventQueue};
 use crossterm::{
     event::{Event, KeyCode},
@@ -61,8 +61,9 @@ fn run(args: InlineScrollCli) -> Result<()> {
             for event in event_queue.pop_all() {
                 match event {
                     BfEvent::Tick => {
-                        let now =
-                            SystemTime::now().duration_since(UNIX_EPOCH)?;
+                        let now = SystemTime::now()
+                            .duration_since(UNIX_EPOCH)
+                            .context("time went backwards")?;
                         output.push(format!(
                             "{ts:.03} {script} {id}",
                             ts = now.as_millis() as f64 / 1000.0,
@@ -71,9 +72,13 @@ fn run(args: InlineScrollCli) -> Result<()> {
 
                         let lines = output.iter().map(String::as_str);
                         let len = output.len() as u16;
-                        let size = terminal.size()?;
+                        let size = terminal
+                            .size()
+                            .context("unable to get terminal size")?;
                         let scroll = len.saturating_sub(size.height);
-                        terminal.draw(|frame| draw(frame, lines, scroll))?;
+                        terminal
+                            .draw(|frame| draw(frame, lines, scroll))
+                            .context("unable to draw frame")?;
                     }
                     BfEvent::Input(Event::Key(key_evt)) => {
                         if event_matches!(key_evt, KeyCode::Esc) {

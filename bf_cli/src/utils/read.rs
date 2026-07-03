@@ -1,14 +1,14 @@
 use std::{
     fs::File,
     io::{self, BufRead, BufReader},
-    path::PathBuf,
+    path::{Path, PathBuf},
 };
 
 use anyhow::{Context, Result};
 
 pub fn read_script(infile: Option<&PathBuf>) -> Result<Vec<String>> {
     match infile {
-        Some(path) if *path != PathBuf::from("-") => read_script_file(path),
+        Some(path) if path != Path::new("-") => read_script_file(path),
         _ => read_script_stdin(),
     }
 }

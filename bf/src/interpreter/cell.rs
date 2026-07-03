@@ -20,7 +20,7 @@ impl Cell {
         (self.0).0
     }
 
-    pub fn set(&mut self, value: u8) {
+    pub const fn set(&mut self, value: u8) {
         self.0 = Wrapping(value);
     }
 }

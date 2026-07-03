@@ -9,19 +9,14 @@ use anyhow::{bail, Result};
 use bf::interpreter::{Interpreter, Tape};
 use bf_utils::sync::{SharedBool, SharedCell};
 
-#[derive(Clone, Eq, PartialEq)]
+#[derive(Clone, Default, Eq, PartialEq)]
 pub enum Status {
     Running,
     WaitingForInput,
+    #[default]
     Done,
     Error(String),
     FatalError(String),
-}
-
-impl Default for Status {
-    fn default() -> Self {
-        Self::Done
-    }
 }
 
 impl Display for Status {

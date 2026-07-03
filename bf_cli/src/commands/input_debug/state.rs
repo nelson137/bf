@@ -45,7 +45,7 @@ impl State {
         self.spinner
     }
 
-    pub fn spinner_tick(&mut self) {
+    pub const fn spinner_tick(&mut self) {
         self.spinner.tick();
     }
 

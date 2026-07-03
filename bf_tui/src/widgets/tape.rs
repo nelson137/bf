@@ -52,6 +52,7 @@ impl ChunkedTapeWidget {
     }
 }
 
+#[allow(clippy::missing_const_for_fn)]
 impl ChunkedTapeWidget {
     delegate::delegate! {
         to self.0 {
@@ -63,9 +64,10 @@ impl ChunkedTapeWidget {
 
 impl Widget for ChunkedTapeWidget {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let layout = Layout::vertical(
-            iter::repeat(Constraint::Length(3)).take(self.0.len()),
-        )
+        let layout = Layout::vertical(iter::repeat_n(
+            Constraint::Length(3),
+            self.0.len(),
+        ))
         .split(area);
 
         for (chunk, &chunk_area) in self.0.into_iter().zip(layout.iter()) {
@@ -112,8 +114,7 @@ impl Widget for TapeChunkWidget {
         }
 
         let layout = Layout::horizontal(
-            iter::repeat(Constraint::Length(4))
-                .take(len - 1)
+            iter::repeat_n(Constraint::Length(4), len - 1)
                 .chain(iter::once(Constraint::Fill(1))),
         )
         .split(area);

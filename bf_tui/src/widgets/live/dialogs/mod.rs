@@ -141,11 +141,11 @@ impl DialogFocusController {
     // Mutators
     //
 
-    fn next(&mut self) {
+    const fn next(&mut self) {
         self.index = (self.index + 1) % self.order.len();
     }
 
-    fn prev(&mut self) {
+    const fn prev(&mut self) {
         self.index = (self.index + self.order.len() - 1) % self.order.len();
     }
 }

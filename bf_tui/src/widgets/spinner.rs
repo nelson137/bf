@@ -9,7 +9,7 @@ const SPINNER: [&str; 4] = ["│", "╱", "─", "╲"];
 pub struct Spinner(usize);
 
 impl Spinner {
-    pub fn tick(&mut self) {
+    pub const fn tick(&mut self) {
         self.0 = (self.0 + 1) % SPINNER.len();
     }
 }

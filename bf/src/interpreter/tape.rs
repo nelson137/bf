@@ -21,7 +21,7 @@ impl Tape {
     }
 
     #[allow(clippy::len_without_is_empty)]
-    pub fn len(&self) -> usize {
+    pub const fn len(&self) -> usize {
         self.cells.len()
     }
 
@@ -40,7 +40,7 @@ impl Tape {
         self.cursor
     }
 
-    pub fn left(&mut self) {
+    pub const fn left(&mut self) {
         self.cursor = self.cursor.saturating_sub(1);
     }
 
